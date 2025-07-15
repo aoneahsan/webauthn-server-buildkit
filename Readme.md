@@ -58,7 +58,8 @@ it should be fully type safe and secure and follow all best practices
 
 ## Package info
 
-i will put it's code on 
+package github repo: https://github.com/aoneahsan/webauthn-server-buildkit
+package npm url: https://www.npmjs.com/package/webauthn-server-buildkit
 
 ### General Rules
 
