@@ -1,54 +1,395 @@
-i have "https://www.npmjs.com/package/capacitor-biometric-authentication" from frontend part
+# WebAuthn Server Buildkit
 
-in that package i have implemented
+A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication.
 
-Capacitor Biometric Auth Plugin
-A comprehensive biometric authentication plugin for Capacitor that provides secure, type-safe, and framework-independent biometric authentication across Android, iOS, and Web platforms.
+## Features
 
-Features
-🔐 Multi-platform Support: Works on Android, iOS, and Web
-📱 Multiple Biometric Types: Fingerprint, Face ID, Touch ID, and more
-🌐 Web Authentication API: Modern WebAuthn implementation for browsers
-🔒 Secure Session Management: Built-in session handling with configurable duration
-🎨 Customizable UI: Configure colors, text, and appearance
-🔧 Framework Independent: Use with any JavaScript framework
-📝 Full TypeScript Support: Complete type definitions included
-🔄 Fallback Options: Passcode, pattern, PIN alternatives
+- 🔐 **Full WebAuthn Implementation**: Complete server-side implementation of WebAuthn registration and authentication
+- 📱 **Framework Independent**: Works with any Node.js framework (Express, Fastify, Koa, etc.)
+- 🔒 **Secure by Default**: Built-in session management, secure challenge generation, and encryption
+- 📝 **Full TypeScript Support**: Complete type definitions with strict mode
+- 🎯 **Simple API**: Easy-to-use API with sensible defaults
+- 🔧 **Highly Configurable**: Extensive configuration options for customization
+- 💾 **Storage Agnostic**: Bring your own database with the storage adapter interface
+- 🚀 **Modern**: Built with latest ES2022 features and Node.js 20+ support
 
-Platform-Specific Implementation
-Android
-Uses the BiometricPrompt API for secure authentication. Requires:
+## Installation
 
-Android 6.0 (API 23) or higher
-Biometric hardware (fingerprint sensor, face recognition)
-iOS
-Uses the LocalAuthentication framework. Supports:
+```bash
+npm install webauthn-server-buildkit
+# or
+yarn add webauthn-server-buildkit
+```
 
-Touch ID (iPhone 5s and later)
-Face ID (iPhone X and later)
-Requires iOS 11.0 or higher
-Web
-Implements the Web Authentication API (WebAuthn) for biometric authentication in browsers. Supports:
+## Quick Start
 
-Platform authenticators (Windows Hello, Touch ID, etc.)
-Requires HTTPS connection
-Modern browsers with WebAuthn support
+```typescript
+import { WebAuthnServer, MemoryStorageAdapter } from 'webauthn-server-buildkit';
 
-for web i am using "Web Authentication API", for android i'm using "androidx biometric api", for ios i'm using "localauthentication api"
+// Initialize the server
+const webauthn = new WebAuthnServer({
+  rpName: 'My App',
+  rpID: 'localhost',
+  origin: 'http://localhost:3000',
+  encryptionSecret: 'your-32-character-or-longer-secret-key-here',
+});
 
-now i need the backend part, mainly written in Typescript, that's why this package
+// Registration flow
+async function handleRegistration(user: UserModel) {
+  // 1. Generate registration options
+  const { options, challenge } = await webauthn.createRegistrationOptions(user);
 
-1 reference package we can look into is "https://www.npmjs.com/package/@simplewebauthn/server" with it's documentation at "https://simplewebauthn.dev/docs/packages/server"
+  // 2. Send options to client
+  // ... client performs WebAuthn registration ...
 
-and make sure that we write our own code and do not include "@simplewebauthn/server" as dependency, or giv any cridits to "@simplewebauthn/server"
+  // 3. Verify registration response
+  const { verified, registrationInfo } = await webauthn.verifyRegistration(
+    clientResponse,
+    challenge,
+  );
 
-i copy and pasted the page content as text in "simplewebauthn-server-documentation-part.md" file next to "Readme.md" file
+  if (verified && registrationInfo) {
+    // Save credential to database
+    await saveCredential({
+      ...registrationInfo.credential,
+      userId: user.id,
+      webAuthnUserID: options.user.id,
+    });
+  }
+}
 
-that's just to reference
+// Authentication flow
+async function handleAuthentication(credentials: WebAuthnCredential[]) {
+  // 1. Generate authentication options
+  const { options, challenge } = await webauthn.createAuthenticationOptions(credentials);
 
-we need to create as simple and easy to implement implementation as possible, with providing as much control to end user through config, props, options as possible
+  // 2. Send options to client
+  // ... client performs WebAuthn authentication ...
 
-it should be fully type safe and secure and follow all best practices
+  // 3. Verify authentication response
+  const credential = credentials.find((c) => c.id === clientResponse.id);
+  const { verified, authenticationInfo } = await webauthn.verifyAuthentication(
+    clientResponse,
+    challenge,
+    credential,
+  );
+
+  if (verified && authenticationInfo) {
+    // Create session
+    const sessionToken = await webauthn.createSession(
+      credential.userId,
+      credential.id,
+      authenticationInfo.userVerified,
+    );
+
+    return sessionToken;
+  }
+}
+```
+
+## Configuration
+
+```typescript
+const webauthn = new WebAuthnServer({
+  // Required
+  rpName: 'My App', // Relying Party name
+  rpID: 'example.com', // Relying Party ID (domain)
+  origin: 'https://example.com', // Expected origin(s)
+  encryptionSecret: 'secret-key', // Min 32 chars for session encryption
+
+  // Optional
+  sessionDuration: 86400000, // Session duration in ms (default: 24h)
+  attestationType: 'none', // Attestation preference
+  userVerification: 'preferred', // User verification requirement
+  authenticatorSelection: {
+    // Authenticator selection criteria
+    residentKey: 'preferred',
+    userVerification: 'preferred',
+    authenticatorAttachment: 'platform',
+  },
+  supportedAlgorithms: [-7, -257], // COSE algorithm identifiers
+  challengeSize: 32, // Challenge size in bytes
+  timeout: 60000, // Operation timeout in ms
+  preferredAuthenticatorType: 'localDevice', // Preferred authenticator
+  storageAdapter: customAdapter, // Custom storage adapter
+  debug: true, // Enable debug logging
+  logger: customLogger, // Custom logger function
+});
+```
+
+## Storage Adapters
+
+The package includes an in-memory storage adapter for development. For production, implement your own storage adapter:
+
+```typescript
+import { StorageAdapter } from 'webauthn-server-buildkit';
+
+class MySQLStorageAdapter implements StorageAdapter {
+  users = {
+    async findById(id: string | number) {
+      /* ... */
+    },
+    async findByUsername(username: string) {
+      /* ... */
+    },
+    async create(user: Omit<UserModel, 'id'>) {
+      /* ... */
+    },
+    async update(id: string | number, updates: Partial<UserModel>) {
+      /* ... */
+    },
+    async delete(id: string | number) {
+      /* ... */
+    },
+  };
+
+  credentials = {
+    async findById(id: Base64URLString) {
+      /* ... */
+    },
+    async findByUserId(userId: string | number) {
+      /* ... */
+    },
+    async findByWebAuthnUserId(webAuthnUserId: Base64URLString) {
+      /* ... */
+    },
+    async create(credential: Omit<WebAuthnCredential, 'createdAt'>) {
+      /* ... */
+    },
+    async updateCounter(id: Base64URLString, counter: number) {
+      /* ... */
+    },
+    async updateLastUsed(id: Base64URLString) {
+      /* ... */
+    },
+    async delete(id: Base64URLString) {
+      /* ... */
+    },
+    async deleteByUserId(userId: string | number) {
+      /* ... */
+    },
+  };
+
+  challenges = {
+    async create(challenge: ChallengeData) {
+      /* ... */
+    },
+    async find(challenge: string) {
+      /* ... */
+    },
+    async delete(challenge: string) {
+      /* ... */
+    },
+    async deleteExpired() {
+      /* ... */
+    },
+  };
+
+  sessions = {
+    async create(sessionId: string, data: SessionData) {
+      /* ... */
+    },
+    async find(sessionId: string) {
+      /* ... */
+    },
+    async update(sessionId: string, data: Partial<SessionData>) {
+      /* ... */
+    },
+    async delete(sessionId: string) {
+      /* ... */
+    },
+    async deleteExpired() {
+      /* ... */
+    },
+    async deleteByUserId(userId: string | number) {
+      /* ... */
+    },
+  };
+}
+```
+
+## Session Management
+
+Built-in secure session management with encrypted tokens:
+
+```typescript
+// Create session after authentication
+const token = await webauthn.createSession(
+  userId,
+  credentialId,
+  userVerified,
+  { customData: 'value' }, // Optional additional data
+);
+
+// Validate session
+const { valid, sessionData } = await webauthn.validateSession(token);
+
+// Refresh session
+const newToken = await webauthn.refreshSession(token);
+
+// Revoke session
+await webauthn.revokeSession(token);
+
+// Revoke all user sessions
+await webauthn.revokeUserSessions(userId);
+```
+
+## Express.js Example
+
+```typescript
+import express from 'express';
+import { WebAuthnServer } from 'webauthn-server-buildkit';
+
+const app = express();
+const webauthn = new WebAuthnServer({
+  rpName: 'My Express App',
+  rpID: 'localhost',
+  origin: 'http://localhost:3000',
+  encryptionSecret: process.env.ENCRYPTION_SECRET,
+});
+
+app.use(express.json());
+
+// Registration endpoint
+app.post('/api/register/options', async (req, res) => {
+  const user = req.user; // From your auth middleware
+  const credentials = await getUserCredentials(user.id);
+  const { options } = await webauthn.createRegistrationOptions(user, credentials);
+  req.session.challenge = options.challenge;
+  res.json(options);
+});
+
+app.post('/api/register/verify', async (req, res) => {
+  const challenge = req.session.challenge;
+  const { verified, registrationInfo } = await webauthn.verifyRegistration(req.body, challenge);
+
+  if (verified && registrationInfo) {
+    await saveCredential(registrationInfo.credential);
+    res.json({ verified: true });
+  } else {
+    res.status(400).json({ verified: false });
+  }
+});
+
+// Authentication endpoint
+app.post('/api/authenticate/options', async (req, res) => {
+  const credentials = await getCredentialsByUsername(req.body.username);
+  const { options } = await webauthn.createAuthenticationOptions(credentials);
+  req.session.challenge = options.challenge;
+  res.json(options);
+});
+
+app.post('/api/authenticate/verify', async (req, res) => {
+  const challenge = req.session.challenge;
+  const credential = await getCredentialById(req.body.id);
+  const { verified, authenticationInfo } = await webauthn.verifyAuthentication(
+    req.body,
+    challenge,
+    credential,
+  );
+
+  if (verified && authenticationInfo) {
+    const token = await webauthn.createSession(
+      credential.userId,
+      credential.id,
+      authenticationInfo.userVerified,
+    );
+    res.json({ verified: true, token });
+  } else {
+    res.status(401).json({ verified: false });
+  }
+});
+```
+
+## API Reference
+
+### WebAuthnServer
+
+#### Constructor
+
+```typescript
+new WebAuthnServer(config: WebAuthnServerConfig)
+```
+
+#### Methods
+
+##### Registration
+
+- `createRegistrationOptions(user, excludeCredentials?)`: Generate registration options
+- `verifyRegistration(response, challenge, origin?)`: Verify registration response
+
+##### Authentication
+
+- `createAuthenticationOptions(allowCredentials?)`: Generate authentication options
+- `verifyAuthentication(response, challenge, credential, origin?)`: Verify authentication response
+
+##### Session Management
+
+- `createSession(userId, credentialId, userVerified, additionalData?)`: Create session
+- `validateSession(token)`: Validate session token
+- `refreshSession(token)`: Refresh session token
+- `revokeSession(token)`: Revoke session
+- `revokeUserSessions(userId)`: Revoke all user sessions
+
+##### Utilities
+
+- `cleanup()`: Clean up expired data
+- `getStorageAdapter()`: Get storage adapter instance
+
+## Supported Algorithms
+
+- ES256 (ECDSA with SHA-256) - Default
+- RS256 (RSASSA-PKCS1-v1_5 with SHA-256) - Default
+- ES384 (ECDSA with SHA-384)
+- ES512 (ECDSA with SHA-512)
+- RS384 (RSASSA-PKCS1-v1_5 with SHA-384)
+- RS512 (RSASSA-PKCS1-v1_5 with SHA-512)
+- PS256 (RSASSA-PSS with SHA-256)
+- PS384 (RSASSA-PSS with SHA-384)
+- PS512 (RSASSA-PSS with SHA-512)
+
+Note: EdDSA (Ed25519) is defined but not yet implemented.
+
+## Security Considerations
+
+1. **Encryption Secret**: Use a strong, unique secret of at least 32 characters
+2. **HTTPS Required**: Always use HTTPS in production for WebAuthn
+3. **Origin Validation**: The package validates origins to prevent phishing
+4. **Counter Tracking**: Authenticator counters are tracked to detect cloned credentials
+5. **Session Security**: Sessions are encrypted with AES-256-GCM
+
+## Error Handling
+
+The package exports typed error classes:
+
+```typescript
+import {
+  WebAuthnError,
+  RegistrationError,
+  AuthenticationError,
+  VerificationError,
+  ConfigurationError,
+  StorageError,
+  SessionError,
+} from 'webauthn-server-buildkit';
+
+try {
+  await webauthn.verifyRegistration(response, challenge);
+} catch (error) {
+  if (error instanceof RegistrationError) {
+    console.error('Registration failed:', error.code, error.message);
+  }
+}
+```
+
+## Requirements
+
+- Node.js 20.0.0 or higher
+- TypeScript 5.0 or higher (for TypeScript projects)
+
+## License
+
+MIT
 
 ## 👨‍💻 Author
 
@@ -58,11 +399,11 @@ it should be fully type safe and secure and follow all best practices
 - GitHub: [@aoneahsan](https://github.com/aoneahsan)
 - Email: [aoneahsan@gmail.com](mailto:aoneahsan@gmail.com)
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
 ## Package info
 
-package github repo: https://github.com/aoneahsan/webauthn-server-buildkit
-package npm url: https://www.npmjs.com/package/webauthn-server-buildkit
-
-### General Rules
-
-should be fully type safe, secure, fully freamework independant, should provide all the options (session validility, encryption secret and all other setting options) as configuration through plugin to end user, all the configuration options should be management when initailizing the plugin in code and no extra dificult config to get it to work, and should use the best practices and coding standards while coding th plugin
+- GitHub: [https://github.com/aoneahsan/webauthn-server-buildkit](https://github.com/aoneahsan/webauthn-server-buildkit)
+- npm: [https://www.npmjs.com/package/webauthn-server-buildkit](https://www.npmjs.com/package/webauthn-server-buildkit)

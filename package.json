@@ -1,0 +1,71 @@
+{
+  "name": "webauthn-server-buildkit",
+  "version": "0.1.0",
+  "description": "A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication",
+  "author": "Ahsan Mahmood <aoneahsan@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aoneahsan/webauthn-server-buildkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aoneahsan/webauthn-server-buildkit/issues"
+  },
+  "homepage": "https://github.com/aoneahsan/webauthn-server-buildkit#readme",
+  "type": "module",
+  "keywords": [
+    "webauthn",
+    "biometric",
+    "authentication",
+    "passkeys",
+    "fido2",
+    "typescript",
+    "security",
+    "server"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn test && yarn lint && yarn typecheck"
+  },
+  "dependencies": {
+    "cbor-x": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.2",
+    "prettier": "^3.4.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

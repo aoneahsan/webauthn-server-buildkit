@@ -89,6 +89,7 @@ yarn check
 ## Package Dependencies
 
 Key dependencies to use:
+
 - `@simplewebauthn/server` - Reference implementation for WebAuthn
 - `@types/node` - Node.js type definitions
 - `vitest` - Testing framework
@@ -114,6 +115,7 @@ Key dependencies to use:
 ## Common Tasks
 
 ### Adding a New Feature
+
 1. Create feature branch from main
 2. Implement with full TypeScript types
 3. Add comprehensive tests
@@ -121,12 +123,14 @@ Key dependencies to use:
 5. Ensure all checks pass
 
 ### Debugging WebAuthn Issues
+
 - Check browser console for WebAuthn API errors
 - Verify origin and RP ID configuration
 - Ensure HTTPS is used (required for WebAuthn)
 - Check credential storage and retrieval logic
 
 ### Performance Considerations
+
 - Minimize bundle size by avoiding unnecessary dependencies
 - Use lazy loading for optional features
 - Implement efficient challenge cleanup mechanisms
