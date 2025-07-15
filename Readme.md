@@ -38,7 +38,9 @@ for web i am using "Web Authentication API", for android i'm using "androidx bio
 
 now i need the backend part, mainly written in Typescript, that's why this package
 
-i reference package we can look into is "https://www.npmjs.com/package/@simplewebauthn/server" with it's documentation at "https://simplewebauthn.dev/docs/packages/server"
+1 reference package we can look into is "https://www.npmjs.com/package/@simplewebauthn/server" with it's documentation at "https://simplewebauthn.dev/docs/packages/server"
+
+and make sure that we write our own code and do not include "@simplewebauthn/server" as dependency, or giv any cridits to "@simplewebauthn/server"
 
 i copy and pasted the page content as text in "simplewebauthn-server-documentation-part.md" file next to "Readme.md" file
 
