@@ -89,14 +89,14 @@ export function parseSessionToken(
     const tag = base64URLToBuffer(tokenData.tag);
 
     // Derive key
-    const key = deriveKey(secret, salt);
+    const key = deriveKey(secret, Buffer.from(salt));
 
     // Create decipher
-    const decipher = createDecipheriv(ALGORITHM, key, iv);
-    decipher.setAuthTag(tag);
+    const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(iv));
+    decipher.setAuthTag(Buffer.from(tag));
 
     // Decrypt data
-    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    const decrypted = Buffer.concat([decipher.update(Buffer.from(encrypted)), decipher.final()]);
 
     // Parse JSON
     const parsed = JSON.parse(decrypted.toString('utf8')) as {

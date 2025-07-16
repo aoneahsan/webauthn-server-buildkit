@@ -117,7 +117,9 @@
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(yarn fix-lint-errors:*)",
       "Bash(cat:*)",
-      "Bash(corepack enable)"
+      "Bash(corepack enable)",
+      "Bash(yarn typecheck)",
+      "Bash(yarn upgrade:*)"
     ],
     "deny": []
   }

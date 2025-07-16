@@ -1,6 +1,12 @@
-import { createVerify, constants } from 'node:crypto';
+import { createVerify, constants, verify, createPublicKey } from 'node:crypto';
 import { COSEAlgorithmIdentifier, COSEKeyType, VerificationError } from '@/types';
-import { COSEPublicKey, COSEEC2Key, COSERSAKey, getCOSEAlgorithmIdentifier } from './cose';
+import {
+  COSEPublicKey,
+  COSEEC2Key,
+  COSERSAKey,
+  COSEOKPKey,
+  getCOSEAlgorithmIdentifier,
+} from './cose';
 
 /**
  * Algorithm details for signature verification
@@ -119,6 +125,45 @@ function rsaKeyToSPKI(key: COSERSAKey): Buffer {
 }
 
 /**
+ * Verify Ed25519 signature
+ */
+function verifyEd25519Signature(
+  signature: Uint8Array,
+  data: Uint8Array,
+  publicKey: COSEOKPKey,
+): boolean {
+  try {
+    // Ed25519 public key format: raw 32-byte public key
+    const publicKeyRaw = publicKey.x;
+
+    // Validate key size (Ed25519 public keys are 32 bytes)
+    if (publicKeyRaw.length !== 32) {
+      return false;
+    }
+
+    // Create Ed25519 public key object
+    // Using type assertion as Node.js types don't properly support raw format for Ed25519
+    const keyObject = createPublicKey({
+      key: Buffer.from(publicKeyRaw),
+      format: 'raw',
+      type: 'public',
+    } as unknown as Parameters<typeof createPublicKey>[0]);
+
+    // Use Node.js crypto verify with Ed25519
+    // Ed25519 doesn't use a hash function, it signs the message directly
+    return verify(
+      null, // Ed25519 doesn't use a hash algorithm
+      Buffer.from(data),
+      keyObject,
+      Buffer.from(signature),
+    );
+  } catch {
+    // If verification fails for any reason, return false
+    return false;
+  }
+}
+
+/**
  * Verify a signature using a COSE public key
  */
 export function verifySignature(
@@ -181,19 +226,18 @@ export function verifySignature(
           );
         }
 
-        // Ed25519 doesn't use standard verify API
-        // For now, we'll throw an error as Ed25519 requires specific handling
-        throw new VerificationError(
-          'Ed25519 verification not yet implemented',
-          'ED25519_NOT_IMPLEMENTED',
-        );
+        // Ed25519 uses a different verification process
+        return verifyEd25519Signature(signature, data, publicKey);
       }
 
-      default:
+      default: {
+        // This should never happen with proper types, but provides runtime safety
+        const exhaustiveCheck: never = publicKey;
         throw new VerificationError(
-          `Unsupported key type: ${publicKey.kty}`,
+          `Unsupported key type: ${(exhaustiveCheck as { kty: number }).kty}`,
           'UNSUPPORTED_KEY_TYPE',
         );
+      }
     }
   } catch (error) {
     if (error instanceof VerificationError) {

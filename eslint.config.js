@@ -58,6 +58,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '*.config.js'],
+    ignores: ['dist/', 'node_modules/', 'coverage/', '*.config.js', '*.config.ts', 'docs/', 'tests/'],
   },
 ];
