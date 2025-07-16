@@ -259,6 +259,15 @@ app.use(express.json());
 // Registration endpoint
 app.post('/api/register/options', async (req, res) => {
   const user = req.user; // From your auth middleware
+  // getUserCredentials should return an array of previously registered credentials for this user
+  // This comes from your database where you stored credentials during registration
+  // Each credential object should contain:
+  // - id: The credential ID (credentialId from registrationInfo.credential)
+  // - publicKey: The public key bytes (publicKey from registrationInfo.credential)
+  // - counter: Usage counter for replay protection (counter from registrationInfo.credential)
+  // - transports: Array of transport methods like ['usb', 'nfc', 'ble', 'internal']
+  //   (transports from registrationInfo.credential or authenticator response)
+  // You get all this data when you save the credential after successful registration
   const credentials = await getUserCredentials(user.id);
   const { options } = await webauthn.createRegistrationOptions(user, credentials);
   req.session.challenge = options.challenge;
