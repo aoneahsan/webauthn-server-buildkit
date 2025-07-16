@@ -57,13 +57,34 @@ export type {
   ConfigurationError,
   StorageError,
   SessionError,
+  AttestationObject,
+  AuthenticatorDataFlags,
+  ParsedAuthenticatorData,
+  COSEAlgorithmIdentifier,
+  COSEEllipticCurve,
+  COSEKeyType,
+  InternalConfig,
+  ParsedClientDataJSON,
 } from './types';
 
-// Enums
-export { COSEAlgorithmIdentifier, COSEKeyType, COSEEllipticCurve } from './types';
-
 // Utility functions
-export { generateChallenge, generateRandomId } from './crypto';
+export {
+  generateChallenge,
+  generateRandomId,
+  COSEEC2Key,
+  COSEKeyCommon,
+  COSEOKPKey,
+  COSEPublicKey,
+  COSERSAKey,
+  decodeCBOR,
+  decodeCBORFirst,
+  encodeCBOR,
+  getCOSEAlgorithmIdentifier,
+  parseAuthenticatorData,
+  parseCOSEPublicKey,
+  validateAuthenticatorDataFlags,
+  verifySignature,
+} from './crypto';
 
 export {
   bufferToBase64URL,
@@ -71,6 +92,16 @@ export {
   stringToBase64URL,
   base64URLToString,
   isBase64URL,
+  bufferToHex,
+  bufferToNumber,
+  buffersEqual,
+  concatBuffers,
+  hexToBuffer,
+  numberToBuffer,
+  sha256,
+  sha384,
+  sha512,
+  verifyHash,
 } from './utils';
 
 // Version

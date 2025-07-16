@@ -1,6 +1,6 @@
 {
   "name": "webauthn-server-buildkit",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication",
   "author": "Ahsan Mahmood <aoneahsan@gmail.com>",
   "license": "MIT",
