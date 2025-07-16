@@ -1,5 +1,11 @@
 # WebAuthn Server Buildkit
 
+[![npm version](https://img.shields.io/npm/v/webauthn-server-buildkit.svg?style=flat-square)](https://www.npmjs.com/package/webauthn-server-buildkit)
+[![npm downloads](https://img.shields.io/npm/dm/webauthn-server-buildkit.svg?style=flat-square)](https://www.npmjs.com/package/webauthn-server-buildkit)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/node/v/webauthn-server-buildkit.svg?style=flat-square)](https://nodejs.org/)
+
 A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication.
 
 ## Features
