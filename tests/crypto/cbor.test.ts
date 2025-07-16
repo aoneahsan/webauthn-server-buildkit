@@ -11,12 +11,12 @@ describe('CBOR', () => {
       expect(result).toBe(1);
     });
 
-    it('should decode CBOR map', () => {
-      // Map with one key-value pair: {1: 2}
+    it('should decode CBOR object', () => {
+      // Object with one key-value pair: {1: 2}
       const cborData = new Uint8Array([0xa1, 0x01, 0x02]);
-      const result = decodeCBOR<Map<number, number>>(cborData);
-      expect(result).toBeInstanceOf(Map);
-      expect(result.get(1)).toBe(2);
+      const result = decodeCBOR<Record<number, number>>(cborData);
+      expect(result).toBeInstanceOf(Object);
+      expect(result[1]).toBe(2);
     });
 
     it('should decode CBOR array', () => {

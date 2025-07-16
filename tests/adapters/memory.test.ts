@@ -13,9 +13,6 @@ describe('MemoryStorageAdapter', () => {
     const mockUser: Omit<UserModel, 'id'> = {
       username: 'testuser',
       displayName: 'Test User',
-      email: 'test@example.com',
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
     };
 
     it('should create a user', async () => {
@@ -24,7 +21,6 @@ describe('MemoryStorageAdapter', () => {
       expect(createdUser.id).toBeDefined();
       expect(createdUser.username).toBe(mockUser.username);
       expect(createdUser.displayName).toBe(mockUser.displayName);
-      expect(createdUser.email).toBe(mockUser.email);
     });
 
     it('should find user by id', async () => {
@@ -77,9 +73,8 @@ describe('MemoryStorageAdapter', () => {
       publicKey: new Uint8Array([1, 2, 3, 4]),
       counter: 0,
       transports: ['internal'],
-      backupEligible: true,
-      backupState: false,
-      lastUsed: new Date().toISOString(),
+      deviceType: 'singleDevice',
+      backedUp: false,
     };
 
     it('should create a credential', async () => {
@@ -124,7 +119,7 @@ describe('MemoryStorageAdapter', () => {
       expect(updated).toBe(true);
       
       const foundCredential = await adapter.credentials.findById(mockCredential.id);
-      expect(foundCredential!.lastUsed).toBeDefined();
+      expect(foundCredential!.lastUsedAt).toBeDefined();
     });
 
     it('should delete credential', async () => {
@@ -155,9 +150,9 @@ describe('MemoryStorageAdapter', () => {
     const mockChallenge: ChallengeData = {
       challenge: 'test-challenge',
       userId: 'user123',
-      type: 'registration',
-      expiresAt: new Date(Date.now() + 300000).toISOString(), // 5 minutes from now
-      createdAt: new Date().toISOString(),
+      operation: 'registration',
+      expiresAt: new Date(Date.now() + 300000), // 5 minutes from now
+      createdAt: new Date(),
     };
 
     it('should create a challenge', async () => {
@@ -189,7 +184,7 @@ describe('MemoryStorageAdapter', () => {
       const expiredChallenge = {
         ...mockChallenge,
         challenge: 'expired-challenge',
-        expiresAt: new Date(Date.now() - 1000).toISOString(), // 1 second ago
+        expiresAt: new Date(Date.now() - 1000), // 1 second ago
       };
       
       await adapter.challenges.create(mockChallenge);
@@ -211,6 +206,7 @@ describe('MemoryStorageAdapter', () => {
       userId: 'user123',
       credentialId: 'cred123',
       userVerified: true,
+      expiresAt: new Date(Date.now() + 86400000), // 24 hours from now
       additionalData: { role: 'user' },
     };
 

@@ -244,6 +244,7 @@ export function verifySignature(
       throw error;
     }
 
-    throw new VerificationError('Signature verification failed', 'SIGNATURE_VERIFICATION_FAILED');
+    // For crypto errors (e.g., invalid signatures), return false
+    return false;
   }
 }

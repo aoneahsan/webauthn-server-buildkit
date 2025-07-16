@@ -17,7 +17,9 @@ export function decodeCBOR<T = unknown>(data: Uint8Array): T {
  */
 export function encodeCBOR(data: unknown): Uint8Array {
   try {
-    return encode(data);
+    const result = encode(data);
+    // Ensure we always return a Uint8Array, not a Buffer
+    return new Uint8Array(result);
   } catch {
     throw new VerificationError('Failed to encode CBOR data', 'CBOR_ENCODE_ERROR');
   }

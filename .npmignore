@@ -1,0 +1,42 @@
+# Source files
+src/
+tests/
+
+# Configuration files
+.gitignore
+.nvmrc
+eslint.config.js
+vitest.config.ts
+tsconfig.json
+tsup.config.ts
+
+# Documentation source
+docs/project-development-plan/
+simplewebauthn-server-documentation-part.md
+
+# Development files
+*.log
+*.test.*
+coverage/
+.vitest/
+
+# CI/CD
+.github/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keep these files
+!dist/
+!README.md
+!LICENSE
+!CHANGELOG.md
+!package.json

@@ -119,7 +119,9 @@
       "Bash(cat:*)",
       "Bash(corepack enable)",
       "Bash(yarn typecheck)",
-      "Bash(yarn upgrade:*)"
+      "Bash(yarn upgrade:*)",
+      "Bash(npm info:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": []
   }

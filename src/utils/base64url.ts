@@ -39,5 +39,5 @@ export function base64URLToString(base64url: Base64URLString): string {
  * Check if a string is valid base64url
  */
 export function isBase64URL(str: string): boolean {
-  return /^[A-Za-z0-9_-]+$/.test(str);
+  return /^[A-Za-z0-9_-]*$/.test(str);
 }
