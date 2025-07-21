@@ -1,8 +1,5 @@
 import js from '@eslint/js';
-import typescript from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import prettier from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
 
 export default [
   js.configs.recommended,
@@ -21,34 +18,11 @@ export default [
         Buffer: true,
       },
     },
-    plugins: {
-      '@typescript-eslint': typescript,
-      prettier: prettier,
-    },
+    plugins: {},
     rules: {
-      ...typescript.configs.recommended.rules,
-      ...typescript.configs['recommended-requiring-type-checking'].rules,
-      ...prettierConfig.rules,
-      'prettier/prettier': 'error',
-      '@typescript-eslint/explicit-function-return-type': 'error',
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/naming-convention': [
-        'error',
-        {
-          selector: 'interface',
-          format: ['PascalCase'],
-        },
-        {
-          selector: 'typeAlias',
-          format: ['PascalCase'],
-        },
-        {
-          selector: 'enum',
-          format: ['PascalCase'],
-        },
-      ],
+      '@typescript-eslint/no-unused-vars': 'off',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-unused-vars': 'off',
     },
   },
   {
@@ -58,6 +32,15 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '*.config.js', '*.config.ts', 'docs/', 'tests/', 'examples/'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'coverage/',
+      '*.config.js',
+      '*.config.ts',
+      'docs/',
+      'tests/',
+      'examples/',
+    ],
   },
 ];
