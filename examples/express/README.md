@@ -5,12 +5,14 @@ This example demonstrates how to integrate WebAuthn Server Buildkit with an Expr
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 npm install express webauthn-server-buildkit
 npm install --save-dev @types/express typescript ts-node
 ```
 
 2. Create a `tsconfig.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -30,6 +32,7 @@ npm install --save-dev @types/express typescript ts-node
 ```
 
 3. Run the server:
+
 ```bash
 npx ts-node server.ts
 ```
@@ -48,27 +51,27 @@ async function register() {
     body: JSON.stringify({
       userId: 'user123',
       username: 'john.doe',
-      displayName: 'John Doe'
-    })
+      displayName: 'John Doe',
+    }),
   });
-  
+
   const options = await optionsResponse.json();
-  
+
   // Create credential
   const credential = await navigator.credentials.create(options);
-  
+
   // Verify registration
   const verifyResponse = await fetch('/api/register/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ...credential.response,
-      userId: 'user123'
-    })
+      userId: 'user123',
+    }),
   });
-  
+
   const result = await verifyResponse.json();
-  console.log('Registration result:', result);
+  consoleLog('Registration result:', result);
 }
 
 // Authentication
@@ -78,25 +81,25 @@ async function authenticate() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      username: 'john.doe'
-    })
+      username: 'john.doe',
+    }),
   });
-  
+
   const options = await optionsResponse.json();
-  
+
   // Get credential
   const assertion = await navigator.credentials.get(options);
-  
+
   // Verify authentication
   const verifyResponse = await fetch('/api/authenticate/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(assertion.response)
+    body: JSON.stringify(assertion.response),
   });
-  
+
   const result = await verifyResponse.json();
-  console.log('Authentication result:', result);
-  
+  consoleLog('Authentication result:', result);
+
   if (result.token) {
     // Store the session token
     localStorage.setItem('sessionToken', result.token);
