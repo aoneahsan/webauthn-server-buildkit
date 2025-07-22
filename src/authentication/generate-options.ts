@@ -9,11 +9,30 @@ import { generateChallenge } from '@/crypto';
 
 /**
  * Options for generating authentication options
+ * @see https://www.w3.org/TR/webauthn-3/#dictdef-publickeycredentialrequestoptions
  */
 export interface GenerateAuthenticationOptionsParams {
+  /**
+   * List of credentials to allow
+   */
   allowCredentials?: WebAuthnCredential[];
+  /**
+   * User verification requirement
+   */
   userVerification?: UserVerificationRequirement;
+  /**
+   * RP ID
+   */
   rpId?: string;
+  /**
+   * WebAuthn extensions to request
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-extensions
+   */
+  extensions?: Record<string, unknown>;
+  /**
+   * Custom timeout for this operation (overrides server default)
+   */
+  timeout?: number;
 }
 
 /**
@@ -27,6 +46,8 @@ export function generateAuthenticationOptions(
     allowCredentials = [],
     userVerification = config.userVerification,
     rpId = config.rpID,
+    extensions,
+    timeout,
   } = params;
 
   // Generate challenge
@@ -41,9 +62,10 @@ export function generateAuthenticationOptions(
 
   const options: PublicKeyCredentialRequestOptionsJSON = {
     challenge,
-    timeout: config.timeout,
+    timeout: timeout ?? config.timeout,
     rpId,
     userVerification,
+    extensions,
   };
 
   // Only include allowCredentials if we have some

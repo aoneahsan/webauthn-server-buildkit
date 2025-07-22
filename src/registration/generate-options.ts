@@ -1,22 +1,55 @@
 import {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialDescriptor,
+  PublicKeyCredentialRpEntity,
   AuthenticatorSelectionCriteria,
   UserModel,
   WebAuthnCredential,
   InternalConfig,
   PreferredAuthenticatorType,
+  AttestationConveyancePreference,
 } from '@/types';
 import { generateChallenge, generateRandomId } from '@/crypto';
 
 /**
  * Options for generating registration options
+ * @see https://www.w3.org/TR/webauthn-3/#dictdef-publickeycredentialcreationoptions
  */
 export interface GenerateRegistrationOptionsParams {
+  /**
+   * User information
+   */
   user: UserModel;
+  /**
+   * List of credentials to exclude
+   */
   excludeCredentials?: WebAuthnCredential[];
+  /**
+   * Authenticator selection criteria
+   */
   authenticatorSelection?: Partial<AuthenticatorSelectionCriteria>;
+  /**
+   * Preferred authenticator type (convenience parameter)
+   */
   preferredAuthenticatorType?: PreferredAuthenticatorType;
+  /**
+   * WebAuthn extensions to request
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-extensions
+   */
+  extensions?: Record<string, unknown>;
+  /**
+   * Custom timeout for this operation (overrides server default)
+   */
+  timeout?: number;
+  /**
+   * Custom attestation preference for this operation (overrides server default)
+   */
+  attestation?: AttestationConveyancePreference;
+  /**
+   * Custom RP icon URL (deprecated in WebAuthn Level 3)
+   * @deprecated
+   */
+  rpIcon?: string;
 }
 
 /**
@@ -31,6 +64,10 @@ export function generateRegistrationOptions(
     excludeCredentials = [],
     authenticatorSelection = {},
     preferredAuthenticatorType,
+    extensions,
+    timeout,
+    attestation,
+    rpIcon,
   } = params;
 
   // Generate challenge
@@ -79,22 +116,31 @@ export function generateRegistrationOptions(
     type: 'public-key' as const,
   }));
 
+  // Build RP entity
+  const rp: PublicKeyCredentialRpEntity = {
+    name: config.rpName,
+    id: config.rpID,
+  };
+
+  // Add RP icon if provided (deprecated but still supported)
+  if (rpIcon || config.rpIcon) {
+    rp.icon = rpIcon || config.rpIcon;
+  }
+
   const options: PublicKeyCredentialCreationOptionsJSON = {
     challenge,
-    rp: {
-      name: config.rpName,
-      id: config.rpID,
-    },
+    rp,
     user: {
       id: webAuthnUserId,
       name: user.username,
       displayName: user.displayName || user.username,
     },
     pubKeyCredParams,
-    timeout: config.timeout,
-    attestation: config.attestationType,
+    timeout: timeout ?? config.timeout,
+    attestation: attestation ?? config.attestationType,
     authenticatorSelection: authSelection,
     excludeCredentials: excludeCredentialsList.length > 0 ? excludeCredentialsList : undefined,
+    extensions,
   };
 
   // Log if debug is enabled

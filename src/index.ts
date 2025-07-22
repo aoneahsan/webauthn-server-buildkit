@@ -104,5 +104,9 @@ export {
   verifyHash,
 } from './utils';
 
+// Registration and Authentication parameter types
+export type { GenerateRegistrationOptionsParams } from './registration';
+export type { GenerateAuthenticationOptionsParams } from './authentication';
+
 // Version
 export const VERSION = '1.0.0';

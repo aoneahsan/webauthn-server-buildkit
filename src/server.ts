@@ -59,22 +59,31 @@ export class WebAuthnServer {
 
   /**
    * Generate registration options
+   * @param user - User information
+   * @param params - Optional parameters to customize registration
+   * @returns Registration options and challenge
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-createCredential
    */
   async createRegistrationOptions(
     user: UserModel,
-    excludeCredentials?: WebAuthnCredential[],
+    params?: Partial<Omit<GenerateRegistrationOptionsParams, 'user'>>,
   ): Promise<{
     options: PublicKeyCredentialCreationOptionsJSON;
     challenge: string;
   }> {
-    const params: GenerateRegistrationOptionsParams = {
+    const fullParams: GenerateRegistrationOptionsParams = {
       user,
-      excludeCredentials,
-      authenticatorSelection: this.config.authenticatorSelection,
-      preferredAuthenticatorType: this.config.preferredAuthenticatorType,
+      excludeCredentials: params?.excludeCredentials,
+      authenticatorSelection: params?.authenticatorSelection ?? this.config.authenticatorSelection,
+      preferredAuthenticatorType:
+        params?.preferredAuthenticatorType ?? this.config.preferredAuthenticatorType,
+      extensions: params?.extensions,
+      timeout: params?.timeout,
+      attestation: params?.attestation,
+      rpIcon: params?.rpIcon,
     };
 
-    const options = generateRegistrationOptions(this.config, params);
+    const options = generateRegistrationOptions(this.config, fullParams);
 
     // Store challenge if storage is available
     if (this.config.storageAdapter) {
@@ -125,18 +134,23 @@ export class WebAuthnServer {
 
   /**
    * Generate authentication options
+   * @param params - Optional parameters to customize authentication
+   * @returns Authentication options and challenge
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-getAssertion
    */
-  async createAuthenticationOptions(allowCredentials?: WebAuthnCredential[]): Promise<{
+  async createAuthenticationOptions(params?: GenerateAuthenticationOptionsParams): Promise<{
     options: PublicKeyCredentialRequestOptionsJSON;
     challenge: string;
   }> {
-    const params: GenerateAuthenticationOptionsParams = {
-      allowCredentials,
-      userVerification: this.config.userVerification,
-      rpId: this.config.rpID,
+    const fullParams: GenerateAuthenticationOptionsParams = {
+      allowCredentials: params?.allowCredentials,
+      userVerification: params?.userVerification ?? this.config.userVerification,
+      rpId: params?.rpId ?? this.config.rpID,
+      extensions: params?.extensions,
+      timeout: params?.timeout,
     };
 
-    const options = generateAuthenticationOptions(this.config, params);
+    const options = generateAuthenticationOptions(this.config, fullParams);
 
     // Store challenge if storage is available
     if (this.config.storageAdapter) {
@@ -296,6 +310,7 @@ export class WebAuthnServer {
     return {
       rpName: config.rpName,
       rpID: config.rpID,
+      rpIcon: config.rpIcon,
       origin: config.origin,
       sessionDuration: config.sessionDuration || 24 * 60 * 60 * 1000, // 24 hours
       encryptionSecret: config.encryptionSecret,

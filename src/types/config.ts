@@ -26,6 +26,12 @@ export interface WebAuthnServerConfig {
   rpID: string;
 
   /**
+   * Relying Party icon URL
+   * @deprecated This field is deprecated in WebAuthn Level 3
+   */
+  rpIcon?: string;
+
+  /**
    * Expected origin(s) for requests
    */
   origin: string | string[];
@@ -96,9 +102,13 @@ export interface WebAuthnServerConfig {
  */
 export interface InternalConfig
   extends Required<
-    Omit<WebAuthnServerConfig, 'storageAdapter' | 'preferredAuthenticatorType' | 'logger'>
+    Omit<
+      WebAuthnServerConfig,
+      'storageAdapter' | 'preferredAuthenticatorType' | 'logger' | 'rpIcon'
+    >
   > {
   storageAdapter?: StorageAdapter;
   preferredAuthenticatorType?: PreferredAuthenticatorType;
   logger?: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) => void;
+  rpIcon?: string;
 }

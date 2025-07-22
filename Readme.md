@@ -6,18 +6,34 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/node/v/webauthn-server-buildkit.svg?style=flat-square)](https://nodejs.org/)
 
+## 📚 Documentation
+
+- [**API Reference**](./docs/api-reference.md) - Detailed API documentation
+- [**Storage Adapters**](./docs/examples/storage-adapters/README.md) - Database integration examples
+- [**Development Guide**](./docs/project-development-plan/implementation-details.md) - Implementation details
+- [**WebAuthn Specification**](https://www.w3.org/TR/webauthn-3/) - W3C WebAuthn standard
+
 A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication.
 
 ## Features
 
-- 🔐 **Full WebAuthn Implementation**: Complete server-side implementation of WebAuthn registration and authentication
-- 📱 **Framework Independent**: Works with any Node.js framework (Express, Fastify, Koa, etc.)
-- 🔒 **Secure by Default**: Built-in session management, secure challenge generation, and encryption
-- 📝 **Full TypeScript Support**: Complete type definitions with strict mode
-- 🎯 **Simple API**: Easy-to-use API with sensible defaults
-- 🔧 **Highly Configurable**: Extensive configuration options for customization
-- 💾 **Storage Agnostic**: Bring your own database with the storage adapter interface
-- 🚀 **Modern**: Built with latest ES2022 features and Node.js 20+ support
+### 🔐 Security & Compliance
+- **Full WebAuthn Level 3 Implementation** - Complete server-side implementation following the latest W3C standards
+- **Secure by Default** - Built-in AES-256-GCM session encryption, cryptographically secure challenge generation
+- **Algorithm Support** - ES256, RS256, EdDSA, and more COSE algorithms
+- **Attestation Support** - Full attestation verification with multiple formats
+
+### 🛠️ Developer Experience
+- **Framework Independent** - Works with Express, Fastify, Koa, Next.js, or any Node.js framework
+- **Full TypeScript Support** - 100% type-safe with comprehensive type definitions and strict mode
+- **Simple API** - Intuitive methods with sensible defaults, get started in minutes
+- **Extensive Configuration** - Every WebAuthn option is configurable with user values taking priority
+
+### 📦 Integration & Storage
+- **Storage Agnostic** - Pluggable adapter system for any database (MongoDB, PostgreSQL, Redis, etc.)
+- **Session Management** - Built-in secure session handling with token-based authentication
+- **Extension Support** - Full support for WebAuthn extensions
+- **Modern Architecture** - ES2022 features, Node.js 20+ support, ESM and CommonJS builds
 
 ## Installation
 
