@@ -3,7 +3,7 @@ import type { SessionData } from 'webauthn-server-buildkit';
 
 /**
  * Redis Session Storage Adapter
- * 
+ *
  * This adapter provides Redis-based session storage with automatic expiration.
  * It can be used alongside other storage adapters for scalable session management.
  */
@@ -26,7 +26,7 @@ export class RedisSessionAdapter {
       retryDelayOnFailover?: number;
       connectTimeout?: number;
       commandTimeout?: number;
-    }
+    },
   ) {
     this.redis = new Redis({
       host: connectionOptions.host,
@@ -64,7 +64,7 @@ export class RedisSessionAdapter {
     const key = this.getKey(sessionId);
     const sessionData = JSON.stringify(data);
     const expirationTime = ttl || this.defaultTTL;
-    
+
     const result = await this.redis.setex(key, expirationTime, sessionData);
     return result === 'OK';
   }
@@ -75,7 +75,7 @@ export class RedisSessionAdapter {
   async find(sessionId: string): Promise<SessionData | null> {
     const key = this.getKey(sessionId);
     const sessionData = await this.redis.get(key);
-    
+
     if (!sessionData) {
       return null;
     }
@@ -94,10 +94,10 @@ export class RedisSessionAdapter {
    */
   async update(sessionId: string, data: Partial<SessionData>): Promise<boolean> {
     const key = this.getKey(sessionId);
-    
+
     // Use a transaction to ensure atomicity
     const pipeline = this.redis.pipeline();
-    
+
     // Get current data
     const currentData = await this.redis.get(key);
     if (!currentData) {
@@ -126,7 +126,7 @@ export class RedisSessionAdapter {
     // Update with preserved TTL
     pipeline.setex(key, ttl, JSON.stringify(updatedData));
     const results = await pipeline.exec();
-    
+
     return results && results[0] && results[0][1] === 'OK';
   }
 
@@ -145,16 +145,16 @@ export class RedisSessionAdapter {
   async deleteByUserId(userId: string | number): Promise<boolean> {
     const pattern = `${this.keyPrefix}*`;
     const keys = await this.redis.keys(pattern);
-    
+
     if (keys.length === 0) {
       return true;
     }
 
     // Get all session data
     const pipeline = this.redis.pipeline();
-    keys.forEach(key => pipeline.get(key));
+    keys.forEach((key) => pipeline.get(key));
     const results = await pipeline.exec();
-    
+
     // Find sessions for this user
     const sessionsToDelete: string[] = [];
     for (let i = 0; i < results.length; i++) {
@@ -162,7 +162,7 @@ export class RedisSessionAdapter {
       if (result[0] || !result[1]) {
         continue; // Skip errors or null values
       }
-      
+
       try {
         const sessionData: SessionData = JSON.parse(result[1] as string);
         if (sessionData.userId === userId) {
@@ -190,16 +190,16 @@ export class RedisSessionAdapter {
     // Redis handles TTL automatically, but we can scan for any orphaned keys
     const pattern = `${this.keyPrefix}*`;
     const keys = await this.redis.keys(pattern);
-    
+
     if (keys.length === 0) {
       return true;
     }
 
     // Check TTL for each key and delete expired ones
     const pipeline = this.redis.pipeline();
-    keys.forEach(key => pipeline.ttl(key));
+    keys.forEach((key) => pipeline.ttl(key));
     const ttlResults = await pipeline.exec();
-    
+
     const expiredKeys: string[] = [];
     for (let i = 0; i < ttlResults.length; i++) {
       const result = ttlResults[i];
@@ -226,27 +226,27 @@ export class RedisSessionAdapter {
   }> {
     const pattern = `${this.keyPrefix}*`;
     const keys = await this.redis.keys(pattern);
-    
+
     let activeSessions = 0;
     let memoryUsage = 0;
-    
+
     if (keys.length > 0) {
       const pipeline = this.redis.pipeline();
-      keys.forEach(key => {
+      keys.forEach((key) => {
         pipeline.ttl(key);
         pipeline.memory('usage', key);
       });
-      
+
       const results = await pipeline.exec();
-      
+
       for (let i = 0; i < results.length; i += 2) {
         const ttlResult = results[i];
         const memoryResult = results[i + 1];
-        
+
         if (!ttlResult[0] && ttlResult[1] > 0) {
           activeSessions++;
         }
-        
+
         if (!memoryResult[0] && memoryResult[1]) {
           memoryUsage += memoryResult[1] as number;
         }
@@ -266,7 +266,7 @@ export class RedisSessionAdapter {
   async refreshSession(sessionId: string, ttl?: number): Promise<boolean> {
     const key = this.getKey(sessionId);
     const expirationTime = ttl || this.defaultTTL;
-    
+
     const result = await this.redis.expire(key, expirationTime);
     return result === 1;
   }
@@ -303,22 +303,22 @@ export class RedisSessionAdapter {
   async getSessionsByUserId(userId: string | number): Promise<string[]> {
     const pattern = `${this.keyPrefix}*`;
     const keys = await this.redis.keys(pattern);
-    
+
     if (keys.length === 0) {
       return [];
     }
 
     const pipeline = this.redis.pipeline();
-    keys.forEach(key => pipeline.get(key));
+    keys.forEach((key) => pipeline.get(key));
     const results = await pipeline.exec();
-    
+
     const userSessions: string[] = [];
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
       if (result[0] || !result[1]) {
         continue;
       }
-      
+
       try {
         const sessionData: SessionData = JSON.parse(result[1] as string);
         if (sessionData.userId === userId) {
@@ -388,7 +388,7 @@ async function manageSession(sessionId: string, userId: string) {
   
   // Get session statistics
   const stats = await sessionAdapter.getStats();
-  console.log('Session stats:', stats);
+  console.info('Session stats:', stats);
 }
 
 // Cleanup on shutdown
