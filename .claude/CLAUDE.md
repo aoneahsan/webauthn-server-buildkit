@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ CRITICAL: Build & Link After Changes
+
+**MANDATORY RULE**: After making ANY changes to this package, you MUST:
+
+1. **Build the package**: `yarn build`
+2. The package is linked via `yarn link` to `backend-test-app`
+
+This ensures changes are immediately available for testing without publishing.
+
+### Link Status
+- ✅ `backend-test-app` - linked via `yarn link "webauthn-server-buildkit"`
+- ❌ `frontend-test-app` - does not use this package (backend-only)
+
+### Quick Command
+```bash
+# After making changes, run from this directory:
+yarn build
+```
+
 ## Project Overview
 
 This is a TypeScript WebAuthn server package (`webauthn-server-buildkit`) that provides backend authentication functionality. It's designed to work seamlessly with the `capacitor-biometric-authentication` frontend package for biometric authentication across Android, iOS, and Web platforms.

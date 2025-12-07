@@ -71,7 +71,21 @@ export function verifyRegistrationResponse(
 
     // Decode attestation object
     const attestationObjectBuffer = base64URLToBuffer(response.response.attestationObject);
-    const attestationObject = decodeCBOR<AttestationObject>(attestationObjectBuffer);
+    const decodedAttestationObject = decodeCBOR<Map<string, unknown> | AttestationObject>(
+      attestationObjectBuffer,
+    );
+
+    // Handle both Map (from cbor-x with mapsAsObjects: false) and Object formats
+    let attestationObject: AttestationObject;
+    if (decodedAttestationObject instanceof Map) {
+      attestationObject = {
+        fmt: decodedAttestationObject.get('fmt') as AttestationObject['fmt'],
+        attStmt: decodedAttestationObject.get('attStmt') as Record<string, unknown>,
+        authData: decodedAttestationObject.get('authData') as Uint8Array,
+      };
+    } else {
+      attestationObject = decodedAttestationObject;
+    }
 
     // Parse authenticator data
     const authData = parseAuthenticatorData(attestationObject.authData);
@@ -157,8 +171,10 @@ export function verifyRegistrationResponse(
       throw error;
     }
 
+    // Include original error message for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     throw new VerificationError(
-      'Registration verification failed',
+      `Registration verification failed: ${errorMessage}`,
       'REGISTRATION_VERIFICATION_FAILED',
     );
   }
