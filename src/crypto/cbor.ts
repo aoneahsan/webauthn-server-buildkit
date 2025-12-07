@@ -1,12 +1,23 @@
-import { decode, encode } from 'cbor-x';
+import { Decoder, encode } from 'cbor-x';
 import { VerificationError } from '@/types';
+
+/**
+ * CBOR decoder configured for WebAuthn
+ *
+ * By default, cbor-x decodes CBOR maps as JavaScript Objects.
+ * WebAuthn COSE keys use integer keys (1, 2, 3, -1, -2, etc.) which must be
+ * accessed as Map keys, so we configure mapsAsObjects: false.
+ */
+const cborDecoder = new Decoder({
+  mapsAsObjects: false, // Decode CBOR maps as JavaScript Map, not Object
+});
 
 /**
  * Decode CBOR data
  */
 export function decodeCBOR<T = unknown>(data: Uint8Array): T {
   try {
-    return decode(data) as T;
+    return cborDecoder.decode(data) as T;
   } catch {
     throw new VerificationError('Failed to decode CBOR data', 'CBOR_DECODE_ERROR');
   }
@@ -37,7 +48,7 @@ export function decodeCBORFirst<T = unknown>(
   try {
     // For now, we'll just use the regular decode
     // cbor-x doesn't expose position tracking in a simple way
-    const value = decode(data) as T;
+    const value = cborDecoder.decode(data) as T;
 
     // This is a simplified implementation
     // In production, you'd want to properly track the consumed bytes
