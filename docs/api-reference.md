@@ -317,6 +317,128 @@ interface StorageAdapter {
 }
 ```
 
+## Mobile Attestation Functions
+
+These functions handle attestation data from mobile platforms (iOS/Android) that may use a simplified format instead of standard WebAuthn attestation objects.
+
+### isMobileAttestation
+
+```typescript
+function isMobileAttestation(
+  response: RegistrationCredentialJSON
+): boolean
+```
+
+Detects if a registration response is in mobile attestation format.
+
+#### Parameters
+
+- `response` - Registration response from the client
+
+#### Returns
+
+`true` if the response appears to be mobile attestation format (has `publicKey` and `signature` fields instead of standard attestation object).
+
+#### Example
+
+```typescript
+import { isMobileAttestation } from 'webauthn-server-buildkit';
+
+if (isMobileAttestation(response)) {
+  // Use mobile attestation validation
+  const result = await validateMobileAttestation(response, challenge, rpId);
+} else {
+  // Use standard WebAuthn verification
+  const result = await webauthn.verifyRegistration(response, challenge);
+}
+```
+
+### validateMobileAttestation
+
+```typescript
+async function validateMobileAttestation(
+  response: RegistrationCredentialJSON,
+  expectedChallenge: string,
+  rpId: string,
+  expectedOrigin?: string
+): Promise<{
+  verified: boolean;
+  registrationInfo?: VerifiedRegistrationInfo;
+}>
+```
+
+Validates a mobile attestation response.
+
+#### Parameters
+
+- `response` - Mobile attestation response
+- `expectedChallenge` - The challenge that was sent to the client
+- `rpId` - Relying party ID
+- `expectedOrigin` - Optional custom origin (defaults to platform-specific origin based on detected platform)
+
+#### Platform Detection
+
+The function automatically detects the platform from the origin:
+- iOS: Origins starting with `ios-app://`
+- Android: Origins starting with `android-app://`
+
+#### Example
+
+```typescript
+import { validateMobileAttestation } from 'webauthn-server-buildkit';
+
+const result = await validateMobileAttestation(
+  response,
+  challenge,
+  'example.com',
+  'ios-app://com.example.app' // Optional: explicit origin
+);
+
+if (result.verified) {
+  // Store credential
+  const credential = {
+    id: response.id,
+    publicKey: result.registrationInfo.credentialPublicKey,
+    counter: result.registrationInfo.counter,
+    // ...
+  };
+}
+```
+
+### isCborParsingError
+
+```typescript
+function isCborParsingError(error: unknown): boolean
+```
+
+Detects if an error is related to CBOR parsing failures.
+
+#### Parameters
+
+- `error` - Any caught error
+
+#### Returns
+
+`true` if the error is related to CBOR decoding failures (useful for falling back to mobile attestation).
+
+#### Example
+
+```typescript
+import { isCborParsingError, validateMobileAttestation } from 'webauthn-server-buildkit';
+
+try {
+  // Try standard verification first
+  const result = await webauthn.verifyRegistration(response, challenge);
+  return result;
+} catch (error) {
+  if (isCborParsingError(error)) {
+    // Fall back to mobile attestation
+    return await validateMobileAttestation(response, challenge, rpId);
+  }
+  throw error;
+}
+```
+
 ## Error Types
 
 The package exports specific error types for different scenarios:

@@ -10,7 +10,9 @@
 
 - [**API Reference**](./docs/api-reference.md) - Detailed API documentation
 - [**Storage Adapters**](./docs/examples/storage-adapters/README.md) - Database integration examples
-- [**Development Guide**](./docs/project-development-plan/implementation-details.md) - Implementation details
+- [**Troubleshooting Guide**](./docs/troubleshooting.md) - Common issues and solutions
+- [**Migration Guide**](./docs/migration.md) - Upgrading between versions
+- [**Changelog**](./CHANGELOG.md) - Release history
 - [**WebAuthn Specification**](https://www.w3.org/TR/webauthn-3/) - W3C WebAuthn standard
 
 A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication.
@@ -381,6 +383,60 @@ new WebAuthnServer(config: WebAuthnServerConfig)
 
 Note: EdDSA (Ed25519) is defined but not yet implemented.
 
+## Mobile Attestation Support
+
+v2.0 adds full support for mobile platform attestation from iOS and Android apps. The package automatically handles the simplified attestation format used by mobile SDKs.
+
+### Mobile Attestation Functions
+
+```typescript
+import {
+  isMobileAttestation,
+  validateMobileAttestation,
+  isCborParsingError
+} from 'webauthn-server-buildkit';
+
+// Detect and handle mobile attestation
+async function verifyRegistration(response, challenge) {
+  if (isMobileAttestation(response)) {
+    // Use mobile attestation validation
+    return await validateMobileAttestation(response, challenge, 'example.com');
+  }
+
+  try {
+    // Standard WebAuthn verification
+    return await webauthn.verifyRegistration(response, challenge);
+  } catch (error) {
+    // Fall back to mobile attestation if CBOR parsing fails
+    if (isCborParsingError(error)) {
+      return await validateMobileAttestation(response, challenge, 'example.com');
+    }
+    throw error;
+  }
+}
+```
+
+### Mobile Origin Configuration
+
+Configure origins for mobile apps:
+
+```typescript
+const webauthn = new WebAuthnServer({
+  origin: [
+    'https://example.com',           // Web
+    'ios-app://com.example.app',     // iOS app bundle identifier
+    'android-app://com.example.app', // Android app package name
+  ],
+  // ...
+});
+```
+
+### Platform Detection
+
+The library automatically detects the platform from the origin URL and validates accordingly:
+- **iOS**: Origins starting with `ios-app://`
+- **Android**: Origins starting with `android-app://`
+
 ## Security Considerations
 
 1. **Encryption Secret**: Use a strong, unique secret of at least 32 characters
@@ -388,6 +444,7 @@ Note: EdDSA (Ed25519) is defined but not yet implemented.
 3. **Origin Validation**: The package validates origins to prevent phishing
 4. **Counter Tracking**: Authenticator counters are tracked to detect cloned credentials
 5. **Session Security**: Sessions are encrypted with AES-256-GCM
+6. **Mobile Security**: Mobile attestation includes public key and signature validation
 
 ## Error Handling
 

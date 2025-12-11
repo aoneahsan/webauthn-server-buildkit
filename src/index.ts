@@ -1,3 +1,42 @@
+/**
+ * WebAuthn Server Buildkit
+ *
+ * A comprehensive WebAuthn server implementation for Node.js/TypeScript.
+ * Provides secure, type-safe biometric authentication with:
+ *
+ * - **Registration and Authentication Flows**: Complete WebAuthn Level 3 support
+ * - **Session Management**: Encrypted tokens using AES-256-GCM
+ * - **Flexible Storage Adapters**: Memory adapter included, custom adapters supported
+ * - **Mobile Attestation Support**: iOS and Android platform validation
+ * - **Comprehensive Crypto**: CBOR/COSE encoding, signature verification
+ *
+ * @example
+ * ```typescript
+ * import { WebAuthnServer, MemoryStorageAdapter } from 'webauthn-server-buildkit';
+ *
+ * const webauthn = new WebAuthnServer({
+ *   rpName: 'My App',
+ *   rpID: 'example.com',
+ *   origin: 'https://example.com',
+ *   encryptionSecret: 'your-32-char-secret-key-here',
+ *   storageAdapter: new MemoryStorageAdapter(),
+ * });
+ *
+ * // Registration
+ * const { options, challenge } = await webauthn.createRegistrationOptions(user);
+ * // ... send options to client, receive response ...
+ * const result = await webauthn.verifyRegistration(response, challenge);
+ *
+ * // Authentication
+ * const { options, challenge } = await webauthn.createAuthenticationOptions();
+ * // ... send options to client, receive response ...
+ * const result = await webauthn.verifyAuthentication(response, challenge, credential);
+ * ```
+ *
+ * @packageDocumentation
+ * @module webauthn-server-buildkit
+ */
+
 // Main export
 export { WebAuthnServer } from './server';
 
