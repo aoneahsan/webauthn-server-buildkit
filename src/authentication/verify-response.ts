@@ -99,9 +99,16 @@ export function verifyAuthenticationResponse(
     // Validate flags
     validateAuthenticatorDataFlags(authData.flags, requireUserVerification);
 
-    // Verify counter
-    if (authData.counter > 0 && credential.counter > 0 && authData.counter <= credential.counter) {
-      throw new AuthenticationError('Authenticator counter did not increase', 'COUNTER_ERROR');
+    // Verify counter - WebAuthn spec requires counter to strictly increase
+    // Exception: Allow 0 -> 0 for fresh credentials that haven't been used yet
+    // This prevents cloned authenticator detection bypass
+    if (!(authData.counter === 0 && credential.counter === 0)) {
+      if (authData.counter <= credential.counter) {
+        throw new AuthenticationError(
+          `Authenticator counter did not increase (was ${credential.counter}, got ${authData.counter})`,
+          'COUNTER_ERROR',
+        );
+      }
     }
 
     // Parse public key

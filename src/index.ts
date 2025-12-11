@@ -108,5 +108,6 @@ export {
 export type { GenerateRegistrationOptionsParams } from './registration';
 export type { GenerateAuthenticationOptionsParams } from './authentication';
 
-// Version
-export const VERSION = '1.0.0';
+// Version - injected at build time from package.json
+declare const __VERSION__: string;
+export const VERSION = typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.0.0';

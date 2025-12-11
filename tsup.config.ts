@@ -1,4 +1,8 @@
 import { defineConfig } from 'tsup';
+import { readFileSync } from 'fs';
+
+// Read version from package.json at build time
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -14,6 +18,9 @@ export default defineConfig({
   treeshake: true,
   external: [],
   noExternal: ['cbor-x'],
+  define: {
+    __VERSION__: JSON.stringify(packageJson.version),
+  },
   esbuildOptions(options) {
     options.platform = 'node';
   },

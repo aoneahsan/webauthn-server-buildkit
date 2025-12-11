@@ -16,6 +16,11 @@ import {
 import { base64URLToBuffer, base64URLToString, bufferToBase64URL } from '@/utils/base64url';
 import { sha256 } from '@/utils/hash';
 import { buffersEqual } from '@/utils/buffer';
+import {
+  detectMobileAttestation,
+  validateMobileAttestation,
+  isCborParsingError,
+} from './mobile-attestation';
 
 /**
  * Options for verifying registration response
@@ -47,6 +52,45 @@ export function verifyRegistrationResponse(
   } = params;
 
   try {
+    // First, check for mobile attestation format
+    const mobileDetection = detectMobileAttestation(response);
+
+    if (mobileDetection.reason === 'INVALID_PLACEHOLDER_ATTESTATION') {
+      throw new VerificationError(
+        'Invalid mobile attestation: placeholder attestation values are not accepted',
+        'INVALID_MOBILE_ATTESTATION',
+      );
+    }
+
+    if (mobileDetection.reason === 'MOBILE_CREDENTIAL_INVALID_ATTESTATION') {
+      throw new VerificationError(
+        'Mobile credential ID detected but attestation is invalid',
+        'MOBILE_CREDENTIAL_INVALID_ATTESTATION',
+      );
+    }
+
+    // If valid mobile attestation, use mobile validation path
+    if (mobileDetection.isMobileAttestation && mobileDetection.data) {
+      const registrationInfo = validateMobileAttestation(
+        response,
+        mobileDetection.data,
+        expectedOrigin,
+      );
+
+      if (config.debug && config.logger) {
+        config.logger('debug', 'Mobile registration verified successfully', {
+          credentialId: registrationInfo.credential.id,
+          platform: mobileDetection.data.platform,
+        });
+      }
+
+      return {
+        verified: true,
+        registrationInfo,
+      };
+    }
+
+    // Standard WebAuthn verification path
     // Decode client data JSON
     const clientDataJSON = base64URLToBuffer(response.response.clientDataJSON);
     const clientData = JSON.parse(
@@ -169,6 +213,14 @@ export function verifyRegistrationResponse(
 
     if (error instanceof VerificationError) {
       throw error;
+    }
+
+    // Check if this is a CBOR/COSE parsing error - might indicate mobile attestation issue
+    if (isCborParsingError(error)) {
+      throw new VerificationError(
+        'Failed to parse attestation data. If this is a mobile registration, ensure the attestation is in valid JSON format with publicKey and credentialId fields.',
+        'ATTESTATION_PARSE_ERROR',
+      );
     }
 
     // Include original error message for debugging
