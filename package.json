@@ -1,6 +1,6 @@
 {
   "name": "webauthn-server-buildkit",
-  "version": "1.7.0",
+  "version": "2.0.0",
   "description": "A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication",
   "author": "Ahsan Mahmood <aoneahsan@gmail.com>",
   "license": "MIT",
@@ -57,9 +57,9 @@
     "cbor-x": "^1.6.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.1",
-    "@typescript-eslint/parser": "^8.48.1",
+    "@types/node": "^25.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
     "@vitest/coverage-v8": "^4.0.15",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
