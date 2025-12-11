@@ -59,7 +59,7 @@ export function detectMobileAttestation(
     // First, try to decode as base64
     let decoded: string;
     try {
-      decoded = atob(attestationObject);
+      decoded = Buffer.from(attestationObject, 'base64').toString('utf-8');
     } catch {
       // Not valid base64, might be raw string or CBOR
       decoded = attestationObject;
@@ -116,11 +116,8 @@ export function validateMobileAttestation(
   // Decode and validate public key
   let publicKeyBytes: Uint8Array;
   try {
-    const binaryString = atob(data.publicKey);
-    publicKeyBytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      publicKeyBytes[i] = binaryString.charCodeAt(i);
-    }
+    const buffer = Buffer.from(data.publicKey, 'base64');
+    publicKeyBytes = new Uint8Array(buffer);
 
     // Public key should be at least 32 bytes (EC256 public key minimum)
     if (publicKeyBytes.length < 32) {

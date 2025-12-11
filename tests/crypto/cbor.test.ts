@@ -13,10 +13,11 @@ describe('CBOR', () => {
 
     it('should decode CBOR object', () => {
       // Object with one key-value pair: {1: 2}
+      // CBOR decodes maps as JavaScript Map objects
       const cborData = new Uint8Array([0xa1, 0x01, 0x02]);
-      const result = decodeCBOR<Record<number, number>>(cborData);
-      expect(result).toBeInstanceOf(Object);
-      expect(result[1]).toBe(2);
+      const result = decodeCBOR<Map<number, number>>(cborData);
+      expect(result).toBeInstanceOf(Map);
+      expect(result.get(1)).toBe(2);
     });
 
     it('should decode CBOR array', () => {
@@ -87,10 +88,14 @@ describe('CBOR', () => {
     });
 
     it('should handle round-trip for objects', () => {
+      // CBOR encodes objects as maps and decodes them as Map objects
       const originalObject = { name: 'test', value: 123 };
       const encoded = encodeCBOR(originalObject);
-      const decoded = decodeCBOR<Record<string, unknown>>(encoded);
-      expect(decoded).toEqual(originalObject);
+      const decoded = decodeCBOR<Map<string, unknown>>(encoded);
+      // Verify the Map contains the same key-value pairs
+      expect(decoded).toBeInstanceOf(Map);
+      expect(decoded.get('name')).toBe('test');
+      expect(decoded.get('value')).toBe(123);
     });
   });
 });
