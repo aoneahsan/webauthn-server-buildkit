@@ -7,6 +7,7 @@ export const consoleError = (data: unknown) => {
 
 export const consoleLog = (data: unknown) => {
   if (isProduction) return;
+  // eslint-disable-next-line no-console
   console.log(data);
 };
 
@@ -17,10 +18,12 @@ export const consoleWarn = (data: unknown) => {
 
 export const consoleInfo = (data: unknown) => {
   if (isProduction) return;
+  // eslint-disable-next-line no-console
   console.info(data);
 };
 
 export const consoleDir = (data: unknown) => {
   if (isProduction) return;
+  // eslint-disable-next-line no-console
   console.dir(data);
 };

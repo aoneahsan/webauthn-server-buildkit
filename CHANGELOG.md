@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-01-21
+
+### Added
+- AI Integration Guide (`AI-INTEGRATION-GUIDE.md`) for easy integration with `capacitor-biometric-authentication` frontend package
+- Documentation link to AI guide as first item in README
+
+### Changed
+- Updated all dependencies to latest versions
+- Node.js engine requirement lowered from 24.2.0 to 20.0.0 for wider compatibility
+- Updated devDependencies:
+  - `@types/node` 25.0.9
+  - `@typescript-eslint/eslint-plugin` 8.53.1
+  - `@typescript-eslint/parser` 8.53.1
+  - `@vitest/coverage-v8` 4.0.17
+  - `eslint` 9.39.2
+  - `eslint-plugin-prettier` 5.5.5
+  - `prettier` 3.8.0
+  - `vitest` 4.0.17
+
+### Fixed
+- ESLint warnings in console utilities by adding eslint-disable comments
+
 ## [2.0.0] - 2025-12-11
 
 ### Added

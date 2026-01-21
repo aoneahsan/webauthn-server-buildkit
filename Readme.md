@@ -8,6 +8,7 @@
 
 ## 📚 Documentation
 
+- [**🤖 AI Integration Guide**](./AI-INTEGRATION-GUIDE.md) - Complete integration with `capacitor-biometric-authentication` frontend
 - [**API Reference**](./docs/api-reference.md) - Detailed API documentation
 - [**Storage Adapters**](./docs/examples/storage-adapters/README.md) - Database integration examples
 - [**Troubleshooting Guide**](./docs/troubleshooting.md) - Common issues and solutions
@@ -474,6 +475,10 @@ try {
 
 - Node.js 20.0.0 or higher
 - TypeScript 5.0 or higher (for TypeScript projects)
+
+## Frontend Package
+
+For frontend biometric authentication, use the companion package [`capacitor-biometric-authentication`](https://www.npmjs.com/package/capacitor-biometric-authentication) which works with React, Vue, Angular, or vanilla JavaScript.
 
 ## License
 
