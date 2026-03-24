@@ -14,9 +14,21 @@
 - [**Troubleshooting Guide**](./docs/troubleshooting.md) - Common issues and solutions
 - [**Migration Guide**](./docs/migration.md) - Upgrading between versions
 - [**Changelog**](./CHANGELOG.md) - Release history
+- [**Portfolio Info File**](./WEBAUTHN-SERVER-BUILDKIT_portfolio-info_2026-03-24.md) - Resume, portfolio, SEO, and social-content source material
 - [**WebAuthn Specification**](https://www.w3.org/TR/webauthn-3/) - W3C WebAuthn standard
 
 A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication.
+
+## Current State
+
+- Package version: `2.1.0`
+- Verified on: `2026-03-24`
+- Tests: `131/131` passing via `npm test`
+- Build: `npm run build` succeeds
+- Output formats:
+  - ESM bundle
+  - CommonJS bundle
+  - Type declaration outputs
 
 ## Features
 
@@ -36,7 +48,7 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 - **Storage Agnostic** - Pluggable adapter system for any database (MongoDB, PostgreSQL, Redis, etc.)
 - **Session Management** - Built-in secure session handling with token-based authentication
 - **Extension Support** - Full support for WebAuthn extensions
-- **Modern Architecture** - ES2022 features, Node.js 20+ support, ESM and CommonJS builds
+- **Modern Architecture** - ES2022 features, Node.js `>=24.13.0` support, ESM and CommonJS builds
 
 ## Installation
 
@@ -110,6 +122,22 @@ async function handleAuthentication(credentials: WebAuthnCredential[]) {
     return sessionToken;
   }
 }
+```
+
+## Verified Package Architecture
+
+- `src/registration/` handles registration option generation and verification.
+- `src/authentication/` handles authentication option generation and verification.
+- `src/session/` handles encrypted session lifecycle operations.
+- `src/crypto/` handles challenge generation, CBOR parsing, COSE operations, and verification helpers.
+- `src/adapters/` contains the storage abstraction layer and memory adapter.
+- `tests/` currently covers adapters, crypto, session, registration, and authentication paths.
+
+## Verification Commands
+
+```bash
+npm test
+npm run build
 ```
 
 ## Configuration
