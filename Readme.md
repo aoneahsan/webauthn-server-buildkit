@@ -23,8 +23,8 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 
 - Package version: `2.1.0`
 - Verified on: `2026-03-24`
-- Tests: `131/131` passing via `npm test`
-- Build: `npm run build` succeeds
+- Tests: `131/131` passing via the `test` script in the last verification pass
+- Build: the `build` script succeeds in the last verification pass
 - Output formats:
   - ESM bundle
   - CommonJS bundle
@@ -53,10 +53,15 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 ## Installation
 
 ```bash
-npm install webauthn-server-buildkit
-# or
 yarn add webauthn-server-buildkit
 ```
+
+## Package Manager Policy
+
+- Use `yarn` for project-local installs and script execution.
+- Use `pnpm` for global package installs.
+- Use `npm` only to install or update `pnpm` globally.
+- Keep `yarn.lock` and remove other lockfiles.
 
 ## Quick Start
 
@@ -136,8 +141,8 @@ async function handleAuthentication(credentials: WebAuthnCredential[]) {
 ## Verification Commands
 
 ```bash
-npm test
-npm run build
+yarn test
+yarn build
 ```
 
 ## Configuration

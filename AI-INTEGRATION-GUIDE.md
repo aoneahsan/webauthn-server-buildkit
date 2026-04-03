@@ -15,15 +15,11 @@
 
 **Backend (Node.js):**
 ```bash
-npm install webauthn-server-buildkit
-# or
 yarn add webauthn-server-buildkit
 ```
 
 **Frontend (Web/Mobile App):**
 ```bash
-npm install capacitor-biometric-authentication
-# or
 yarn add capacitor-biometric-authentication
 ```
 

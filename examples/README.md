@@ -17,7 +17,7 @@ A complete Express.js server implementation with REST API endpoints for WebAuthn
 
 ```bash
 cd examples/express
-npm install
+yarn install
 npx ts-node server.ts
 ```
 

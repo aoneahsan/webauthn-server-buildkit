@@ -7,8 +7,8 @@ This example demonstrates how to integrate WebAuthn Server Buildkit with an Expr
 1. Install dependencies:
 
 ```bash
-npm install express webauthn-server-buildkit
-npm install --save-dev @types/express typescript ts-node
+yarn add express webauthn-server-buildkit
+yarn add -D @types/express typescript ts-node
 ```
 
 2. Create a `tsconfig.json`:

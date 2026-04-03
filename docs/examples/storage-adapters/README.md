@@ -18,8 +18,8 @@ A full-featured PostgreSQL adapter with connection pooling, optimized queries, a
 
 **Dependencies:**
 ```bash
-npm install pg
-npm install --save-dev @types/pg
+yarn add pg
+yarn add -D @types/pg
 ```
 
 **Usage:**
@@ -53,7 +53,7 @@ A MongoDB adapter with automatic indexing, TTL support, and efficient document o
 
 **Dependencies:**
 ```bash
-npm install mongodb
+yarn add mongodb
 ```
 
 **Usage:**
@@ -87,7 +87,7 @@ A specialized Redis adapter for session storage with automatic expiration and cl
 
 **Dependencies:**
 ```bash
-npm install ioredis
+yarn add ioredis
 ```
 
 **Usage:**
@@ -129,7 +129,8 @@ const sessionAdapter = new RedisSessionAdapter({
 
 3. **Install Dependencies:**
    ```bash
-   npm install pg @types/pg
+   yarn add pg
+   yarn add -D @types/pg
    ```
 
 ### MongoDB Setup
@@ -159,7 +160,7 @@ const sessionAdapter = new RedisSessionAdapter({
 
 3. **Install Dependencies:**
    ```bash
-   npm install mongodb
+   yarn add mongodb
    ```
 
 ### Redis Setup
@@ -189,7 +190,7 @@ const sessionAdapter = new RedisSessionAdapter({
 
 3. **Install Dependencies:**
    ```bash
-   npm install ioredis
+   yarn add ioredis
    ```
 
 ## Configuration Examples
