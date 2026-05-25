@@ -50,31 +50,39 @@ export function hexToBuffer(hex: string): Uint8Array {
 
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
   }
 
   return bytes;
 }
 
 /**
- * Convert a number to buffer (big-endian)
+ * Convert a number to buffer (big-endian).
+ *
+ * Uses arithmetic rather than bitwise operators so values above 2^31 (e.g. a
+ * 32-bit signature counter) are encoded correctly — JS bitwise ops are 32-bit
+ * signed and would corrupt large values.
  */
 export function numberToBuffer(num: number, length: number): Uint8Array {
   const buffer = new Uint8Array(length);
   for (let i = length - 1; i >= 0; i--) {
-    buffer[i] = num & 0xff;
-    num = num >> 8;
+    buffer[i] = num % 256;
+    num = Math.floor(num / 256);
   }
   return buffer;
 }
 
 /**
- * Convert buffer to number (big-endian)
+ * Convert buffer to number (big-endian).
+ *
+ * Uses multiplication rather than the bitwise `<<` so 4-byte values above 2^24
+ * (notably authenticator signature counters, which are unsigned 32-bit) are not
+ * corrupted by 32-bit signed integer overflow.
  */
 export function bufferToNumber(buffer: Uint8Array): number {
   let num = 0;
   for (let i = 0; i < buffer.length; i++) {
-    num = (num << 8) | buffer[i]!;
+    num = num * 256 + buffer[i]!;
   }
   return num;
 }

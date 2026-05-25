@@ -1,5 +1,6 @@
 import { AuthenticatorDataFlags, ParsedAuthenticatorData, VerificationError } from '@/types';
 import { bufferToNumber } from '@/utils/buffer';
+import { decodeCBORFirst } from './cbor';
 
 /**
  * Parse authenticator data according to WebAuthn spec
@@ -67,20 +68,25 @@ export function parseAuthenticatorData(authData: Uint8Array): ParsedAuthenticato
     parsed.credentialId = authData.slice(offset, offset + credentialIdLength);
     offset += credentialIdLength;
 
-    // Credential public key (CBOR encoded)
-    // We don't know the exact length, so we take the remaining bytes
-    // minus any extension data
-    if (flags.extensionData) {
-      // If extensions are present, we need to parse CBOR to find the boundary
-      // For now, we'll assume no extensions and take all remaining data
-      parsed.credentialPublicKey = authData.slice(offset);
-    } else {
-      parsed.credentialPublicKey = authData.slice(offset);
-    }
-  }
+    // Credential public key (CBOR-encoded COSE_Key), optionally followed by
+    // CBOR-encoded extension data. Decode the first CBOR item to find its exact
+    // byte boundary rather than swallowing any trailing extension bytes into the
+    // public key (which previously corrupted the stored key when the ED flag was
+    // set, and threw because cbor-x rejects trailing data).
+    const afterCredentialId = authData.subarray(offset);
+    const { remainingBytes } = decodeCBORFirst(afterCredentialId);
+    const publicKeyLength = afterCredentialId.length - remainingBytes.length;
 
-  // Parse extension data if present
-  if (flags.extensionData && !flags.attestedCredentialData) {
+    // Copy out of the larger buffer so the stored key does not retain it.
+    parsed.credentialPublicKey = authData.slice(offset, offset + publicKeyLength);
+    offset += publicKeyLength;
+
+    // Any bytes after the public key are extension data (present iff ED flag set).
+    if (flags.extensionData && remainingBytes.length > 0) {
+      parsed.extensionsData = authData.slice(offset);
+    }
+  } else if (flags.extensionData) {
+    // Extension data present without attested credential data.
     parsed.extensionsData = authData.slice(offset);
   }
 

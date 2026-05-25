@@ -101,35 +101,45 @@
       "id": "phase02",
       "title": "Crypto correctness fixes (+ round-trip tests)",
       "file": "docs/features/package-polish-v2.2.0/phase02-crypto.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-26",
       "subTasks": [
         {
           "id": "phase02.1",
           "title": "SEC-2/SEC-3: Replace hand-rolled SPKI with Node JWK key import in crypto/verify.ts (fix RSA, ES512, Ed25519)",
-          "status": "pending"
+          "status": "complete",
+          "note": "verify.ts rewritten with createPublicKey({format:'jwk'}) + crypto.verify for EC2/RSA(PKCS1+PSS)/Ed25519. ~120 lines of buggy ASN.1 removed. Round-trip tests prove RS256/384/512, PS256/384/512, ES256/384/512, Ed25519 all verify."
         },
         {
           "id": "phase02.2",
           "title": "FUNC-1: Implement real decodeCBORFirst with byte tracking (cbor-x)",
-          "status": "pending"
+          "status": "complete",
+          "note": "Self-contained RFC 8949 item-length scanner (cbor-x has no public offset API and throws on trailing bytes). Returns value + correct remainingBytes."
         },
         {
           "id": "phase02.3",
           "title": "FUNC-2: Fix parseAuthenticatorData COSE-key boundary using decodeCBORFirst (stop swallowing extension bytes)",
-          "status": "pending"
+          "status": "complete",
+          "note": "authenticator-data.ts now bounds the COSE key via decodeCBORFirst; trailing bytes -> extensionsData. Removed dead duplicate branch."
         },
         {
           "id": "phase02.4",
           "title": "SEC-7: Fix bufferToNumber 32-bit overflow for counters >= 2^24 (use DataView/unsigned)",
-          "status": "pending"
+          "status": "complete",
+          "note": "bufferToNumber uses multiplication; numberToBuffer uses div/mod. Correct for full uint32 counter range. (also fixed substr->substring HYG-6)."
         },
         {
           "id": "phase02.5",
           "title": "Add round-trip crypto tests: real ES256/384/512, RS256/PS256, Ed25519 sign+verify; counter parsing; CBOR-first",
-          "status": "pending"
+          "status": "complete",
+          "note": "tests/crypto/verify.test.ts (14), tests/crypto/cbor.test.ts +decodeCBORFirst (4), tests/utils/buffer.test.ts (new). Total suite 131 -> 157."
         },
-        { "id": "phase02.6", "title": "Verify gate + commit", "status": "pending" }
+        {
+          "id": "phase02.6",
+          "title": "Verify gate + commit",
+          "status": "complete",
+          "note": "typecheck/lint/format clean; 157 tests pass; build ESM+CJS+DTS OK."
+        }
       ]
     },
     {
@@ -285,15 +295,21 @@
       "phase": "phase01",
       "summary": "Updated all deps to latest stable incl. majors ESLint 10.4.0 + TypeScript 6.0.3 (verified typescript-eslint 8.60.0 peers support both). Rewrote eslint.config.js with typescript-eslint flat config (removed banned @eslint/js, wired TS plugin, no-unused-vars error, prettier integration). tsconfig: types:['node'], ignoreDeprecations '6.0', paths ./src/*. Dropped --ext from lint scripts. Normalized repo formatting (prettier 3.8.3). Gate green: typecheck/lint/test(131)/build/format all clean.",
       "commit": "pending"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase02",
+      "summary": "Crypto correctness: rewrote crypto/verify.ts to import keys via JWK (createPublicKey format:'jwk') + crypto.verify, fixing previously-broken RSA (2048-bit) and ES512 (P-521) and the fragile Ed25519 raw import. Implemented a real decodeCBORFirst (RFC 8949 length scanner) and used it to bound the COSE key in authenticator-data.ts (it was swallowing extension bytes / would throw under cbor-x's strict trailing-byte check). Fixed bufferToNumber/numberToBuffer 32-bit overflow for uint32 counters. Added round-trip + counter + cbor-first tests (suite 131 -> 157). Gate green.",
+      "commit": "pending"
     }
   ],
   "newFindings": [
     "CI-1 [low]: .github/workflows/ci.yml tests Node 20.x/22.x but package engine requires >=24.13.0 — bump CI matrix to 24.x (Phase 04/05)."
   ],
   "nextSuggestion": {
-    "phase": "phase02",
-    "subTask": "phase02.1",
-    "rationale": "Phase 01 complete. Begin crypto correctness: replace hand-rolled SPKI in crypto/verify.ts with Node JWK key import (fixes RSA/ES512/Ed25519), then decodeCBORFirst, COSE boundary, counter overflow, and round-trip tests."
+    "phase": "phase03",
+    "subTask": "phase03.1",
+    "rationale": "Phases 01-02 complete. Begin security hardening: mobile-attestation opt-in (enableMobileAttestation, default false), session HKDF + 12-byte IV, constant-time compares, algorithm allowlist, and packed/fido-u2f attestation verification."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md. 3) Find the first phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, vitest, nodejs-best-practices, documentation-writer, simplify as relevant). 6) Do the work, run the verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker update. 8) Do NOT npm publish without explicit user confirmation (phase06.4)."
 }

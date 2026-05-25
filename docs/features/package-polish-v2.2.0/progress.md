@@ -39,24 +39,54 @@ Session-by-session log. Newest first. The authoritative status is `00-tracker.js
 - Fixed one unused `catch (error)` in `mobile-attestation.ts`. Normalized repo formatting with prettier 3.8.3.
 
 ### Verification gate (Phase 01)
-| Gate | Result |
-|---|---|
-| typecheck | ✅ clean |
-| lint | ✅ clean |
-| test | ✅ 131 passed |
-| build | ✅ ESM+CJS+DTS |
-| format:check | ✅ clean |
+
+| Gate         | Result         |
+| ------------ | -------------- |
+| typecheck    | ✅ clean       |
+| lint         | ✅ clean       |
+| test         | ✅ 131 passed  |
+| build        | ✅ ESM+CJS+DTS |
+| format:check | ✅ clean       |
 
 ### Errors encountered (Phase 01)
-| Error | Attempt | Resolution |
-|---|---|---|
-| TS5101 baseUrl deprecated (TS6) | 1 | Removed baseUrl |
-| TS5090 non-relative paths w/o baseUrl | 2 | `paths` → `./src/*` |
-| @types/node globals not found w/o baseUrl | 2 | Added `types: ["node"]` |
-| tsup DTS build re-raised baseUrl deprecation | 3 | Re-added baseUrl + `ignoreDeprecations: "6.0"` |
+
+| Error                                        | Attempt | Resolution                                     |
+| -------------------------------------------- | ------- | ---------------------------------------------- |
+| TS5101 baseUrl deprecated (TS6)              | 1       | Removed baseUrl                                |
+| TS5090 non-relative paths w/o baseUrl        | 2       | `paths` → `./src/*`                            |
+| @types/node globals not found w/o baseUrl    | 2       | Added `types: ["node"]`                        |
+| tsup DTS build re-raised baseUrl deprecation | 3       | Re-added baseUrl + `ignoreDeprecations: "6.0"` |
 
 ### New finding
+
 - CI-1 [low]: `ci.yml` matrix tests Node 20/22 but engine requires ≥24.13.0 → bump to 24.x (Phase 04/05).
 
 ### Next
+
 Phase 02 (crypto correctness): JWK key import in `crypto/verify.ts`, real `decodeCBORFirst`, COSE boundary, counter overflow + round-trip tests.
+
+## 2026-05-26 — Session 1 (Phase 02: crypto correctness)
+
+- **SEC-2/SEC-3** — Rewrote `crypto/verify.ts` to import keys via `createPublicKey({ format: 'jwk' })` + `crypto.verify`. Removed ~120 lines of hand-rolled ASN.1/SPKI that silently broke RSA (256-byte modulus) and P-521. Validated via inline run + tests before proceeding.
+- **FUNC-1** — Implemented a real `decodeCBORFirst` using a self-contained RFC 8949 item-length scanner. (cbor-x exposes no public byte-offset API and `decode` throws on trailing bytes.)
+- **FUNC-2** — `authenticator-data.ts` now bounds the COSE key via `decodeCBORFirst`; trailing bytes become `extensionsData`. Removed the dead duplicate `if/else`.
+- **SEC-7 / HYG-6** — `bufferToNumber` (multiplication) and `numberToBuffer` (div/mod) handle full uint32 counters; `substr` → `substring`.
+- Tests: real key-pair round-trips for ES256/384/512, RS256/384/512, PS256/384/512, Ed25519; `decodeCBORFirst`; counter parsing. Suite **131 → 157**.
+
+### Verification gate (Phase 02)
+
+| Gate         | Result         |
+| ------------ | -------------- |
+| typecheck    | ✅ clean       |
+| lint         | ✅ clean       |
+| test         | ✅ 157 passed  |
+| build        | ✅ ESM+CJS+DTS |
+| format:check | ✅ clean       |
+
+### Key finding confirmed
+
+- The previous "131 passing" was misleading: old crypto tests used dummy bytes and only asserted "does not throw". Real RSA/ES512 verification was broken in production and untested.
+
+### Next
+
+Phase 03 (security hardening): mobile-attestation opt-in (`enableMobileAttestation`, default off), session HKDF + 12-byte IV, constant-time compares, algorithm allowlist, packed/fido-u2f attestation.

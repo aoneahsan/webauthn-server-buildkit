@@ -1,5 +1,11 @@
-import { createVerify, constants, verify, createPublicKey } from 'node:crypto';
-import { COSEAlgorithmIdentifier, COSEKeyType, VerificationError } from '@/types';
+import { constants, createPublicKey, verify as nodeVerify, type KeyObject } from 'node:crypto';
+import {
+  COSEAlgorithmIdentifier,
+  COSEEllipticCurve,
+  COSEKeyType,
+  VerificationError,
+} from '@/types';
+import { bufferToBase64URL } from '@/utils/base64url';
 import {
   COSEPublicKey,
   COSEEC2Key,
@@ -12,159 +18,115 @@ import {
  * Algorithm details for signature verification
  */
 interface AlgorithmInfo {
-  name: string;
-  hash: string;
-  namedCurve?: string;
+  /** Whether this algorithm uses RSA-PSS padding */
+  isPSS: boolean;
+  /** Node hash algorithm name, or null for algorithms that do not pre-hash (EdDSA) */
+  hash: string | null;
 }
 
 /**
- * Get algorithm info from COSE algorithm identifier
+ * Get algorithm info from COSE algorithm identifier.
+ *
+ * The curve/key shape is taken from the COSE key itself (which is authoritative);
+ * this only resolves the digest + padding implied by the registered algorithm.
  */
 function getAlgorithmInfo(alg: COSEAlgorithmIdentifier): AlgorithmInfo {
   switch (alg) {
     case COSEAlgorithmIdentifier.ES256:
-      return { name: 'ECDSA', hash: 'SHA-256', namedCurve: 'P-256' };
+      return { isPSS: false, hash: 'sha256' };
     case COSEAlgorithmIdentifier.ES384:
-      return { name: 'ECDSA', hash: 'SHA-384', namedCurve: 'P-384' };
+      return { isPSS: false, hash: 'sha384' };
     case COSEAlgorithmIdentifier.ES512:
-      return { name: 'ECDSA', hash: 'SHA-512', namedCurve: 'P-521' };
+      return { isPSS: false, hash: 'sha512' };
     case COSEAlgorithmIdentifier.RS256:
-      return { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
+      return { isPSS: false, hash: 'sha256' };
     case COSEAlgorithmIdentifier.RS384:
-      return { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-384' };
+      return { isPSS: false, hash: 'sha384' };
     case COSEAlgorithmIdentifier.RS512:
-      return { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-512' };
+      return { isPSS: false, hash: 'sha512' };
     case COSEAlgorithmIdentifier.PS256:
-      return { name: 'RSA-PSS', hash: 'SHA-256' };
+      return { isPSS: true, hash: 'sha256' };
     case COSEAlgorithmIdentifier.PS384:
-      return { name: 'RSA-PSS', hash: 'SHA-384' };
+      return { isPSS: true, hash: 'sha384' };
     case COSEAlgorithmIdentifier.PS512:
-      return { name: 'RSA-PSS', hash: 'SHA-512' };
+      return { isPSS: true, hash: 'sha512' };
     case COSEAlgorithmIdentifier.EdDSA:
-      return { name: 'Ed25519', hash: 'SHA-512' };
+      return { isPSS: false, hash: null };
     default:
       throw new VerificationError(`Unsupported algorithm: ${String(alg)}`, 'UNSUPPORTED_ALGORITHM');
   }
 }
 
 /**
- * Convert EC2 key to SubjectPublicKeyInfo format
+ * Map a COSE elliptic curve to the JWK `crv` name.
  */
-function ec2KeyToSPKI(key: COSEEC2Key, namedCurve: string): Buffer {
-  // Create uncompressed point (0x04 || x || y)
-  const point = Buffer.concat([Buffer.from([0x04]), Buffer.from(key.x), Buffer.from(key.y)]);
-
-  // EC public key OID based on curve
-  let curveOid: Buffer;
-  switch (namedCurve) {
-    case 'P-256':
-      curveOid = Buffer.from([0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07]);
-      break;
-    case 'P-384':
-      curveOid = Buffer.from([0x2b, 0x81, 0x04, 0x00, 0x22]);
-      break;
-    case 'P-521':
-      curveOid = Buffer.from([0x2b, 0x81, 0x04, 0x00, 0x23]);
-      break;
+function ec2NamedCurve(key: COSEEC2Key): 'P-256' | 'P-384' | 'P-521' {
+  switch (key.crv) {
+    case COSEEllipticCurve.P256:
+      return 'P-256';
+    case COSEEllipticCurve.P384:
+      return 'P-384';
+    case COSEEllipticCurve.P521:
+      return 'P-521';
     default:
-      throw new VerificationError(`Unsupported curve: ${namedCurve}`, 'UNSUPPORTED_CURVE');
-  }
-
-  // Build ASN.1 structure
-  const algorithmIdentifier = Buffer.concat([
-    Buffer.from([0x30, 0x13]), // SEQUENCE
-    Buffer.from([0x06, 0x07]), // OID for ecPublicKey
-    Buffer.from([0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01]),
-    Buffer.from([0x06, curveOid.length]),
-    curveOid,
-  ]);
-
-  const bitString = Buffer.concat([Buffer.from([0x03, point.length + 1, 0x00]), point]);
-
-  const spki = Buffer.concat([
-    Buffer.from([0x30, algorithmIdentifier.length + bitString.length]),
-    algorithmIdentifier,
-    bitString,
-  ]);
-
-  return spki;
-}
-
-/**
- * Convert RSA key to SubjectPublicKeyInfo format
- */
-function rsaKeyToSPKI(key: COSERSAKey): Buffer {
-  // Build ASN.1 RSA public key
-  const modulus = Buffer.concat([Buffer.from([0x02, key.n.length]), Buffer.from(key.n)]);
-
-  const exponent = Buffer.concat([Buffer.from([0x02, key.e.length]), Buffer.from(key.e)]);
-
-  const rsaPublicKey = Buffer.concat([
-    Buffer.from([0x30, modulus.length + exponent.length]),
-    modulus,
-    exponent,
-  ]);
-
-  // RSA algorithm identifier
-  const algorithmIdentifier = Buffer.from([
-    0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
-  ]);
-
-  const bitString = Buffer.concat([
-    Buffer.from([0x03, rsaPublicKey.length + 1, 0x00]),
-    rsaPublicKey,
-  ]);
-
-  const spki = Buffer.concat([
-    Buffer.from([0x30, algorithmIdentifier.length + bitString.length]),
-    algorithmIdentifier,
-    bitString,
-  ]);
-
-  return spki;
-}
-
-/**
- * Verify Ed25519 signature
- */
-function verifyEd25519Signature(
-  signature: Uint8Array,
-  data: Uint8Array,
-  publicKey: COSEOKPKey,
-): boolean {
-  try {
-    // Ed25519 public key format: raw 32-byte public key
-    const publicKeyRaw = publicKey.x;
-
-    // Validate key size (Ed25519 public keys are 32 bytes)
-    if (publicKeyRaw.length !== 32) {
-      return false;
-    }
-
-    // Create Ed25519 public key object
-    // Using type assertion as Node.js types don't properly support raw format for Ed25519
-    const keyObject = createPublicKey({
-      key: Buffer.from(publicKeyRaw),
-      format: 'raw',
-      type: 'public',
-    } as unknown as Parameters<typeof createPublicKey>[0]);
-
-    // Use Node.js crypto verify with Ed25519
-    // Ed25519 doesn't use a hash function, it signs the message directly
-    return verify(
-      null, // Ed25519 doesn't use a hash algorithm
-      Buffer.from(data),
-      keyObject,
-      Buffer.from(signature),
-    );
-  } catch {
-    // If verification fails for any reason, return false
-    return false;
+      throw new VerificationError(`Unsupported EC2 curve: ${String(key.crv)}`, 'UNSUPPORTED_CURVE');
   }
 }
 
 /**
- * Verify a signature using a COSE public key
+ * Import an EC2 COSE key as a Node public key via JWK.
+ * Node validates that the point lies on the named curve.
+ */
+function ec2KeyToKeyObject(key: COSEEC2Key): KeyObject {
+  return createPublicKey({
+    key: {
+      kty: 'EC',
+      crv: ec2NamedCurve(key),
+      x: bufferToBase64URL(key.x),
+      y: bufferToBase64URL(key.y),
+    },
+    format: 'jwk',
+  });
+}
+
+/**
+ * Import an RSA COSE key as a Node public key via JWK.
+ */
+function rsaKeyToKeyObject(key: COSERSAKey): KeyObject {
+  return createPublicKey({
+    key: {
+      kty: 'RSA',
+      n: bufferToBase64URL(key.n),
+      e: bufferToBase64URL(key.e),
+    },
+    format: 'jwk',
+  });
+}
+
+/**
+ * Import an Ed25519 (OKP) COSE key as a Node public key via JWK.
+ */
+function okpKeyToKeyObject(key: COSEOKPKey): KeyObject {
+  return createPublicKey({
+    key: {
+      kty: 'OKP',
+      crv: 'Ed25519',
+      x: bufferToBase64URL(key.x),
+    },
+    format: 'jwk',
+  });
+}
+
+/**
+ * Verify a signature using a COSE public key.
+ *
+ * Keys are imported via JWK so Node performs all ASN.1/SPKI handling and curve
+ * validation — this supports EC2 (ES256/384/512), RSA (RS256/384/512, PS256/384/512)
+ * and OKP (Ed25519) correctly, including large RSA moduli and P-521.
+ *
+ * @returns `true` if the signature is valid, `false` if it is invalid (or the key
+ * cannot be imported). Throws {@link VerificationError} only for unsupported
+ * algorithms/curves/key types.
  */
 export function verifySignature(
   signature: Uint8Array,
@@ -177,45 +139,26 @@ export function verifySignature(
   try {
     switch (publicKey.kty) {
       case COSEKeyType.EC2: {
-        const spki = ec2KeyToSPKI(publicKey, algInfo.namedCurve!);
-        const verify = createVerify(algInfo.hash);
-        verify.update(data);
-        return verify.verify(
-          {
-            key: spki,
-            format: 'der',
-            type: 'spki',
-          },
-          signature,
-        );
+        const keyObject = ec2KeyToKeyObject(publicKey);
+        // WebAuthn ECDSA signatures are ASN.1 DER encoded (Node's default dsaEncoding).
+        return nodeVerify(algInfo.hash, data, keyObject, signature);
       }
 
       case COSEKeyType.RSA: {
-        const spki = rsaKeyToSPKI(publicKey);
-        const verify = createVerify(algInfo.hash);
-        verify.update(data);
-
-        if (algInfo.name === 'RSA-PSS') {
-          return verify.verify(
+        const keyObject = rsaKeyToKeyObject(publicKey);
+        if (algInfo.isPSS) {
+          return nodeVerify(
+            algInfo.hash,
+            data,
             {
-              key: spki,
-              format: 'der',
-              type: 'spki',
+              key: keyObject,
               padding: constants.RSA_PKCS1_PSS_PADDING,
               saltLength: constants.RSA_PSS_SALTLEN_DIGEST,
             },
             signature,
           );
         }
-
-        return verify.verify(
-          {
-            key: spki,
-            format: 'der',
-            type: 'spki',
-          },
-          signature,
-        );
+        return nodeVerify(algInfo.hash, data, keyObject, signature);
       }
 
       case COSEKeyType.OKP: {
@@ -226,8 +169,14 @@ export function verifySignature(
           );
         }
 
-        // Ed25519 uses a different verification process
-        return verifyEd25519Signature(signature, data, publicKey);
+        // Ed25519 public keys are exactly 32 bytes.
+        if (publicKey.x.length !== 32) {
+          return false;
+        }
+
+        const keyObject = okpKeyToKeyObject(publicKey);
+        // Ed25519 signs the message directly (no pre-hash).
+        return nodeVerify(null, data, keyObject, signature);
       }
 
       default: {
@@ -244,7 +193,7 @@ export function verifySignature(
       throw error;
     }
 
-    // For crypto errors (e.g., invalid signatures), return false
+    // For crypto errors (invalid signatures, un-importable/invalid keys), fail closed.
     return false;
   }
 }
