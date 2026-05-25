@@ -308,7 +308,7 @@
           "title": "npm publish (REQUIRES explicit user go-ahead) + verify on npmjs.com",
           "status": "blocked",
           "awaitingUser": true,
-          "note": "User approved publishing. BLOCKED on npm auth: `npm whoami` returns 401 both before and after setting the documented global token (npm_EzXz...) — the token is expired/revoked. Network/read is fine (npm view works). Resume: (a) `npm login` or set a VALID token then `npm publish`, or (b) run `npm publish` from an authenticated environment, or (c) create a GitHub Release to trigger publish.yml CI (needs a valid NPM_TOKEN repo secret). All gates green; `npm pack --dry-run` clean; package.json is 2.2.0."
+          "note": "User approved publishing. BLOCKED on npm auth and no autonomous path available this session: `npm whoami` 401 before and after setting the documented global token (expired/revoked); `yarn npm whoami` unauthenticated; `gh` CLI not installed (can't create a Release to trigger publish.yml CI); env vars NPM_TOKEN/NODE_AUTH_TOKEN/YARN_NPM_AUTH_TOKEN/GITHUB_TOKEN all unset. Network/read is fine (npm view works). REQUIRES the user to authenticate. Resume: (a) `npm login` (or set a VALID token via `npm config set //registry.npmjs.org/:_authToken <token>`) then `npm publish`; or (b) `npm publish` from an already-authenticated terminal; or (c) install gh + create a v2.2.0 Release (needs a valid NPM_TOKEN repo secret). All gates green; `npm pack --dry-run` clean; package.json is 2.2.0; everything committed + pushed."
         }
       ]
     }
