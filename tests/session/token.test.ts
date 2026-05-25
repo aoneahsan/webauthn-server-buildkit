@@ -50,7 +50,7 @@ describe('Session Token', () => {
     it('should parse a valid session token', () => {
       const token = createSessionToken('session123', mockSessionData, secret);
       const result = parseSessionToken(token, secret);
-      
+
       expect(result.sessionId).toBe('session123');
       expect(result.data).toEqual(mockSessionData);
       expect(result.createdAt).toBeInstanceOf(Date);
@@ -88,7 +88,7 @@ describe('Session Token', () => {
   describe('token structure', () => {
     it('should create base64url encoded tokens', () => {
       const token = createSessionToken('session123', mockSessionData, secret);
-      
+
       // Check that token is base64url encoded (no +, /, or = characters)
       expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(token).not.toContain('+');
@@ -100,9 +100,9 @@ describe('Session Token', () => {
       const beforeTime = Date.now();
       const token = createSessionToken('session123', mockSessionData, secret);
       const afterTime = Date.now();
-      
+
       const result = parseSessionToken(token, secret);
-      
+
       const createdAt = result.createdAt.getTime();
       expect(createdAt).toBeGreaterThanOrEqual(beforeTime);
       expect(createdAt).toBeLessThanOrEqual(afterTime);

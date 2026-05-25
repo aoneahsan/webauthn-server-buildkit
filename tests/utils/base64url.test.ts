@@ -60,7 +60,7 @@ describe('Base64URL utilities', () => {
         'SGVs', // "Hel" - would need = padding
       ];
 
-      testCases.forEach(testCase => {
+      testCases.forEach((testCase) => {
         const result = base64URLToBuffer(testCase);
         expect(result).toBeInstanceOf(Uint8Array);
         expect(result.length).toBeGreaterThan(0);
@@ -134,7 +134,7 @@ describe('Base64URL utilities', () => {
         '',
       ];
 
-      validStrings.forEach(str => {
+      validStrings.forEach((str) => {
         expect(isBase64URL(str)).toBe(true);
       });
     });
@@ -151,7 +151,7 @@ describe('Base64URL utilities', () => {
         'SGVsbG8#', // contains #
       ];
 
-      invalidStrings.forEach(str => {
+      invalidStrings.forEach((str) => {
         expect(isBase64URL(str)).toBe(false);
       });
     });

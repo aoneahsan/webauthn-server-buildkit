@@ -4,21 +4,23 @@
 
 ## Package Overview
 
-| Package | Role | npm |
-|---------|------|-----|
-| `webauthn-server-buildkit` | Backend WebAuthn server | [npm](https://www.npmjs.com/package/webauthn-server-buildkit) |
-| `capacitor-biometric-authentication` | Frontend biometric UI | [npm](https://www.npmjs.com/package/capacitor-biometric-authentication) |
+| Package                              | Role                    | npm                                                                     |
+| ------------------------------------ | ----------------------- | ----------------------------------------------------------------------- |
+| `webauthn-server-buildkit`           | Backend WebAuthn server | [npm](https://www.npmjs.com/package/webauthn-server-buildkit)           |
+| `capacitor-biometric-authentication` | Frontend biometric UI   | [npm](https://www.npmjs.com/package/capacitor-biometric-authentication) |
 
 ## Quick Setup
 
 ### 1. Install Packages
 
 **Backend (Node.js):**
+
 ```bash
 yarn add webauthn-server-buildkit
 ```
 
 **Frontend (Web/Mobile App):**
+
 ```bash
 yarn add capacitor-biometric-authentication
 ```
@@ -34,12 +36,12 @@ app.use(express.json());
 
 // Initialize WebAuthn server
 const webauthn = new WebAuthnServer({
-  rpName: 'My App',                    // Your app name
-  rpID: 'myapp.com',                   // Your domain (no protocol)
+  rpName: 'My App', // Your app name
+  rpID: 'myapp.com', // Your domain (no protocol)
   origin: [
-    'https://myapp.com',               // Web origin
-    'android-app://com.myapp.app',     // Android (optional)
-    'ios-app://com.myapp.app',         // iOS (optional)
+    'https://myapp.com', // Web origin
+    'android-app://com.myapp.app', // Android (optional)
+    'ios-app://com.myapp.app', // iOS (optional)
   ],
   encryptionSecret: process.env.ENCRYPTION_SECRET!, // Min 32 chars
 });
@@ -60,12 +62,11 @@ app.post('/api/webauthn/register/options', async (req, res) => {
   };
 
   // Get existing credentials for this user (to exclude)
-  const existingCredentials = Array.from(credentials.values())
-    .filter(c => c.userId === userId);
+  const existingCredentials = Array.from(credentials.values()).filter((c) => c.userId === userId);
 
   const { options, challenge } = await webauthn.createRegistrationOptions(
     user,
-    existingCredentials
+    existingCredentials,
   );
 
   // Store challenge temporarily (use session/cache in production)
@@ -85,7 +86,7 @@ app.post('/api/webauthn/register/verify', async (req, res) => {
 
   const { verified, registrationInfo } = await webauthn.verifyRegistration(
     response,
-    user.challenge
+    user.challenge,
   );
 
   if (verified && registrationInfo) {
@@ -111,16 +112,13 @@ app.post('/api/webauthn/authenticate/options', async (req, res) => {
   const { userId } = req.body;
 
   // Get user's credentials from database
-  const userCredentials = Array.from(credentials.values())
-    .filter(c => c.userId === userId);
+  const userCredentials = Array.from(credentials.values()).filter((c) => c.userId === userId);
 
   if (userCredentials.length === 0) {
     return res.status(400).json({ error: 'No credentials found' });
   }
 
-  const { options, challenge } = await webauthn.createAuthenticationOptions(
-    userCredentials
-  );
+  const { options, challenge } = await webauthn.createAuthenticationOptions(userCredentials);
 
   // Store challenge
   const user = users.get(userId) || { id: userId };
@@ -148,7 +146,7 @@ app.post('/api/webauthn/authenticate/verify', async (req, res) => {
   const { verified, authenticationInfo } = await webauthn.verifyAuthentication(
     response,
     user.authChallenge,
-    credential
+    credential,
   );
 
   if (verified && authenticationInfo) {
@@ -159,7 +157,7 @@ app.post('/api/webauthn/authenticate/verify', async (req, res) => {
     const token = await webauthn.createSession(
       userId,
       credential.id,
-      authenticationInfo.userVerified
+      authenticationInfo.userVerified,
     );
 
     // Clear challenge
@@ -304,27 +302,27 @@ function BiometricLogin({ userId }: { userId: string }) {
 
 ### Backend (webauthn-server-buildkit)
 
-| Method | Description |
-|--------|-------------|
-| `new WebAuthnServer(config)` | Initialize server |
-| `createRegistrationOptions(user, excludeCredentials?)` | Generate registration challenge |
-| `verifyRegistration(response, challenge)` | Verify registration |
-| `createAuthenticationOptions(allowCredentials?)` | Generate auth challenge |
-| `verifyAuthentication(response, challenge, credential)` | Verify authentication |
-| `createSession(userId, credentialId, userVerified)` | Create session token |
-| `validateSession(token)` | Validate session token |
-| `revokeSession(token)` | Revoke session |
+| Method                                                  | Description                     |
+| ------------------------------------------------------- | ------------------------------- |
+| `new WebAuthnServer(config)`                            | Initialize server               |
+| `createRegistrationOptions(user, excludeCredentials?)`  | Generate registration challenge |
+| `verifyRegistration(response, challenge)`               | Verify registration             |
+| `createAuthenticationOptions(allowCredentials?)`        | Generate auth challenge         |
+| `verifyAuthentication(response, challenge, credential)` | Verify authentication           |
+| `createSession(userId, credentialId, userVerified)`     | Create session token            |
+| `validateSession(token)`                                | Validate session token          |
+| `revokeSession(token)`                                  | Revoke session                  |
 
 ### Frontend (capacitor-biometric-authentication)
 
-| Method | Description |
-|--------|-------------|
-| `BiometricAuth.isAvailable()` | Check biometric availability |
-| `BiometricAuth.authenticate(options)` | Perform authentication |
+| Method                                   | Description                   |
+| ---------------------------------------- | ----------------------------- |
+| `BiometricAuth.isAvailable()`            | Check biometric availability  |
+| `BiometricAuth.authenticate(options)`    | Perform authentication        |
 | `BiometricAuth.getSupportedBiometrics()` | Get available biometric types |
-| `BiometricAuth.deleteCredentials()` | Clear stored credentials |
-| `BiometricAuth.configure(config)` | Configure plugin |
-| `BiometricAuth.logout()` | Clear session |
+| `BiometricAuth.deleteCredentials()`      | Clear stored credentials      |
+| `BiometricAuth.configure(config)`        | Configure plugin              |
+| `BiometricAuth.logout()`                 | Clear session                 |
 
 ## Configuration Reference
 
@@ -358,17 +356,17 @@ const webauthn = new WebAuthnServer({
 
 ```typescript
 BiometricAuth.configure({
-  sessionDuration: number,  // Session duration in seconds
-  debug: boolean,           // Enable debug logging
+  sessionDuration: number, // Session duration in seconds
+  debug: boolean, // Enable debug logging
 });
 
 BiometricAuth.authenticate({
-  reason: string,           // Message shown to user
-  title: string,            // Android dialog title
-  subtitle: string,         // Android dialog subtitle
-  fallbackTitle: string,    // Fallback button text
-  cancelTitle: string,      // Cancel button text
-  maxAttempts: number,      // Max failed attempts
+  reason: string, // Message shown to user
+  title: string, // Android dialog title
+  subtitle: string, // Android dialog subtitle
+  fallbackTitle: string, // Fallback button text
+  cancelTitle: string, // Cancel button text
+  maxAttempts: number, // Max failed attempts
   saveCredentials: boolean, // Store credentials
 });
 ```
@@ -412,12 +410,12 @@ CREATE TABLE sessions (
 
 ## Platform Support
 
-| Platform | Backend | Frontend |
-|----------|---------|----------|
-| Web | ✅ Node.js 20+ | ✅ WebAuthn API |
-| iOS | ✅ | ✅ Touch ID / Face ID |
-| Android | ✅ | ✅ BiometricPrompt |
-| Electron | ✅ | ✅ Windows Hello / Touch ID |
+| Platform | Backend        | Frontend                    |
+| -------- | -------------- | --------------------------- |
+| Web      | ✅ Node.js 20+ | ✅ WebAuthn API             |
+| iOS      | ✅             | ✅ Touch ID / Face ID       |
+| Android  | ✅             | ✅ BiometricPrompt          |
+| Electron | ✅             | ✅ Windows Hello / Touch ID |
 
 ## Security Checklist
 
@@ -436,7 +434,7 @@ CREATE TABLE sessions (
 import {
   RegistrationError,
   AuthenticationError,
-  VerificationError
+  VerificationError,
 } from 'webauthn-server-buildkit';
 
 try {
@@ -466,6 +464,7 @@ if (!result.success) {
 ## Complete Working Example
 
 See the `/examples` directory for complete working examples:
+
 - `examples/express/` - Full Express.js server
 - `examples/basic/` - Basic Node.js usage
 

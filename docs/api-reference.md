@@ -76,10 +76,10 @@ const { options, challenge } = await webauthn.createRegistrationOptions(user, {
   excludeCredentials: existingCredentials,
   extensions: {
     credProps: true,
-    largeBlob: { support: 'preferred' }
+    largeBlob: { support: 'preferred' },
   },
   timeout: 120000, // 2 minutes
-  attestation: 'direct'
+  attestation: 'direct',
 });
 ```
 
@@ -134,10 +134,10 @@ Generates authentication options for verifying an existing credential.
 const { options, challenge } = await webauthn.createAuthenticationOptions({
   allowCredentials: userCredentials,
   extensions: {
-    largeBlob: { read: true }
+    largeBlob: { read: true },
   },
   timeout: 60000,
-  userVerification: 'required'
+  userVerification: 'required',
 });
 ```
 
@@ -216,22 +216,22 @@ Revokes all sessions for a specific user.
 
 ```typescript
 interface WebAuthnServerConfig {
-  rpName: string;                          // Relying Party name
-  rpID: string;                            // Relying Party ID (domain)
-  rpIcon?: string;                         // RP icon URL (deprecated)
-  origin: string | string[];               // Expected origin(s)
-  sessionDuration?: number;                // Session duration in ms (default: 24h)
-  encryptionSecret: string;                // Secret for session encryption (min 32 chars)
+  rpName: string; // Relying Party name
+  rpID: string; // Relying Party ID (domain)
+  rpIcon?: string; // RP icon URL (deprecated)
+  origin: string | string[]; // Expected origin(s)
+  sessionDuration?: number; // Session duration in ms (default: 24h)
+  encryptionSecret: string; // Secret for session encryption (min 32 chars)
   attestationType?: AttestationConveyancePreference; // Default: 'none'
-  userVerification?: UserVerificationRequirement;    // Default: 'preferred'
+  userVerification?: UserVerificationRequirement; // Default: 'preferred'
   authenticatorSelection?: AuthenticatorSelectionCriteria;
-  supportedAlgorithms?: COSEAlgorithmIdentifier[];  // Default: ES256, RS256
-  challengeSize?: number;                  // Challenge size in bytes (16-64)
-  timeout?: number;                        // Operation timeout in ms
+  supportedAlgorithms?: COSEAlgorithmIdentifier[]; // Default: ES256, RS256
+  challengeSize?: number; // Challenge size in bytes (16-64)
+  timeout?: number; // Operation timeout in ms
   preferredAuthenticatorType?: PreferredAuthenticatorType;
-  storageAdapter?: StorageAdapter;         // Storage adapter instance
-  debug?: boolean;                         // Enable debug logging
-  logger?: LoggerFunction;                 // Custom logger function
+  storageAdapter?: StorageAdapter; // Storage adapter instance
+  debug?: boolean; // Enable debug logging
+  logger?: LoggerFunction; // Custom logger function
 }
 ```
 
@@ -255,6 +255,7 @@ interface GenerateRegistrationOptionsParams {
 #### PublicKeyCredentialCreationOptionsJSON
 
 Complete WebAuthn registration options following W3C spec, including:
+
 - RP information with optional icon
 - User information
 - Challenge
@@ -289,7 +290,7 @@ interface StorageAdapter {
     update(id: string | number, data: Partial<UserModel>): Promise<void>;
     delete(id: string | number): Promise<void>;
   };
-  
+
   credentials: {
     findById(id: Base64URLString): Promise<WebAuthnCredential | null>;
     findByUserId(userId: string | number): Promise<WebAuthnCredential[]>;
@@ -298,14 +299,14 @@ interface StorageAdapter {
     updateLastUsed(id: Base64URLString): Promise<void>;
     delete(id: Base64URLString): Promise<void>;
   };
-  
+
   challenges: {
     create(challenge: ChallengeData): Promise<void>;
     findByChallenge(challenge: string): Promise<ChallengeData | null>;
     delete(challenge: string): Promise<void>;
     deleteExpired(): Promise<void>;
   };
-  
+
   sessions: {
     create(id: string, data: SessionData): Promise<void>;
     findById(id: string): Promise<SessionData | null>;
@@ -324,9 +325,7 @@ These functions handle attestation data from mobile platforms (iOS/Android) that
 ### isMobileAttestation
 
 ```typescript
-function isMobileAttestation(
-  response: RegistrationCredentialJSON
-): boolean
+function isMobileAttestation(response: RegistrationCredentialJSON): boolean;
 ```
 
 Detects if a registration response is in mobile attestation format.
@@ -360,11 +359,11 @@ async function validateMobileAttestation(
   response: RegistrationCredentialJSON,
   expectedChallenge: string,
   rpId: string,
-  expectedOrigin?: string
+  expectedOrigin?: string,
 ): Promise<{
   verified: boolean;
   registrationInfo?: VerifiedRegistrationInfo;
-}>
+}>;
 ```
 
 Validates a mobile attestation response.
@@ -379,6 +378,7 @@ Validates a mobile attestation response.
 #### Platform Detection
 
 The function automatically detects the platform from the origin:
+
 - iOS: Origins starting with `ios-app://`
 - Android: Origins starting with `android-app://`
 
@@ -391,7 +391,7 @@ const result = await validateMobileAttestation(
   response,
   challenge,
   'example.com',
-  'ios-app://com.example.app' // Optional: explicit origin
+  'ios-app://com.example.app', // Optional: explicit origin
 );
 
 if (result.verified) {
@@ -408,7 +408,7 @@ if (result.verified) {
 ### isCborParsingError
 
 ```typescript
-function isCborParsingError(error: unknown): boolean
+function isCborParsingError(error: unknown): boolean;
 ```
 
 Detects if an error is related to CBOR parsing failures.
@@ -483,7 +483,7 @@ const webauthn = new WebAuthnServer({
   authenticatorSelection: {
     authenticatorAttachment: 'cross-platform',
     residentKey: 'preferred',
-    userVerification: 'preferred'
+    userVerification: 'preferred',
   },
   supportedAlgorithms: [-7, -257], // ES256, RS256
   challengeSize: 32,
@@ -493,7 +493,7 @@ const webauthn = new WebAuthnServer({
   debug: true,
   logger: (level, message, data) => {
     console.log(`[${level}] ${message}`, data);
-  }
+  },
 });
 
 // Use with full customization
@@ -501,13 +501,13 @@ const { options } = await webauthn.createRegistrationOptions(user, {
   extensions: {
     credProps: true,
     largeBlob: { support: 'preferred' },
-    minPinLength: true
+    minPinLength: true,
   },
   timeout: 120000,
   attestation: 'direct',
   authenticatorSelection: {
     authenticatorAttachment: 'platform',
-    residentKey: 'required'
-  }
+    residentKey: 'required',
+  },
 });
 ```

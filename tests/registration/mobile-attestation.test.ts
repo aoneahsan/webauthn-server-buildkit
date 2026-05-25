@@ -41,15 +41,34 @@ function createWebAttestation(): string {
   const cborBytes = new Uint8Array([
     0xa3, // map of 3 items
     0x63, // text string of 3 chars
-    0x66, 0x6d, 0x74, // "fmt"
+    0x66,
+    0x6d,
+    0x74, // "fmt"
     0x64, // text string of 4 chars
-    0x6e, 0x6f, 0x6e, 0x65, // "none"
+    0x6e,
+    0x6f,
+    0x6e,
+    0x65, // "none"
     0x67, // text string of 7 chars
-    0x61, 0x74, 0x74, 0x53, 0x74, 0x6d, 0x74, // "attStmt"
+    0x61,
+    0x74,
+    0x74,
+    0x53,
+    0x74,
+    0x6d,
+    0x74, // "attStmt"
     0xa0, // empty map
     0x68, // text string of 8 chars
-    0x61, 0x75, 0x74, 0x68, 0x44, 0x61, 0x74, 0x61, // "authData"
-    0x58, 0x20, // byte string of 32 bytes
+    0x61,
+    0x75,
+    0x74,
+    0x68,
+    0x44,
+    0x61,
+    0x74,
+    0x61, // "authData"
+    0x58,
+    0x20, // byte string of 32 bytes
     ...new Uint8Array(32), // 32 zero bytes for authData (minimal)
   ]);
   return bufferToBase64URL(cborBytes);
@@ -65,7 +84,7 @@ describe('Mobile Attestation', () => {
           type: 'webauthn.create',
           challenge: bufferToBase64URL(crypto.getRandomValues(new Uint8Array(32))),
           origin: TEST_ORIGIN,
-        })
+        }),
       );
 
       const response = {
@@ -93,7 +112,7 @@ describe('Mobile Attestation', () => {
           type: 'webauthn.create',
           challenge: bufferToBase64URL(crypto.getRandomValues(new Uint8Array(32))),
           origin: TEST_ORIGIN,
-        })
+        }),
       );
 
       const response = {
@@ -120,7 +139,7 @@ describe('Mobile Attestation', () => {
           type: 'webauthn.create',
           challenge: bufferToBase64URL(crypto.getRandomValues(new Uint8Array(32))),
           origin: TEST_ORIGIN,
-        })
+        }),
       );
 
       const response = {
@@ -139,14 +158,15 @@ describe('Mobile Attestation', () => {
     });
 
     it('should detect mobile credential IDs without valid attestation as invalid', () => {
-      const credentialId = 'mobile_' + bufferToBase64URL(crypto.getRandomValues(new Uint8Array(32)));
+      const credentialId =
+        'mobile_' + bufferToBase64URL(crypto.getRandomValues(new Uint8Array(32)));
       const attestation = createWebAttestation(); // CBOR, not JSON
       const clientDataJSON = textToBase64(
         JSON.stringify({
           type: 'webauthn.create',
           challenge: bufferToBase64URL(crypto.getRandomValues(new Uint8Array(32))),
           origin: TEST_ORIGIN,
-        })
+        }),
       );
 
       const response = {
@@ -240,9 +260,9 @@ describe('Mobile Attestation', () => {
         type: 'public-key' as const,
       };
 
-      expect(() =>
-        validateMobileAttestation(response, mobileData, TEST_ORIGIN)
-      ).toThrow(VerificationError);
+      expect(() => validateMobileAttestation(response, mobileData, TEST_ORIGIN)).toThrow(
+        VerificationError,
+      );
     });
 
     it('should throw on missing credential ID', () => {
@@ -263,9 +283,9 @@ describe('Mobile Attestation', () => {
         type: 'public-key' as const,
       };
 
-      expect(() =>
-        validateMobileAttestation(response, mobileData, TEST_ORIGIN)
-      ).toThrow(VerificationError);
+      expect(() => validateMobileAttestation(response, mobileData, TEST_ORIGIN)).toThrow(
+        VerificationError,
+      );
     });
 
     it('should throw on public key too short', () => {
@@ -287,9 +307,9 @@ describe('Mobile Attestation', () => {
         type: 'public-key' as const,
       };
 
-      expect(() =>
-        validateMobileAttestation(response, mobileData, TEST_ORIGIN)
-      ).toThrow(VerificationError);
+      expect(() => validateMobileAttestation(response, mobileData, TEST_ORIGIN)).toThrow(
+        VerificationError,
+      );
     });
   });
 });

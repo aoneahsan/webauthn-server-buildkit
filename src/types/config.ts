@@ -100,13 +100,9 @@ export interface WebAuthnServerConfig {
 /**
  * Internal configuration with defaults applied
  */
-export interface InternalConfig
-  extends Required<
-    Omit<
-      WebAuthnServerConfig,
-      'storageAdapter' | 'preferredAuthenticatorType' | 'logger' | 'rpIcon'
-    >
-  > {
+export interface InternalConfig extends Required<
+  Omit<WebAuthnServerConfig, 'storageAdapter' | 'preferredAuthenticatorType' | 'logger' | 'rpIcon'>
+> {
   storageAdapter?: StorageAdapter;
   preferredAuthenticatorType?: PreferredAuthenticatorType;
   logger?: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) => void;

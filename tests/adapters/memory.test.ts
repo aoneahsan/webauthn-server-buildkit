@@ -4,7 +4,7 @@ import type { UserModel, WebAuthnCredential, ChallengeData, SessionData } from '
 
 describe('MemoryStorageAdapter', () => {
   let adapter: MemoryStorageAdapter;
-  
+
   beforeEach(() => {
     adapter = new MemoryStorageAdapter();
   });
@@ -44,7 +44,7 @@ describe('MemoryStorageAdapter', () => {
       const createdUser = await adapter.users.create(mockUser);
       const updates = { displayName: 'Updated Name' };
       const updatedUser = await adapter.users.update(createdUser.id, updates);
-      
+
       expect(updatedUser).toBeDefined();
       expect(updatedUser!.displayName).toBe(updates.displayName);
       expect(updatedUser!.username).toBe(mockUser.username);
@@ -54,7 +54,7 @@ describe('MemoryStorageAdapter', () => {
       const createdUser = await adapter.users.create(mockUser);
       const deleted = await adapter.users.delete(createdUser.id);
       expect(deleted).toBe(true);
-      
+
       const foundUser = await adapter.users.findById(createdUser.id);
       expect(foundUser).toBeNull();
     });
@@ -94,21 +94,21 @@ describe('MemoryStorageAdapter', () => {
     it('should find credentials by user id', async () => {
       const credential1 = { ...mockCredential, id: 'cred1' };
       const credential2 = { ...mockCredential, id: 'cred2' };
-      
+
       await adapter.credentials.create(credential1);
       await adapter.credentials.create(credential2);
-      
+
       const foundCredentials = await adapter.credentials.findByUserId(mockCredential.userId);
       expect(foundCredentials).toHaveLength(2);
-      expect(foundCredentials.map(c => c.id)).toContain('cred1');
-      expect(foundCredentials.map(c => c.id)).toContain('cred2');
+      expect(foundCredentials.map((c) => c.id)).toContain('cred1');
+      expect(foundCredentials.map((c) => c.id)).toContain('cred2');
     });
 
     it('should update credential counter', async () => {
       await adapter.credentials.create(mockCredential);
       const updated = await adapter.credentials.updateCounter(mockCredential.id, 5);
       expect(updated).toBe(true);
-      
+
       const foundCredential = await adapter.credentials.findById(mockCredential.id);
       expect(foundCredential!.counter).toBe(5);
     });
@@ -117,7 +117,7 @@ describe('MemoryStorageAdapter', () => {
       await adapter.credentials.create(mockCredential);
       const updated = await adapter.credentials.updateLastUsed(mockCredential.id);
       expect(updated).toBe(true);
-      
+
       const foundCredential = await adapter.credentials.findById(mockCredential.id);
       expect(foundCredential!.lastUsedAt).toBeDefined();
     });
@@ -126,7 +126,7 @@ describe('MemoryStorageAdapter', () => {
       await adapter.credentials.create(mockCredential);
       const deleted = await adapter.credentials.delete(mockCredential.id);
       expect(deleted).toBe(true);
-      
+
       const foundCredential = await adapter.credentials.findById(mockCredential.id);
       expect(foundCredential).toBeNull();
     });
@@ -134,13 +134,13 @@ describe('MemoryStorageAdapter', () => {
     it('should delete credentials by user id', async () => {
       const credential1 = { ...mockCredential, id: 'cred1' };
       const credential2 = { ...mockCredential, id: 'cred2' };
-      
+
       await adapter.credentials.create(credential1);
       await adapter.credentials.create(credential2);
-      
+
       const deleted = await adapter.credentials.deleteByUserId(mockCredential.userId);
       expect(deleted).toBe(true);
-      
+
       const foundCredentials = await adapter.credentials.findByUserId(mockCredential.userId);
       expect(foundCredentials).toHaveLength(0);
     });
@@ -175,7 +175,7 @@ describe('MemoryStorageAdapter', () => {
       await adapter.challenges.create(mockChallenge);
       const deleted = await adapter.challenges.delete(mockChallenge.challenge);
       expect(deleted).toBe(true);
-      
+
       const foundChallenge = await adapter.challenges.find(mockChallenge.challenge);
       expect(foundChallenge).toBeNull();
     });
@@ -186,16 +186,16 @@ describe('MemoryStorageAdapter', () => {
         challenge: 'expired-challenge',
         expiresAt: new Date(Date.now() - 1000), // 1 second ago
       };
-      
+
       await adapter.challenges.create(mockChallenge);
       await adapter.challenges.create(expiredChallenge);
-      
+
       const deleted = await adapter.challenges.deleteExpired();
       expect(deleted).toBe(true);
-      
+
       const foundValid = await adapter.challenges.find(mockChallenge.challenge);
       const foundExpired = await adapter.challenges.find(expiredChallenge.challenge);
-      
+
       expect(foundValid).toEqual(mockChallenge);
       expect(foundExpired).toBeNull();
     });
@@ -231,7 +231,7 @@ describe('MemoryStorageAdapter', () => {
       const updates = { userVerified: false };
       const updated = await adapter.sessions.update('session123', updates);
       expect(updated).toBe(true);
-      
+
       const foundSession = await adapter.sessions.find('session123');
       expect(foundSession!.userVerified).toBe(false);
       expect(foundSession!.userId).toBe(mockSession.userId);
@@ -241,7 +241,7 @@ describe('MemoryStorageAdapter', () => {
       await adapter.sessions.create('session123', mockSession);
       const deleted = await adapter.sessions.delete('session123');
       expect(deleted).toBe(true);
-      
+
       const foundSession = await adapter.sessions.find('session123');
       expect(foundSession).toBeNull();
     });
@@ -249,13 +249,13 @@ describe('MemoryStorageAdapter', () => {
     it('should delete sessions by user id', async () => {
       await adapter.sessions.create('session1', mockSession);
       await adapter.sessions.create('session2', mockSession);
-      
+
       const deleted = await adapter.sessions.deleteByUserId(mockSession.userId);
       expect(deleted).toBe(true);
-      
+
       const foundSession1 = await adapter.sessions.find('session1');
       const foundSession2 = await adapter.sessions.find('session2');
-      
+
       expect(foundSession1).toBeNull();
       expect(foundSession2).toBeNull();
     });

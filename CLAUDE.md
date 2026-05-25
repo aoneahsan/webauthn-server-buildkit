@@ -28,6 +28,7 @@ Guidance for Claude Code when working with `webauthn-server-buildkit`.
 ## Critical Verification Rule
 
 After making changes to this package:
+
 1. Run `yarn build` to verify the build succeeds.
 2. Run `yarn test` to verify all 131 tests pass.
 3. Run `yarn lint` and `yarn typecheck` for code quality.

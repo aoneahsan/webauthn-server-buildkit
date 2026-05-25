@@ -15,6 +15,7 @@ We take the security of WebAuthn Server Buildkit seriously. If you believe you h
 **Please do not report security vulnerabilities through public GitHub issues.**
 
 Instead, please report them via email to:
+
 - **Email**: aoneahsan@gmail.com
 - **Subject Line**: [SECURITY] WebAuthn Server Buildkit - [Brief Description]
 

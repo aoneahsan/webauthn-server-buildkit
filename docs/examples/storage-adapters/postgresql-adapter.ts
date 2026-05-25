@@ -10,7 +10,7 @@ import type {
 
 /**
  * PostgreSQL Storage Adapter for WebAuthn Server
- * 
+ *
  * This adapter provides production-ready PostgreSQL storage for WebAuthn data.
  * It includes connection pooling, error handling, and optimized queries.
  */
@@ -98,12 +98,24 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       `);
 
       // Create indexes for performance
-      await client.query('CREATE INDEX IF NOT EXISTS idx_webauthn_users_username ON webauthn_users(username)');
-      await client.query('CREATE INDEX IF NOT EXISTS idx_webauthn_credentials_user_id ON webauthn_credentials(user_id)');
-      await client.query('CREATE INDEX IF NOT EXISTS idx_webauthn_credentials_webauthn_user_id ON webauthn_credentials(webauthn_user_id)');
-      await client.query('CREATE INDEX IF NOT EXISTS idx_webauthn_challenges_expires_at ON webauthn_challenges(expires_at)');
-      await client.query('CREATE INDEX IF NOT EXISTS idx_webauthn_sessions_expires_at ON webauthn_sessions(expires_at)');
-      await client.query('CREATE INDEX IF NOT EXISTS idx_webauthn_sessions_user_id ON webauthn_sessions(user_id)');
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_webauthn_users_username ON webauthn_users(username)',
+      );
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_webauthn_credentials_user_id ON webauthn_credentials(user_id)',
+      );
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_webauthn_credentials_webauthn_user_id ON webauthn_credentials(webauthn_user_id)',
+      );
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_webauthn_challenges_expires_at ON webauthn_challenges(expires_at)',
+      );
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_webauthn_sessions_expires_at ON webauthn_sessions(expires_at)',
+      );
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_webauthn_sessions_user_id ON webauthn_sessions(user_id)',
+      );
 
       await client.query('COMMIT');
     } catch (error) {
@@ -125,15 +137,12 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
     async findById(id: string | number): Promise<UserModel | null> {
       const client = await this.pool.connect();
       try {
-        const result = await client.query(
-          'SELECT * FROM webauthn_users WHERE id = $1',
-          [id]
-        );
-        
+        const result = await client.query('SELECT * FROM webauthn_users WHERE id = $1', [id]);
+
         if (result.rows.length === 0) {
           return null;
         }
-        
+
         const row = result.rows[0];
         return {
           id: row.id,
@@ -151,15 +160,14 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
     async findByUsername(username: string): Promise<UserModel | null> {
       const client = await this.pool.connect();
       try {
-        const result = await client.query(
-          'SELECT * FROM webauthn_users WHERE username = $1',
-          [username]
-        );
-        
+        const result = await client.query('SELECT * FROM webauthn_users WHERE username = $1', [
+          username,
+        ]);
+
         if (result.rows.length === 0) {
           return null;
         }
-        
+
         const row = result.rows[0];
         return {
           id: row.id,
@@ -181,9 +189,9 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
           `INSERT INTO webauthn_users (username, display_name, email, created_at, last_login_at) 
            VALUES ($1, $2, $3, $4, $5) 
            RETURNING *`,
-          [user.username, user.displayName, user.email, user.createdAt, user.lastLoginAt]
+          [user.username, user.displayName, user.email, user.createdAt, user.lastLoginAt],
         );
-        
+
         const row = result.rows[0];
         return {
           id: row.id,
@@ -231,13 +239,13 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
 
         const result = await client.query(
           `UPDATE webauthn_users SET ${setParts.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-          values
+          values,
         );
-        
+
         if (result.rows.length === 0) {
           return null;
         }
-        
+
         const row = result.rows[0];
         return {
           id: row.id,
@@ -267,15 +275,12 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
     async findById(id: Base64URLString): Promise<WebAuthnCredential | null> {
       const client = await this.pool.connect();
       try {
-        const result = await client.query(
-          'SELECT * FROM webauthn_credentials WHERE id = $1',
-          [id]
-        );
-        
+        const result = await client.query('SELECT * FROM webauthn_credentials WHERE id = $1', [id]);
+
         if (result.rows.length === 0) {
           return null;
         }
-        
+
         const row = result.rows[0];
         return {
           id: row.id,
@@ -299,10 +304,10 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         const result = await client.query(
           'SELECT * FROM webauthn_credentials WHERE user_id = $1 ORDER BY created_at DESC',
-          [userId]
+          [userId],
         );
-        
-        return result.rows.map(row => ({
+
+        return result.rows.map((row) => ({
           id: row.id,
           userId: row.user_id,
           webAuthnUserID: row.webauthn_user_id,
@@ -324,10 +329,10 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         const result = await client.query(
           'SELECT * FROM webauthn_credentials WHERE webauthn_user_id = $1 ORDER BY created_at DESC',
-          [webAuthnUserId]
+          [webAuthnUserId],
         );
-        
-        return result.rows.map(row => ({
+
+        return result.rows.map((row) => ({
           id: row.id,
           userId: row.user_id,
           webAuthnUserID: row.webauthn_user_id,
@@ -362,9 +367,9 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
             credential.backupEligible,
             credential.backupState,
             credential.lastUsed,
-          ]
+          ],
         );
-        
+
         const row = result.rows[0];
         return {
           id: row.id,
@@ -388,7 +393,7 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         const result = await client.query(
           'UPDATE webauthn_credentials SET counter = $1 WHERE id = $2',
-          [counter, id]
+          [counter, id],
         );
         return result.rowCount > 0;
       } finally {
@@ -401,7 +406,7 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         const result = await client.query(
           'UPDATE webauthn_credentials SET last_used = CURRENT_TIMESTAMP WHERE id = $1',
-          [id]
+          [id],
         );
         return result.rowCount > 0;
       } finally {
@@ -422,7 +427,9 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
     async deleteByUserId(userId: string | number): Promise<boolean> {
       const client = await this.pool.connect();
       try {
-        const result = await client.query('DELETE FROM webauthn_credentials WHERE user_id = $1', [userId]);
+        const result = await client.query('DELETE FROM webauthn_credentials WHERE user_id = $1', [
+          userId,
+        ]);
         return result.rowCount > 0;
       } finally {
         client.release();
@@ -436,7 +443,13 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         await client.query(
           'INSERT INTO webauthn_challenges (challenge, user_id, type, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)',
-          [challenge.challenge, challenge.userId, challenge.type, challenge.expiresAt, challenge.createdAt]
+          [
+            challenge.challenge,
+            challenge.userId,
+            challenge.type,
+            challenge.expiresAt,
+            challenge.createdAt,
+          ],
         );
         return true;
       } finally {
@@ -449,13 +462,13 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         const result = await client.query(
           'SELECT * FROM webauthn_challenges WHERE challenge = $1',
-          [challenge]
+          [challenge],
         );
-        
+
         if (result.rows.length === 0) {
           return null;
         }
-        
+
         const row = result.rows[0];
         return {
           challenge: row.challenge,
@@ -472,7 +485,9 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
     async delete(challenge: string): Promise<boolean> {
       const client = await this.pool.connect();
       try {
-        const result = await client.query('DELETE FROM webauthn_challenges WHERE challenge = $1', [challenge]);
+        const result = await client.query('DELETE FROM webauthn_challenges WHERE challenge = $1', [
+          challenge,
+        ]);
         return result.rowCount > 0;
       } finally {
         client.release();
@@ -496,10 +511,17 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         // Sessions expire after 24 hours by default
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        
+
         await client.query(
           'INSERT INTO webauthn_sessions (session_id, user_id, credential_id, user_verified, additional_data, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
-          [sessionId, data.userId, data.credentialId, data.userVerified, JSON.stringify(data.additionalData), expiresAt]
+          [
+            sessionId,
+            data.userId,
+            data.credentialId,
+            data.userVerified,
+            JSON.stringify(data.additionalData),
+            expiresAt,
+          ],
         );
         return true;
       } finally {
@@ -512,13 +534,13 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
       try {
         const result = await client.query(
           'SELECT * FROM webauthn_sessions WHERE session_id = $1 AND expires_at > CURRENT_TIMESTAMP',
-          [sessionId]
+          [sessionId],
         );
-        
+
         if (result.rows.length === 0) {
           return null;
         }
-        
+
         const row = result.rows[0];
         return {
           userId: row.user_id,
@@ -563,7 +585,7 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
 
         const result = await client.query(
           `UPDATE webauthn_sessions SET ${setParts.join(', ')} WHERE session_id = $${paramIndex} AND expires_at > CURRENT_TIMESTAMP`,
-          values
+          values,
         );
         return result.rowCount > 0;
       } finally {
@@ -574,7 +596,9 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
     async delete(sessionId: string): Promise<boolean> {
       const client = await this.pool.connect();
       try {
-        const result = await client.query('DELETE FROM webauthn_sessions WHERE session_id = $1', [sessionId]);
+        const result = await client.query('DELETE FROM webauthn_sessions WHERE session_id = $1', [
+          sessionId,
+        ]);
         return result.rowCount > 0;
       } finally {
         client.release();
@@ -594,7 +618,9 @@ export class PostgreSQLStorageAdapter implements StorageAdapter {
     async deleteByUserId(userId: string | number): Promise<boolean> {
       const client = await this.pool.connect();
       try {
-        const result = await client.query('DELETE FROM webauthn_sessions WHERE user_id = $1', [userId]);
+        const result = await client.query('DELETE FROM webauthn_sessions WHERE user_id = $1', [
+          userId,
+        ]);
         return result.rowCount > 0;
       } finally {
         client.release();

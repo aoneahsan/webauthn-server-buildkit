@@ -33,18 +33,21 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 ## Features
 
 ### 🔐 Security & Compliance
+
 - **Full WebAuthn Level 3 Implementation** - Complete server-side implementation following the latest W3C standards
 - **Secure by Default** - Built-in AES-256-GCM session encryption, cryptographically secure challenge generation
 - **Algorithm Support** - ES256, RS256, EdDSA, and more COSE algorithms
 - **Attestation Support** - Full attestation verification with multiple formats
 
 ### 🛠️ Developer Experience
+
 - **Framework Independent** - Works with Express, Fastify, Koa, Next.js, or any Node.js framework
 - **Full TypeScript Support** - 100% type-safe with comprehensive type definitions and strict mode
 - **Simple API** - Intuitive methods with sensible defaults, get started in minutes
 - **Extensive Configuration** - Every WebAuthn option is configurable with user values taking priority
 
 ### 📦 Integration & Storage
+
 - **Storage Agnostic** - Pluggable adapter system for any database (MongoDB, PostgreSQL, Redis, etc.)
 - **Session Management** - Built-in secure session handling with token-based authentication
 - **Extension Support** - Full support for WebAuthn extensions
@@ -427,7 +430,7 @@ v2.0 adds full support for mobile platform attestation from iOS and Android apps
 import {
   isMobileAttestation,
   validateMobileAttestation,
-  isCborParsingError
+  isCborParsingError,
 } from 'webauthn-server-buildkit';
 
 // Detect and handle mobile attestation
@@ -457,8 +460,8 @@ Configure origins for mobile apps:
 ```typescript
 const webauthn = new WebAuthnServer({
   origin: [
-    'https://example.com',           // Web
-    'ios-app://com.example.app',     // iOS app bundle identifier
+    'https://example.com', // Web
+    'ios-app://com.example.app', // iOS app bundle identifier
     'android-app://com.example.app', // Android app package name
   ],
   // ...
@@ -468,6 +471,7 @@ const webauthn = new WebAuthnServer({
 ### Platform Detection
 
 The library automatically detects the platform from the origin URL and validates accordingly:
+
 - **iOS**: Origins starting with `ios-app://`
 - **Android**: Origins starting with `android-app://`
 

@@ -9,6 +9,7 @@ This directory contains production-ready storage adapter implementations for the
 A full-featured PostgreSQL adapter with connection pooling, optimized queries, and comprehensive error handling.
 
 **Features:**
+
 - Connection pooling with configurable limits
 - Automatic table creation and indexing
 - Transaction support
@@ -17,12 +18,14 @@ A full-featured PostgreSQL adapter with connection pooling, optimized queries, a
 - Connection management with graceful shutdown
 
 **Dependencies:**
+
 ```bash
 yarn add pg
 yarn add -D @types/pg
 ```
 
 **Usage:**
+
 ```typescript
 import { PostgreSQLStorageAdapter } from './postgresql-adapter';
 
@@ -44,6 +47,7 @@ await adapter.initialize();
 A MongoDB adapter with automatic indexing, TTL support, and efficient document operations.
 
 **Features:**
+
 - Connection pooling with MongoDB best practices
 - Automatic index creation for performance
 - TTL indexes for automatic expiration
@@ -52,23 +56,21 @@ A MongoDB adapter with automatic indexing, TTL support, and efficient document o
 - Counter-based user ID generation
 
 **Dependencies:**
+
 ```bash
 yarn add mongodb
 ```
 
 **Usage:**
+
 ```typescript
 import { MongoDBStorageAdapter } from './mongodb-adapter';
 
-const adapter = new MongoDBStorageAdapter(
-  'mongodb://localhost:27017',
-  'webauthn_db',
-  {
-    maxPoolSize: 10,
-    minPoolSize: 5,
-    maxIdleTimeMS: 30000,
-  }
-);
+const adapter = new MongoDBStorageAdapter('mongodb://localhost:27017', 'webauthn_db', {
+  maxPoolSize: 10,
+  minPoolSize: 5,
+  maxIdleTimeMS: 30000,
+});
 
 await adapter.connect();
 ```
@@ -78,6 +80,7 @@ await adapter.connect();
 A specialized Redis adapter for session storage with automatic expiration and clustering support.
 
 **Features:**
+
 - High-performance session storage
 - Automatic TTL management
 - Session statistics and monitoring
@@ -86,11 +89,13 @@ A specialized Redis adapter for session storage with automatic expiration and cl
 - Memory usage optimization
 
 **Dependencies:**
+
 ```bash
 yarn add ioredis
 ```
 
 **Usage:**
+
 ```typescript
 import { RedisSessionAdapter } from './redis-session-adapter';
 
@@ -108,19 +113,21 @@ const sessionAdapter = new RedisSessionAdapter({
 ### PostgreSQL Setup
 
 1. **Install PostgreSQL:**
+
    ```bash
    # Ubuntu/Debian
    sudo apt update
    sudo apt install postgresql postgresql-contrib
-   
+
    # macOS
    brew install postgresql
-   
+
    # Docker
    docker run --name webauthn-postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres
    ```
 
 2. **Create Database:**
+
    ```sql
    CREATE DATABASE webauthn_db;
    CREATE USER webauthn_user WITH ENCRYPTED PASSWORD 'secure_password';
@@ -136,19 +143,21 @@ const sessionAdapter = new RedisSessionAdapter({
 ### MongoDB Setup
 
 1. **Install MongoDB:**
+
    ```bash
    # Ubuntu/Debian
    sudo apt update
    sudo apt install mongodb
-   
+
    # macOS
    brew install mongodb-community
-   
+
    # Docker
    docker run --name webauthn-mongo -p 27017:27017 -d mongo
    ```
 
 2. **Create Database and User:**
+
    ```javascript
    use webauthn_db
    db.createUser({
@@ -166,24 +175,26 @@ const sessionAdapter = new RedisSessionAdapter({
 ### Redis Setup
 
 1. **Install Redis:**
+
    ```bash
    # Ubuntu/Debian
    sudo apt update
    sudo apt install redis-server
-   
+
    # macOS
    brew install redis
-   
+
    # Docker
    docker run --name webauthn-redis -p 6379:6379 -d redis
    ```
 
 2. **Configure Redis:**
+
    ```bash
    # Edit /etc/redis/redis.conf
    # Set password
    requirepass your-secure-password
-   
+
    # Set memory policy
    maxmemory-policy allkeys-lru
    ```
@@ -257,7 +268,7 @@ const adapter = new MongoDBStorageAdapter(
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
     connectTimeoutMS: 10000,
-  }
+  },
 );
 
 await adapter.connect();
@@ -282,8 +293,8 @@ Configure connection pools based on your application load:
 // PostgreSQL
 const adapter = new PostgreSQLStorageAdapter({
   // ... other config
-  max: 20,                    // Maximum connections
-  idleTimeoutMillis: 30000,   // Close idle connections
+  max: 20, // Maximum connections
+  idleTimeoutMillis: 30000, // Close idle connections
   connectionTimeoutMillis: 2000,
 });
 
@@ -298,14 +309,17 @@ const adapter = new MongoDBStorageAdapter(connectionString, dbName, {
 ### Redis Optimization
 
 ```typescript
-const sessionAdapter = new RedisSessionAdapter({
-  // ... other config
-  defaultTTL: 24 * 60 * 60,  // 24 hours
-  keyPrefix: 'wa:s:',        // Short prefix
-}, {
-  maxRetriesPerRequest: 3,
-  commandTimeout: 5000,
-});
+const sessionAdapter = new RedisSessionAdapter(
+  {
+    // ... other config
+    defaultTTL: 24 * 60 * 60, // 24 hours
+    keyPrefix: 'wa:s:', // Short prefix
+  },
+  {
+    maxRetriesPerRequest: 3,
+    commandTimeout: 5000,
+  },
+);
 ```
 
 ## Monitoring and Health Checks

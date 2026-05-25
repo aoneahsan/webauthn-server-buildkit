@@ -1,36 +1,7 @@
-import js from '@eslint/js';
-import tsParser from '@typescript-eslint/parser';
+import tseslint from 'typescript-eslint';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
-export default [
-  js.configs.recommended,
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        project: './tsconfig.json',
-      },
-      globals: {
-        console: true,
-        process: true,
-        Buffer: true,
-      },
-    },
-    plugins: {},
-    rules: {
-      '@typescript-eslint/no-unused-vars': 'off',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'no-unused-vars': 'off',
-    },
-  },
-  {
-    files: ['**/*.test.ts', '**/*.spec.ts'],
-    rules: {
-      'no-console': 'off',
-    },
-  },
+export default tseslint.config(
   {
     ignores: [
       'dist/',
@@ -43,4 +14,25 @@ export default [
       'examples/',
     ],
   },
-];
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+    },
+  },
+  // Must be last: enables prettier as a lint rule and disables conflicting stylistic rules.
+  eslintPluginPrettierRecommended,
+);

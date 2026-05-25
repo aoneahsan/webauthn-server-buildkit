@@ -21,6 +21,7 @@ This guide covers common issues and solutions when using webauthn-server-buildki
 **Solutions:**
 
 1. **Check if it's a mobile attestation:**
+
    ```typescript
    import { isMobileAttestation, validateMobileAttestation } from 'webauthn-server-buildkit';
 
@@ -31,6 +32,7 @@ This guide covers common issues and solutions when using webauthn-server-buildki
    ```
 
 2. **Use the error detection helper:**
+
    ```typescript
    import { isCborParsingError } from 'webauthn-server-buildkit';
 
@@ -68,6 +70,7 @@ This guide covers common issues and solutions when using webauthn-server-buildki
 **Solutions:**
 
 1. **Verify the platform is supported:**
+
    ```typescript
    // Check response structure
    console.log('Response type:', response.response?.attestationObject ? 'standard' : 'mobile');
@@ -89,6 +92,7 @@ This guide covers common issues and solutions when using webauthn-server-buildki
 **Cause:** Cannot determine if attestation is from iOS or Android.
 
 **Solution:** The origin URL helps detect the platform:
+
 ```typescript
 // Origin formats
 const iosOrigin = 'ios-app://com.example.app';
@@ -107,6 +111,7 @@ const result = await validateMobileAttestation(response, challenge, rpId);
 **Solutions:**
 
 1. **Verify encryption secret consistency:**
+
    ```typescript
    // Ensure the same secret is used across server instances
    const webauthn = new WebAuthnServer({
@@ -130,6 +135,7 @@ const result = await validateMobileAttestation(response, challenge, rpId);
 **Solutions:**
 
 1. **Adjust session duration:**
+
    ```typescript
    const webauthn = new WebAuthnServer({
      sessionDuration: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
@@ -159,29 +165,56 @@ const result = await validateMobileAttestation(response, challenge, rpId);
 **Cause:** No storage adapter was provided and the default memory adapter is insufficient.
 
 **Solution:** Implement a persistent storage adapter:
+
 ```typescript
 import { StorageAdapter } from 'webauthn-server-buildkit';
 
 class DatabaseStorageAdapter implements StorageAdapter {
   users = {
-    async findById(id) { /* database query */ },
-    async findByUsername(username) { /* database query */ },
-    async create(user) { /* database insert */ },
-    async update(id, data) { /* database update */ },
-    async delete(id) { /* database delete */ },
+    async findById(id) {
+      /* database query */
+    },
+    async findByUsername(username) {
+      /* database query */
+    },
+    async create(user) {
+      /* database insert */
+    },
+    async update(id, data) {
+      /* database update */
+    },
+    async delete(id) {
+      /* database delete */
+    },
   };
 
   credentials = {
-    async findById(id) { /* ... */ },
-    async findByUserId(userId) { /* ... */ },
-    async create(credential) { /* ... */ },
-    async updateCounter(id, counter) { /* ... */ },
-    async updateLastUsed(id) { /* ... */ },
-    async delete(id) { /* ... */ },
+    async findById(id) {
+      /* ... */
+    },
+    async findByUserId(userId) {
+      /* ... */
+    },
+    async create(credential) {
+      /* ... */
+    },
+    async updateCounter(id, counter) {
+      /* ... */
+    },
+    async updateLastUsed(id) {
+      /* ... */
+    },
+    async delete(id) {
+      /* ... */
+    },
   };
 
-  challenges = { /* ... */ };
-  sessions = { /* ... */ };
+  challenges = {
+    /* ... */
+  };
+  sessions = {
+    /* ... */
+  };
 }
 
 const webauthn = new WebAuthnServer({
@@ -197,6 +230,7 @@ const webauthn = new WebAuthnServer({
 **Solutions:**
 
 1. **Increase challenge timeout:**
+
    ```typescript
    const webauthn = new WebAuthnServer({
      timeout: 300000, // 5 minutes
@@ -217,6 +251,7 @@ const webauthn = new WebAuthnServer({
 **Solutions:**
 
 1. **Configure multiple origins:**
+
    ```typescript
    const webauthn = new WebAuthnServer({
      origin: [
@@ -229,13 +264,10 @@ const webauthn = new WebAuthnServer({
    ```
 
 2. **For mobile apps, add mobile origins:**
+
    ```typescript
    const webauthn = new WebAuthnServer({
-     origin: [
-       'https://example.com',
-       'ios-app://com.example.app',
-       'android-app://com.example.app',
-     ],
+     origin: ['https://example.com', 'ios-app://com.example.app', 'android-app://com.example.app'],
      // ...
    });
    ```
@@ -245,7 +277,7 @@ const webauthn = new WebAuthnServer({
    const result = await webauthn.verifyRegistration(
      response,
      challenge,
-     'custom-origin://my-app' // Custom expected origin
+     'custom-origin://my-app', // Custom expected origin
    );
    ```
 
@@ -271,6 +303,7 @@ const webauthn = new WebAuthnServer({
    - RS256: RSA with SHA-256
 
 2. **Check signed data construction:**
+
    ```typescript
    // The signed data should be: authenticatorData + SHA256(clientDataJSON)
    ```
@@ -294,6 +327,7 @@ const webauthn = new WebAuthnServer({
 **Solutions:**
 
 1. **Decide on counter policy:**
+
    ```typescript
    // In your verification logic
    if (!result.authenticationInfo.counterIncreased) {
@@ -306,10 +340,7 @@ const webauthn = new WebAuthnServer({
 2. **Update stored counter:**
    ```typescript
    // Always update counter after successful auth
-   await storage.credentials.updateCounter(
-     credentialId,
-     result.authenticationInfo.newCounter
-   );
+   await storage.credentials.updateCounter(credentialId, result.authenticationInfo.newCounter);
    ```
 
 ## Debug Mode

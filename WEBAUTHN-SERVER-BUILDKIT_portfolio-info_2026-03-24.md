@@ -10,8 +10,8 @@ Next Eligible Update After: 2026-03-31
 
 ## Update History
 
-| Date | Type | Notes |
-| --- | --- | --- |
+| Date       | Type              | Notes                                                                                                                |
+| ---------- | ----------------- | -------------------------------------------------------------------------------------------------------------------- |
 | 2026-03-24 | Created/Refreshed | Portfolio file created from current repository state, package docs refreshed, tests and build verified successfully. |
 
 ## One-Line Summary

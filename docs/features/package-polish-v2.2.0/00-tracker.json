@@ -1,0 +1,299 @@
+{
+  "$schema": "package-polish-v2.2.0-tracker",
+  "description": "Resumable tracker for the webauthn-server-buildkit v2.2.0 polish: dependency updates, full security/code audit, fixes, docs, and npm release. The first phase/sub-task with status 'pending' or 'in_progress' is the next thing to work on. Re-running the originating prompt MUST read this file and resume from the first non-complete sub-task — never restart from scratch.",
+  "module": "package-polish-v2.2.0",
+  "package": "webauthn-server-buildkit",
+  "fromVersion": "2.1.0",
+  "targetVersion": "2.2.0",
+  "createdAt": "2026-05-26",
+  "lastUpdated": "2026-05-26",
+  "overview": "docs/features/package-polish-v2.2.0/00-overview.md",
+  "findings": "docs/features/package-polish-v2.2.0/findings.md",
+  "progress": "docs/features/package-polish-v2.2.0/progress.md",
+  "userDecisions": {
+    "mobileAttestation": "Opt-in via enableMobileAttestation config flag, default OFF. Standard WebAuthn path only unless explicitly enabled. Loud warnings + docs when enabled (no cryptographic attestation guarantee).",
+    "cryptoTests": "APPROVED to add real round-trip regression tests (overrides the standing no-tests-unless-asked rule, scoped to this security work).",
+    "versioning": "Minor 2.2.0. Document in CHANGELOG that existing session tokens are invalidated on upgrade (one-time re-auth) and that mobile-attestation default changed.",
+    "majorDeps": "Attempt ESLint 9->10 and TypeScript 5.9->6.0; verify toolchain works together; pin back only if the plugin ecosystem does not yet support them, documenting why."
+  },
+  "knownRisks": [
+    "TypeScript 6.0 may surface new strict type errors in src/.",
+    "ESLint 10 may not yet be supported by typescript-eslint 8.x (peer range) — may need to hold at ESLint 9 latest.",
+    "Switching session KDF (HKDF) invalidates existing session tokens on deploy — documented, acceptable per user decision.",
+    "JWK-based key import requires Node >=18; engine is >=24.13.0 so safe.",
+    "Full multi-format attestation (tpm/android-safetynet/apple) is large; this release scopes to none + packed + fido-u2f, others explicitly flagged unverified."
+  ],
+  "verificationGate": [
+    "yarn typecheck (0 errors)",
+    "yarn lint (0 errors/warnings)",
+    "yarn test (all pass)",
+    "yarn build (0 warnings)"
+  ],
+  "commitPolicy": "ONE commit per completed+verified phase (green checkpoint), tracker update included in the same commit. This maximizes resumability for this large multi-session task. Push after committing (authorized by project CLAUDE.md). npm publish requires explicit user confirmation at Phase 6.",
+  "phases": [
+    {
+      "id": "phase00",
+      "title": "Planning & resumable scaffolding",
+      "file": "docs/features/package-polish-v2.2.0/ (this tracker + overview + findings + phase files)",
+      "status": "complete",
+      "completedAt": "2026-05-26",
+      "subTasks": [
+        {
+          "id": "phase00.1",
+          "title": "Read full codebase, establish green baseline (typecheck/lint/test/build)",
+          "status": "complete",
+          "note": "Baseline green: 131 tests pass, build OK."
+        },
+        {
+          "id": "phase00.2",
+          "title": "Compile audit findings with severity + file refs",
+          "status": "complete",
+          "note": "See findings.md"
+        },
+        {
+          "id": "phase00.3",
+          "title": "Confirm product decisions with user (mobile attestation, tests, versioning)",
+          "status": "complete",
+          "note": "Captured in userDecisions."
+        },
+        {
+          "id": "phase00.4",
+          "title": "Write overview, findings, tracker, progress, and 6 phase files",
+          "status": "complete",
+          "awaitingUser": false
+        }
+      ]
+    },
+    {
+      "id": "phase01",
+      "title": "Dependency updates & toolchain modernization",
+      "file": "docs/features/package-polish-v2.2.0/phase01-dependencies.md",
+      "status": "complete",
+      "completedAt": "2026-05-26",
+      "subTasks": [
+        {
+          "id": "phase01.1",
+          "title": "Bump patch/minor deps to latest stable (cbor-x, @types/node, typescript-eslint, vitest, coverage, prettier, tsup)",
+          "status": "complete",
+          "note": "cbor-x 1.6.4, @types/node 25.9.1, vitest+coverage 4.1.7, prettier 3.8.3, tsup 8.5.1."
+        },
+        {
+          "id": "phase01.2",
+          "title": "Attempt ESLint 10 + TypeScript 6 majors; verify ecosystem compatibility; pin back if unsupported (document)",
+          "status": "complete",
+          "note": "Both taken: ESLint 10.4.0 + TS 6.0.3. typescript-eslint 8.60.0 peers allow eslint ^10 and ts <6.1.0. TS6: removed/handled baseUrl deprecation via ignoreDeprecations '6.0' (tsup dts injects baseUrl); added types:['node']; paths -> ./src/*."
+        },
+        {
+          "id": "phase01.3",
+          "title": "Rewrite eslint.config.js to use typescript-eslint (drop banned @eslint/js), wire TS plugin, align unused-vars enforcement with tsconfig",
+          "status": "complete",
+          "note": "Flat config via tseslint.config(); recommended ruleset; no-unused-vars error (^_ ignore); prettier integrated via eslint-plugin-prettier/recommended; dropped --ext from scripts. @eslint/js removed."
+        },
+        {
+          "id": "phase01.4",
+          "title": "Verify gate (typecheck/lint/test/build) + commit",
+          "status": "complete",
+          "note": "All green: typecheck clean, lint clean, 131 tests pass, build (ESM+CJS+DTS) success, format:check clean. Repo-wide prettier normalization included (baseline had drift)."
+        }
+      ]
+    },
+    {
+      "id": "phase02",
+      "title": "Crypto correctness fixes (+ round-trip tests)",
+      "file": "docs/features/package-polish-v2.2.0/phase02-crypto.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase02.1",
+          "title": "SEC-2/SEC-3: Replace hand-rolled SPKI with Node JWK key import in crypto/verify.ts (fix RSA, ES512, Ed25519)",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.2",
+          "title": "FUNC-1: Implement real decodeCBORFirst with byte tracking (cbor-x)",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.3",
+          "title": "FUNC-2: Fix parseAuthenticatorData COSE-key boundary using decodeCBORFirst (stop swallowing extension bytes)",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.4",
+          "title": "SEC-7: Fix bufferToNumber 32-bit overflow for counters >= 2^24 (use DataView/unsigned)",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.5",
+          "title": "Add round-trip crypto tests: real ES256/384/512, RS256/PS256, Ed25519 sign+verify; counter parsing; CBOR-first",
+          "status": "pending"
+        },
+        { "id": "phase02.6", "title": "Verify gate + commit", "status": "pending" }
+      ]
+    },
+    {
+      "id": "phase03",
+      "title": "Security hardening",
+      "file": "docs/features/package-polish-v2.2.0/phase03-security.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase03.1",
+          "title": "SEC-1: Mobile attestation -> opt-in via enableMobileAttestation (default false); gate JSON path; loud warning; reject when disabled",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.2",
+          "title": "SEC-4/SEC-5: Session token HKDF-SHA256 key derivation + 12-byte GCM IV",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.3",
+          "title": "SEC-8: Constant-time comparison for security-sensitive buffers (timingSafeEqual)",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.4",
+          "title": "Enforce registered/asserted credential algorithm is within supportedAlgorithms",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.5",
+          "title": "SEC-6: Attestation statement verification for none + packed + fido-u2f; explicitly flag unsupported formats (document tpm/safetynet/apple as future)",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.6",
+          "title": "Add/extend tests for the above; Verify gate + commit",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase04",
+      "title": "API correctness & code hygiene",
+      "file": "docs/features/package-polish-v2.2.0/phase04-api-hygiene.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase04.1",
+          "title": "API-1: Export error classes as VALUES (instanceof works) + VERSION/SUPPORT_CONFIG as values; keep type-only for pure types",
+          "status": "pending"
+        },
+        {
+          "id": "phase04.2",
+          "title": "HYG-1: Delete dead utils/console.ts; HYG-5: challenge.ts throws ConfigurationError not generic Error",
+          "status": "pending"
+        },
+        {
+          "id": "phase04.3",
+          "title": "HYG-2: Surface SUPPORT_CONFIG; add package.json funding field",
+          "status": "pending"
+        },
+        {
+          "id": "phase04.4",
+          "title": "HYG-4: Move/remove stray simplewebauthn-server-documentation-part.md from repo root",
+          "status": "pending"
+        },
+        {
+          "id": "phase04.5",
+          "title": "Unify hash/buffer comparisons; minor cleanups (substr->slice)",
+          "status": "pending"
+        },
+        { "id": "phase04.6", "title": "Verify gate + commit", "status": "pending" }
+      ]
+    },
+    {
+      "id": "phase05",
+      "title": "Documentation refresh",
+      "file": "docs/features/package-polish-v2.2.0/phase05-docs.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase05.1",
+          "title": "Readme.md: update API, config (enableMobileAttestation), security notes, supported algorithms/attestation, version",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.2",
+          "title": "CHANGELOG.md: 2.2.0 entry (deps, security fixes, session-token invalidation note, breaking-ish notes)",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.3",
+          "title": "docs/api-reference.md + docs/migration.md + AI-INTEGRATION-GUIDE.md alignment",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.4",
+          "title": "docs/audit-records.md: append this audit + resolution",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.5",
+          "title": "Update CLAUDE.md + AGENTS.md (root pkg, .claude, monorepo root) verified state + Last Updated; sync both",
+          "status": "pending"
+        },
+        { "id": "phase05.6", "title": "Verify gate + commit", "status": "pending" }
+      ]
+    },
+    {
+      "id": "phase06",
+      "title": "Release v2.2.0",
+      "file": "docs/features/package-polish-v2.2.0/phase06-release.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase06.1",
+          "title": "Bump version to 2.2.0 in package.json (constants/VERSION injected at build)",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.2",
+          "title": "Final full verification gate (typecheck/lint/test/build) + npm pack --dry-run review",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.3",
+          "title": "Commit release; push to origin main (authorized)",
+          "status": "pending",
+          "awaitingUser": false
+        },
+        {
+          "id": "phase06.4",
+          "title": "npm publish (REQUIRES explicit user go-ahead) + verify on npmjs.com",
+          "status": "pending",
+          "awaitingUser": true
+        }
+      ]
+    }
+  ],
+  "runHistory": [
+    {
+      "date": "2026-05-26",
+      "phase": "phase00",
+      "summary": "Read entire codebase, established green baseline, compiled full audit (findings.md), confirmed 3 product decisions with user, scaffolded resumable plan/tracker.",
+      "commit": "pending"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase01",
+      "summary": "Updated all deps to latest stable incl. majors ESLint 10.4.0 + TypeScript 6.0.3 (verified typescript-eslint 8.60.0 peers support both). Rewrote eslint.config.js with typescript-eslint flat config (removed banned @eslint/js, wired TS plugin, no-unused-vars error, prettier integration). tsconfig: types:['node'], ignoreDeprecations '6.0', paths ./src/*. Dropped --ext from lint scripts. Normalized repo formatting (prettier 3.8.3). Gate green: typecheck/lint/test(131)/build/format all clean.",
+      "commit": "pending"
+    }
+  ],
+  "newFindings": [
+    "CI-1 [low]: .github/workflows/ci.yml tests Node 20.x/22.x but package engine requires >=24.13.0 — bump CI matrix to 24.x (Phase 04/05)."
+  ],
+  "nextSuggestion": {
+    "phase": "phase02",
+    "subTask": "phase02.1",
+    "rationale": "Phase 01 complete. Begin crypto correctness: replace hand-rolled SPKI in crypto/verify.ts with Node JWK key import (fixes RSA/ES512/Ed25519), then decodeCBORFirst, COSE boundary, counter overflow, and round-trip tests."
+  },
+  "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md. 3) Find the first phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, vitest, nodejs-best-practices, documentation-writer, simplify as relevant). 6) Do the work, run the verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker update. 8) Do NOT npm publish without explicit user confirmation (phase06.4)."
+}

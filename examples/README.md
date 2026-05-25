@@ -5,6 +5,7 @@ This directory contains examples demonstrating how to use the WebAuthn Server Bu
 ## Examples
 
 ### 1. Basic Example (`/basic`)
+
 A simple Node.js script that demonstrates the core functionality of the library without any web framework.
 
 ```bash
@@ -13,6 +14,7 @@ npx ts-node index.ts
 ```
 
 ### 2. Express.js Example (`/express`)
+
 A complete Express.js server implementation with REST API endpoints for WebAuthn registration and authentication.
 
 ```bash

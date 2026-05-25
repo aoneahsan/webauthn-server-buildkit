@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { generateRegistrationOptions } from '@/registration/generate-options';
 import { InternalConfig, UserModel, WebAuthnCredential } from '@/types';
-import { TEST_RP_ID, TEST_RP_NAME, TEST_ORIGIN, TEST_USER, TEST_TIMEOUT } from '../fixtures/webauthn-data';
+import {
+  TEST_RP_ID,
+  TEST_RP_NAME,
+  TEST_ORIGIN,
+  TEST_USER,
+  TEST_TIMEOUT,
+} from '../fixtures/webauthn-data';
 
 // Create a mock internal config
 function createMockConfig(overrides?: Partial<InternalConfig>): InternalConfig {

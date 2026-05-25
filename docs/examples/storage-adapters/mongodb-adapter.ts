@@ -55,7 +55,7 @@ interface MongoSessionDocument {
 
 /**
  * MongoDB Storage Adapter for WebAuthn Server
- * 
+ *
  * This adapter provides production-ready MongoDB storage for WebAuthn data.
  * It includes connection pooling, error handling, and optimized queries with indexes.
  */
@@ -81,7 +81,7 @@ export class MongoDBStorageAdapter implements StorageAdapter {
       serverSelectionTimeoutMS?: number;
       socketTimeoutMS?: number;
       connectTimeoutMS?: number;
-    } = {}
+    } = {},
   ) {
     this.client = new MongoClient(connectionString, {
       maxPoolSize: options.maxPoolSize || 10,
@@ -103,10 +103,11 @@ export class MongoDBStorageAdapter implements StorageAdapter {
 
     await this.client.connect();
     this.db = this.client.db(this.databaseName);
-    
+
     // Initialize collections
     this.usersCollection = this.db.collection<MongoUserDocument>('webauthn_users');
-    this.credentialsCollection = this.db.collection<MongoCredentialDocument>('webauthn_credentials');
+    this.credentialsCollection =
+      this.db.collection<MongoCredentialDocument>('webauthn_credentials');
     this.challengesCollection = this.db.collection<MongoChallengeDocument>('webauthn_challenges');
     this.sessionsCollection = this.db.collection<MongoSessionDocument>('webauthn_sessions');
 
@@ -161,17 +162,17 @@ export class MongoDBStorageAdapter implements StorageAdapter {
   private async initializeUserIdCounter(): Promise<void> {
     const counterCollection = this.db.collection('counters');
     const counterDoc = await counterCollection.findOne({ _id: 'userId' });
-    
+
     if (!counterDoc) {
       // Find the highest existing user ID
       const highestUser = await this.usersCollection.findOne({}, { sort: { id: -1 } });
       const startValue = highestUser ? highestUser.id + 1 : 1;
-      
+
       await counterCollection.insertOne({
         _id: 'userId',
         sequence_value: startValue,
       });
-      
+
       this.userIdCounter = startValue;
     } else {
       this.userIdCounter = counterDoc.sequence_value;
@@ -186,9 +187,9 @@ export class MongoDBStorageAdapter implements StorageAdapter {
     const result = await counterCollection.findOneAndUpdate(
       { _id: 'userId' },
       { $inc: { sequence_value: 1 } },
-      { returnDocument: 'after' }
+      { returnDocument: 'after' },
     );
-    
+
     return result.value.sequence_value;
   }
 
@@ -263,7 +264,7 @@ export class MongoDBStorageAdapter implements StorageAdapter {
     async create(user: Omit<UserModel, 'id'>): Promise<UserModel> {
       const id = await this.getNextUserId();
       const now = new Date();
-      
+
       const doc: MongoUserDocument = {
         id,
         username: user.username,
@@ -307,7 +308,7 @@ export class MongoDBStorageAdapter implements StorageAdapter {
       const result = await this.usersCollection.findOneAndUpdate(
         { id: Number(id) },
         { $set: updateDoc },
-        { returnDocument: 'after' }
+        { returnDocument: 'after' },
       );
 
       return result.value ? this.mongoUserToModel(result.value) : null;
@@ -330,8 +331,8 @@ export class MongoDBStorageAdapter implements StorageAdapter {
         .find({ userId: Number(userId) })
         .sort({ createdAt: -1 })
         .toArray();
-      
-      return docs.map(doc => this.mongoCredentialToModel(doc));
+
+      return docs.map((doc) => this.mongoCredentialToModel(doc));
     },
 
     async findByWebAuthnUserId(webAuthnUserId: Base64URLString): Promise<WebAuthnCredential[]> {
@@ -339,8 +340,8 @@ export class MongoDBStorageAdapter implements StorageAdapter {
         .find({ webAuthnUserID: webAuthnUserId })
         .sort({ createdAt: -1 })
         .toArray();
-      
-      return docs.map(doc => this.mongoCredentialToModel(doc));
+
+      return docs.map((doc) => this.mongoCredentialToModel(doc));
     },
 
     async create(credential: Omit<WebAuthnCredential, 'createdAt'>): Promise<WebAuthnCredential> {
@@ -363,17 +364,14 @@ export class MongoDBStorageAdapter implements StorageAdapter {
     },
 
     async updateCounter(id: Base64URLString, counter: number): Promise<boolean> {
-      const result = await this.credentialsCollection.updateOne(
-        { id },
-        { $set: { counter } }
-      );
+      const result = await this.credentialsCollection.updateOne({ id }, { $set: { counter } });
       return result.modifiedCount > 0;
     },
 
     async updateLastUsed(id: Base64URLString): Promise<boolean> {
       const result = await this.credentialsCollection.updateOne(
         { id },
-        { $set: { lastUsed: new Date() } }
+        { $set: { lastUsed: new Date() } },
       );
       return result.modifiedCount > 0;
     },
@@ -468,7 +466,7 @@ export class MongoDBStorageAdapter implements StorageAdapter {
 
       const result = await this.sessionsCollection.updateOne(
         { sessionId, expiresAt: { $gt: new Date() } },
-        { $set: updateDoc }
+        { $set: updateDoc },
       );
       return result.modifiedCount > 0;
     },

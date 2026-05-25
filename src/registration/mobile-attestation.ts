@@ -123,7 +123,7 @@ export function validateMobileAttestation(
     if (publicKeyBytes.length < 32) {
       throw new Error('Public key too short');
     }
-  } catch (error) {
+  } catch {
     throw new VerificationError(
       'Mobile attestation public key is not valid base64 or is too short',
       'MOBILE_ATTESTATION_INVALID_PUBLIC_KEY_FORMAT',
@@ -140,7 +140,12 @@ export function validateMobileAttestation(
 
   // Determine origin
   const origins = Array.isArray(expectedOrigin) ? expectedOrigin : [expectedOrigin];
-  const origin: string = data.platform === 'ios' ? 'ios-app' : data.platform === 'android' ? 'android-app' : (origins[0] || 'unknown');
+  const origin: string =
+    data.platform === 'ios'
+      ? 'ios-app'
+      : data.platform === 'android'
+        ? 'android-app'
+        : origins[0] || 'unknown';
 
   const registrationInfo: VerifiedRegistrationInfo = {
     credential: {

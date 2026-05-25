@@ -8,41 +8,62 @@ The main `WebAuthnServer` class serves as the primary interface for all WebAuthn
 
 ```typescript
 class WebAuthnServer {
-  constructor(config: WebAuthnServerConfig)
-  
+  constructor(config: WebAuthnServerConfig);
+
   // Registration methods
-  createRegistrationOptions(user: UserModel, excludeCredentials?: WebAuthnCredential[]): Promise<RegistrationOptionsResult>
-  verifyRegistration(response: RegistrationResponseJSON, challenge: string, origin?: string): Promise<VerificationResult>
-  
+  createRegistrationOptions(
+    user: UserModel,
+    excludeCredentials?: WebAuthnCredential[],
+  ): Promise<RegistrationOptionsResult>;
+  verifyRegistration(
+    response: RegistrationResponseJSON,
+    challenge: string,
+    origin?: string,
+  ): Promise<VerificationResult>;
+
   // Authentication methods
-  createAuthenticationOptions(allowCredentials?: WebAuthnCredential[]): Promise<AuthenticationOptionsResult>
-  verifyAuthentication(response: AuthenticationResponseJSON, challenge: string, credential: WebAuthnCredential, origin?: string): Promise<VerificationResult>
-  
+  createAuthenticationOptions(
+    allowCredentials?: WebAuthnCredential[],
+  ): Promise<AuthenticationOptionsResult>;
+  verifyAuthentication(
+    response: AuthenticationResponseJSON,
+    challenge: string,
+    credential: WebAuthnCredential,
+    origin?: string,
+  ): Promise<VerificationResult>;
+
   // Session management
-  createSession(userId: string | number, credentialId: string, userVerified: boolean, additionalData?: Record<string, unknown>): Promise<string>
-  validateSession(token: string): Promise<SessionValidationResult>
-  refreshSession(token: string): Promise<string>
-  revokeSession(token: string): Promise<boolean>
-  revokeUserSessions(userId: string | number): Promise<boolean>
-  
+  createSession(
+    userId: string | number,
+    credentialId: string,
+    userVerified: boolean,
+    additionalData?: Record<string, unknown>,
+  ): Promise<string>;
+  validateSession(token: string): Promise<SessionValidationResult>;
+  refreshSession(token: string): Promise<string>;
+  revokeSession(token: string): Promise<boolean>;
+  revokeUserSessions(userId: string | number): Promise<boolean>;
+
   // Utility methods
-  cleanup(): Promise<void>
-  getStorageAdapter(): StorageAdapter
+  cleanup(): Promise<void>;
+  getStorageAdapter(): StorageAdapter;
 }
 ```
 
 ### Registration Flow Implementation
 
 #### 1. Options Generation (`registration/generate-options.ts`)
+
 ```typescript
 export async function generateRegistrationOptions(
   user: UserModel,
   config: WebAuthnServerConfig,
-  excludeCredentials?: WebAuthnCredential[]
-): Promise<RegistrationOptionsResult>
+  excludeCredentials?: WebAuthnCredential[],
+): Promise<RegistrationOptionsResult>;
 ```
 
 **Key Features:**
+
 - Generates secure random challenge (32 bytes default)
 - Creates user object with base64url encoded ID
 - Handles exclude credentials for preventing re-registration
@@ -50,16 +71,18 @@ export async function generateRegistrationOptions(
 - Returns standardized PublicKeyCredentialCreationOptions
 
 #### 2. Response Verification (`registration/verify-response.ts`)
+
 ```typescript
 export async function verifyRegistrationResponse(
   response: RegistrationResponseJSON,
   challenge: string,
   config: WebAuthnServerConfig,
-  origin?: string
-): Promise<VerificationResult>
+  origin?: string,
+): Promise<VerificationResult>;
 ```
 
 **Verification Steps:**
+
 1. Parse and validate attestation object
 2. Verify challenge matches stored challenge
 3. Validate origin against configured origins
@@ -70,31 +93,35 @@ export async function verifyRegistrationResponse(
 ### Authentication Flow Implementation
 
 #### 1. Options Generation (`authentication/generate-options.ts`)
+
 ```typescript
 export async function generateAuthenticationOptions(
   allowCredentials?: WebAuthnCredential[],
-  config: WebAuthnServerConfig
-): Promise<AuthenticationOptionsResult>
+  config: WebAuthnServerConfig,
+): Promise<AuthenticationOptionsResult>;
 ```
 
 **Key Features:**
+
 - Generates secure random challenge
 - Configures user verification requirements
 - Handles allow credentials list
 - Supports timeout configuration
 
 #### 2. Response Verification (`authentication/verify-response.ts`)
+
 ```typescript
 export async function verifyAuthenticationResponse(
   response: AuthenticationResponseJSON,
   challenge: string,
   credential: WebAuthnCredential,
   config: WebAuthnServerConfig,
-  origin?: string
-): Promise<VerificationResult>
+  origin?: string,
+): Promise<VerificationResult>;
 ```
 
 **Verification Steps:**
+
 1. Parse authenticator data
 2. Verify challenge matches
 3. Validate origin
@@ -105,6 +132,7 @@ export async function verifyAuthenticationResponse(
 ### Cryptographic Implementation
 
 #### COSE Key Handling (`crypto/cose.ts`)
+
 ```typescript
 export interface COSEPublicKey {
   kty: COSEKeyType;
@@ -112,25 +140,28 @@ export interface COSEPublicKey {
   // ... other properties
 }
 
-export function parseCOSEPublicKey(publicKeyBytes: Uint8Array): COSEPublicKey
-export function getCOSEAlgorithmIdentifier(publicKey: COSEPublicKey): COSEAlgorithmIdentifier
+export function parseCOSEPublicKey(publicKeyBytes: Uint8Array): COSEPublicKey;
+export function getCOSEAlgorithmIdentifier(publicKey: COSEPublicKey): COSEAlgorithmIdentifier;
 ```
 
 **Supported Key Types:**
+
 - **EC2**: Elliptic Curve keys (P-256, P-384, P-521)
 - **RSA**: RSA keys with PKCS#1 and PSS padding
 - **OKP**: Octet Key Pairs (Ed25519)
 
 #### Signature Verification (`crypto/verify.ts`)
+
 ```typescript
 export function verifySignature(
   signature: Uint8Array,
   data: Uint8Array,
-  publicKey: COSEPublicKey
-): boolean
+  publicKey: COSEPublicKey,
+): boolean;
 ```
 
 **Algorithm Support:**
+
 - **ES256**: ECDSA with SHA-256 (P-256)
 - **ES384**: ECDSA with SHA-384 (P-384)
 - **ES512**: ECDSA with SHA-512 (P-521)
@@ -143,12 +174,14 @@ export function verifySignature(
 - **EdDSA**: Ed25519 signature verification
 
 #### CBOR Implementation (`crypto/cbor.ts`)
+
 ```typescript
-export function decodeCBOR<T>(data: Uint8Array): T
-export function encodeCBOR(value: unknown): Uint8Array
+export function decodeCBOR<T>(data: Uint8Array): T;
+export function encodeCBOR(value: unknown): Uint8Array;
 ```
 
 **Features:**
+
 - Full CBOR decoding/encoding support
 - Handles all WebAuthn CBOR data structures
 - Type-safe decoding with generic support
@@ -157,15 +190,13 @@ export function encodeCBOR(value: unknown): Uint8Array
 ### Session Management
 
 #### Token Creation (`session/token.ts`)
+
 ```typescript
-export function createSessionToken(
-  sessionId: string,
-  data: SessionData,
-  secret: string
-): string
+export function createSessionToken(sessionId: string, data: SessionData, secret: string): string;
 ```
 
 **Security Features:**
+
 - AES-256-GCM encryption
 - Random salt generation (32 bytes)
 - Random IV generation (16 bytes)
@@ -173,18 +204,20 @@ export function createSessionToken(
 - Base64URL encoding
 
 #### Token Validation (`session/token.ts`)
+
 ```typescript
 export function parseSessionToken(
   token: string,
-  secret: string
+  secret: string,
 ): {
   sessionId: string;
   data: SessionData;
   createdAt: Date;
-}
+};
 ```
 
 **Validation Steps:**
+
 1. Base64URL decode token
 2. Parse encrypted token structure
 3. Derive key from secret and salt
@@ -195,6 +228,7 @@ export function parseSessionToken(
 ### Storage Architecture
 
 #### Storage Adapter Interface (`types/storage.ts`)
+
 ```typescript
 export interface StorageAdapter {
   users: UserStorage;
@@ -205,6 +239,7 @@ export interface StorageAdapter {
 ```
 
 #### Memory Storage Implementation (`adapters/memory.ts`)
+
 - In-memory storage for development
 - Thread-safe operations
 - Automatic cleanup capabilities
@@ -213,6 +248,7 @@ export interface StorageAdapter {
 ### Error Handling
 
 #### Error Types (`types/errors.ts`)
+
 ```typescript
 export class WebAuthnError extends Error
 export class RegistrationError extends WebAuthnError
@@ -224,6 +260,7 @@ export class SessionError extends WebAuthnError
 ```
 
 **Error Handling Strategy:**
+
 - Typed error classes for different error categories
 - Structured error codes for programmatic handling
 - Detailed error messages for debugging
@@ -232,23 +269,27 @@ export class SessionError extends WebAuthnError
 ### Security Considerations
 
 #### Challenge Generation
+
 - Cryptographically secure random number generation
 - Configurable challenge size (16-64 bytes)
 - Base64URL encoding for safe transmission
 - Automatic expiration handling
 
 #### Session Security
+
 - AES-256-GCM encryption for session tokens
 - Random salt and IV for each token
 - Key derivation using HMAC-SHA256
 - Configurable session duration
 
 #### Origin Validation
+
 - Strict origin checking for WebAuthn responses
 - Support for multiple allowed origins
 - Configurable origin validation rules
 
 #### Counter Tracking
+
 - Authenticator counter verification
 - Clone detection through counter regression
 - Automatic counter updates
@@ -256,11 +297,13 @@ export class SessionError extends WebAuthnError
 ### Performance Optimizations
 
 #### Efficient Data Structures
+
 - Uint8Array for binary data handling
 - Map objects for fast key lookups
 - Lazy initialization of expensive operations
 
 #### Memory Management
+
 - Automatic cleanup of expired data
 - Efficient buffer pooling
 - Minimal memory allocations
@@ -268,12 +311,14 @@ export class SessionError extends WebAuthnError
 ### Testing Strategy
 
 #### Unit Tests
+
 - Individual function testing
 - Mock implementations for dependencies
 - Edge case coverage
 - Error condition testing
 
 #### Integration Tests
+
 - End-to-end WebAuthn flows
 - Storage adapter compliance
 - Cross-browser compatibility
@@ -282,6 +327,7 @@ export class SessionError extends WebAuthnError
 ---
 
 **Implementation Notes:**
+
 - All cryptographic operations use Node.js built-in crypto module
 - Binary data handling uses Uint8Array for consistency
 - Error handling follows fail-fast principles

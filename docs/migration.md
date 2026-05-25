@@ -11,18 +11,21 @@ This guide helps you upgrade between major versions of webauthn-server-buildkit.
 **Change:** Console utility functions changed from `any` to `unknown` types.
 
 **Before (v1.x):**
+
 ```typescript
 // Accepted any value without type checking
 logger(level, message, data: any);
 ```
 
 **After (v2.x):**
+
 ```typescript
 // Requires explicit type handling
 logger(level, message, data: unknown);
 ```
 
 **Migration:**
+
 ```typescript
 // If you're using a custom logger, update the signature:
 const webauthn = new WebAuthnServer({
@@ -41,16 +44,18 @@ const webauthn = new WebAuthnServer({
 v2.0 adds support for mobile platform attestation from iOS and Android apps.
 
 **New Functions:**
+
 - `isMobileAttestation(response)` - Detect mobile attestation format
 - `validateMobileAttestation(response, challenge, rpId)` - Validate mobile credentials
 - `isCborParsingError(error)` - Check for CBOR parsing errors
 
 **Usage:**
+
 ```typescript
 import {
   isMobileAttestation,
   validateMobileAttestation,
-  isCborParsingError
+  isCborParsingError,
 } from 'webauthn-server-buildkit';
 
 // Handle both web and mobile attestation
@@ -76,13 +81,16 @@ async function verifyRegistration(response, challenge) {
 **Change:** Counter validation logic has been fixed in authentication verify-response.
 
 **v1.x Behavior:**
+
 - Counter validation could incorrectly pass in some edge cases
 
 **v2.x Behavior:**
+
 - Strict counter validation: counter must increase or be 0 (for authenticators that don't support counters)
 - Returns `counterIncreased` boolean in authentication info
 
 **Migration:**
+
 ```typescript
 const result = await webauthn.verifyAuthentication(response, challenge, credential);
 
@@ -95,10 +103,7 @@ if (result.verified) {
   }
 
   // Always update the stored counter
-  await updateCredentialCounter(
-    credential.id,
-    result.authenticationInfo.newCounter
-  );
+  await updateCredentialCounter(credential.id, result.authenticationInfo.newCounter);
 }
 ```
 
@@ -113,9 +118,9 @@ const webauthn = new WebAuthnServer({
   rpName: 'My App',
   rpID: 'example.com',
   origin: [
-    'https://example.com',           // Web
-    'https://app.example.com',       // Web subdomain
-    'ios-app://com.example.app',     // iOS app
+    'https://example.com', // Web
+    'https://app.example.com', // Web subdomain
+    'ios-app://com.example.app', // iOS app
     'android-app://com.example.app', // Android app
   ],
   // ...
@@ -152,12 +157,12 @@ const webauthn = new WebAuthnServer({
 
 ## Version Compatibility Matrix
 
-| Frontend Package Version | Backend Package Version | Compatible |
-|-------------------------|------------------------|------------|
-| 2.0.x | 2.0.x | ✅ Yes |
-| 2.0.x | 1.0.x | ⚠️ Partial (web only) |
-| 1.0.x | 2.0.x | ⚠️ Partial (web only) |
-| 1.0.x | 1.0.x | ✅ Yes |
+| Frontend Package Version | Backend Package Version | Compatible            |
+| ------------------------ | ----------------------- | --------------------- |
+| 2.0.x                    | 2.0.x                   | ✅ Yes                |
+| 2.0.x                    | 1.0.x                   | ⚠️ Partial (web only) |
+| 1.0.x                    | 2.0.x                   | ⚠️ Partial (web only) |
+| 1.0.x                    | 1.0.x                   | ✅ Yes                |
 
 **Note:** For full mobile attestation support, both packages should be v2.0.x.
 
@@ -165,8 +170,8 @@ const webauthn = new WebAuthnServer({
 
 ### Deprecated in v2.0
 
-| Feature | Status | Replacement |
-|---------|--------|-------------|
+| Feature         | Status     | Replacement             |
+| --------------- | ---------- | ----------------------- |
 | `rpIcon` option | Deprecated | Will be removed in v3.0 |
 
 ### Removed in v2.0

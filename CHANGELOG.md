@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.1.0] - 2026-01-21
 
 ### Added
+
 - AI Integration Guide (`AI-INTEGRATION-GUIDE.md`) for easy integration with `capacitor-biometric-authentication` frontend package
 - Documentation link to AI guide as first item in README
 
 ### Changed
+
 - Updated all dependencies to latest versions
 - Node.js engine requirement lowered from 24.2.0 to 20.0.0 for wider compatibility
 - Updated devDependencies:
@@ -25,11 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `vitest` 4.0.17
 
 ### Fixed
+
 - ESLint warnings in console utilities by adding eslint-disable comments
 
 ## [2.0.0] - 2025-12-11
 
 ### Added
+
 - Mobile attestation validator with platform detection (iOS/Android)
 - `isMobileAttestation()` function for detecting mobile attestation format
 - `validateMobileAttestation()` function for validating mobile credentials
@@ -40,15 +44,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test fixtures for WebAuthn data (`tests/fixtures/webauthn-data.ts`)
 
 ### Fixed
+
 - Counter validation logic in authentication verify-response
 - VERSION export properly included in package exports
 
 ### Changed
+
 - Console utilities changed from `any` to `unknown` types for type safety
 - Mobile attestation origin handling improved with platform-specific defaults
 - Test suite expanded from 87 to 129+ tests
 
 ### Security
+
 - Added proper validation for mobile attestation data
 - Public key format validation for mobile credentials
 - Platform-specific origin validation (ios-app://, android-app://)
@@ -56,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-07-16
 
 ### Added
+
 - Initial release of webauthn-server-buildkit
 - Complete WebAuthn registration flow implementation
 - Complete WebAuthn authentication flow implementation
@@ -72,8 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Framework-agnostic design
 
 ### Security
+
 - Secure session token encryption using AES-256-GCM
 - Origin validation to prevent phishing attacks
 - Counter tracking to detect cloned credentials
 - Secure random challenge generation
-

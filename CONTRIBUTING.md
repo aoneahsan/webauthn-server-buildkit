@@ -41,27 +41,32 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 ## Development Process
 
 1. Clone the repository
+
    ```bash
    git clone https://github.com/aoneahsan/webauthn-server-buildkit.git
    cd webauthn-server-buildkit
    ```
 
 2. Install dependencies
+
    ```bash
    yarn install
    ```
 
 3. Run tests
+
    ```bash
    yarn test
    ```
 
 4. Run linting
+
    ```bash
    yarn lint
    ```
 
 5. Run type checking
+
    ```bash
    yarn typecheck
    ```
