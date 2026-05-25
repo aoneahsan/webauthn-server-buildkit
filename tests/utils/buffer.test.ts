@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { bufferToNumber, numberToBuffer, buffersEqual, concatBuffers } from '@/utils/buffer';
+import {
+  bufferToNumber,
+  numberToBuffer,
+  buffersEqual,
+  concatBuffers,
+  timingSafeEqualBytes,
+} from '@/utils/buffer';
 
 describe('buffer utils', () => {
   describe('bufferToNumber — big-endian, unsigned, no 32-bit overflow', () => {
@@ -45,6 +51,17 @@ describe('buffer utils', () => {
         new Uint8Array([4, 5]),
       );
       expect(Array.from(result)).toEqual([1, 2, 3, 4, 5]);
+    });
+  });
+
+  describe('timingSafeEqualBytes', () => {
+    it('returns true for identical buffers, false for differing or unequal-length', () => {
+      expect(timingSafeEqualBytes(new Uint8Array([1, 2, 3]), new Uint8Array([1, 2, 3]))).toBe(true);
+      expect(timingSafeEqualBytes(new Uint8Array([1, 2, 3]), new Uint8Array([1, 2, 4]))).toBe(
+        false,
+      );
+      // Unequal length must return false without throwing (timingSafeEqual would throw).
+      expect(timingSafeEqualBytes(new Uint8Array([1, 2]), new Uint8Array([1, 2, 3]))).toBe(false);
     });
   });
 });

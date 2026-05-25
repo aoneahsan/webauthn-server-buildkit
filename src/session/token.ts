@@ -1,10 +1,13 @@
-import { randomBytes, createCipheriv, createDecipheriv, createHmac } from 'node:crypto';
+import { randomBytes, createCipheriv, createDecipheriv, hkdfSync } from 'node:crypto';
 import { SessionData, SessionError } from '@/types';
 import { bufferToBase64URL, base64URLToBuffer } from '@/utils/base64url';
 
 const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;
+// AES-256-GCM uses a 96-bit (12-byte) IV — the value recommended by NIST SP 800-38D.
+const IV_LENGTH = 12;
 const SALT_LENGTH = 32;
+const KEY_LENGTH = 32;
+const HKDF_INFO = 'webauthn-server-buildkit/session-token';
 
 /**
  * Encrypted token structure
@@ -17,10 +20,16 @@ interface EncryptedToken {
 }
 
 /**
- * Derive encryption key from secret
+ * Derive a 256-bit encryption key from the configured secret using HKDF-SHA256.
+ *
+ * HKDF (RFC 5869) is a proper key-derivation function (extract + expand) and is
+ * the correct primitive here, replacing the previous bare HMAC. Each token uses
+ * a fresh random salt, so derived keys are unique per token.
  */
 function deriveKey(secret: string, salt: Buffer): Buffer {
-  return createHmac('sha256', salt).update(secret).digest();
+  return Buffer.from(
+    hkdfSync('sha256', Buffer.from(secret, 'utf8'), salt, Buffer.from(HKDF_INFO), KEY_LENGTH),
+  );
 }
 
 /**

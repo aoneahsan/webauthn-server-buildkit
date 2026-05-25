@@ -9,18 +9,20 @@ import {
 } from '@/types';
 import {
   decodeCBOR,
+  getCOSEAlgorithmIdentifier,
   parseAuthenticatorData,
   parseCOSEPublicKey,
   validateAuthenticatorDataFlags,
 } from '@/crypto';
 import { base64URLToBuffer, base64URLToString, bufferToBase64URL } from '@/utils/base64url';
 import { sha256 } from '@/utils/hash';
-import { buffersEqual } from '@/utils/buffer';
+import { timingSafeEqualBytes } from '@/utils/buffer';
 import {
   detectMobileAttestation,
   validateMobileAttestation,
   isCborParsingError,
 } from './mobile-attestation';
+import { verifyAttestationStatement } from './attestation';
 
 /**
  * Options for verifying registration response
@@ -52,42 +54,50 @@ export function verifyRegistrationResponse(
   } = params;
 
   try {
-    // First, check for mobile attestation format
-    const mobileDetection = detectMobileAttestation(response);
+    // Non-standard mobile JSON attestation path. OFF by default: it does NOT
+    // perform cryptographic WebAuthn attestation (no challenge signature), so it
+    // is only consulted when the relying party explicitly opts in. When
+    // disabled, every response goes through the standard WebAuthn (CBOR) path.
+    if (config.enableMobileAttestation) {
+      const mobileDetection = detectMobileAttestation(response);
 
-    if (mobileDetection.reason === 'INVALID_PLACEHOLDER_ATTESTATION') {
-      throw new VerificationError(
-        'Invalid mobile attestation: placeholder attestation values are not accepted',
-        'INVALID_MOBILE_ATTESTATION',
-      );
-    }
-
-    if (mobileDetection.reason === 'MOBILE_CREDENTIAL_INVALID_ATTESTATION') {
-      throw new VerificationError(
-        'Mobile credential ID detected but attestation is invalid',
-        'MOBILE_CREDENTIAL_INVALID_ATTESTATION',
-      );
-    }
-
-    // If valid mobile attestation, use mobile validation path
-    if (mobileDetection.isMobileAttestation && mobileDetection.data) {
-      const registrationInfo = validateMobileAttestation(
-        response,
-        mobileDetection.data,
-        expectedOrigin,
-      );
-
-      if (config.debug && config.logger) {
-        config.logger('debug', 'Mobile registration verified successfully', {
-          credentialId: registrationInfo.credential.id,
-          platform: mobileDetection.data.platform,
-        });
+      if (mobileDetection.reason === 'INVALID_PLACEHOLDER_ATTESTATION') {
+        throw new VerificationError(
+          'Invalid mobile attestation: placeholder attestation values are not accepted',
+          'INVALID_MOBILE_ATTESTATION',
+        );
       }
 
-      return {
-        verified: true,
-        registrationInfo,
-      };
+      if (mobileDetection.reason === 'MOBILE_CREDENTIAL_INVALID_ATTESTATION') {
+        throw new VerificationError(
+          'Mobile credential ID detected but attestation is invalid',
+          'MOBILE_CREDENTIAL_INVALID_ATTESTATION',
+        );
+      }
+
+      // If valid mobile attestation, use mobile validation path
+      if (mobileDetection.isMobileAttestation && mobileDetection.data) {
+        // Loud warning: this credential is trusted without cryptographic proof.
+        config.logger?.(
+          'warn',
+          'Mobile attestation accepted WITHOUT cryptographic verification (enableMobileAttestation=true). Enforce freshness/authenticity out-of-band.',
+          {
+            credentialId: mobileDetection.data.credentialId,
+            platform: mobileDetection.data.platform,
+          },
+        );
+
+        const registrationInfo = validateMobileAttestation(
+          response,
+          mobileDetection.data,
+          expectedOrigin,
+        );
+
+        return {
+          verified: true,
+          registrationInfo,
+        };
+      }
     }
 
     // Standard WebAuthn verification path
@@ -139,7 +149,7 @@ export function verifyRegistrationResponse(
     let rpIdMatch = false;
     for (const rpId of rpIds) {
       const expectedRPIDHash = sha256(rpId);
-      if (buffersEqual(authData.rpIdHash, expectedRPIDHash)) {
+      if (timingSafeEqualBytes(authData.rpIdHash, expectedRPIDHash)) {
         rpIdMatch = true;
         break;
       }
@@ -160,8 +170,23 @@ export function verifyRegistrationResponse(
       throw new VerificationError('Missing attested credential data', 'MISSING_CREDENTIAL_DATA');
     }
 
-    // Parse public key (for validation)
-    parseCOSEPublicKey(authData.credentialPublicKey);
+    // Parse public key and enforce the configured algorithm allowlist.
+    const credentialPublicKey = parseCOSEPublicKey(authData.credentialPublicKey);
+    const credentialAlg = getCOSEAlgorithmIdentifier(credentialPublicKey);
+    if (!config.supportedAlgorithms.includes(credentialAlg)) {
+      throw new VerificationError(
+        `Credential algorithm ${String(credentialAlg)} is not in the configured supportedAlgorithms`,
+        'UNSUPPORTED_CREDENTIAL_ALGORITHM',
+      );
+    }
+
+    // Verify the attestation statement (bounded: none + packed self-attestation;
+    // certificate-chain formats are surfaced but not trust-anchored here).
+    const attestation = verifyAttestationStatement({
+      attestationObject,
+      clientDataHash: sha256(clientDataJSON),
+      credentialPublicKey,
+    });
 
     // Build credential info
     const credentialId = bufferToBase64URL(authData.credentialId);
@@ -179,6 +204,8 @@ export function verifyRegistrationResponse(
       origin: clientData.origin,
       rpID: rpIds[0],
       userVerified: authData.flags.userVerified,
+      fmt: attestation.fmt,
+      attestationVerified: attestation.attestationVerified,
       attestationObject: attestationObjectBuffer,
       clientDataJSON,
     };

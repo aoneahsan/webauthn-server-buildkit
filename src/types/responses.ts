@@ -84,6 +84,17 @@ export interface VerifiedRegistrationInfo {
   rpID?: string;
   aaguid?: string;
   userVerified: boolean;
+  /** Attestation statement format from the attestation object (e.g. 'none', 'packed'). */
+  fmt?: AttestationFormat;
+  /**
+   * Whether this library cryptographically verified the attestation statement.
+   * `true` only for formats it verifies (currently `packed` self-attestation).
+   * `false` for `none` and for certificate-chain formats whose trust anchors are
+   * not validated here (`packed` with x5c, `fido-u2f`, `tpm`, `android-key`,
+   * `android-safetynet`, `apple`) — verify those out-of-band if you require
+   * attestation trust.
+   */
+  attestationVerified?: boolean;
   attestationObject?: Uint8Array;
   clientDataJSON?: Uint8Array;
 }

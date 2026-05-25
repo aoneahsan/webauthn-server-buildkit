@@ -315,6 +315,7 @@ export class WebAuthnServer {
       sessionDuration: config.sessionDuration || 24 * 60 * 60 * 1000, // 24 hours
       encryptionSecret: config.encryptionSecret,
       attestationType: config.attestationType || 'none',
+      enableMobileAttestation: config.enableMobileAttestation ?? false,
       userVerification: config.userVerification || 'preferred',
       authenticatorSelection: {
         residentKey: 'preferred',

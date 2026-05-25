@@ -52,6 +52,19 @@ export interface WebAuthnServerConfig {
   attestationType?: AttestationConveyancePreference;
 
   /**
+   * Enable the non-standard mobile JSON attestation path used by some native
+   * (e.g. Capacitor) clients (default: `false`).
+   *
+   * ⚠️ Security: this path does **not** perform cryptographic WebAuthn
+   * attestation — it trusts a client-supplied `{ publicKey, credentialId }`
+   * payload without verifying a challenge signature. Leave it disabled unless
+   * you fully control the client and transport, in which case you MUST enforce
+   * freshness/authenticity by other means. When disabled, only the standard
+   * WebAuthn (CBOR) verification path runs.
+   */
+  enableMobileAttestation?: boolean;
+
+  /**
    * User verification requirement (default: 'preferred')
    */
   userVerification?: UserVerificationRequirement;

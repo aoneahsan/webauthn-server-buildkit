@@ -90,3 +90,26 @@ Phase 02 (crypto correctness): JWK key import in `crypto/verify.ts`, real `decod
 ### Next
 
 Phase 03 (security hardening): mobile-attestation opt-in (`enableMobileAttestation`, default off), session HKDF + 12-byte IV, constant-time compares, algorithm allowlist, packed/fido-u2f attestation.
+
+## 2026-05-26 — Session 1 (Phase 03: security hardening)
+
+- **SEC-1** (critical) — Added `enableMobileAttestation` (default `false`). `registration/verify-response.ts` only consults the unsigned-JSON mobile path when explicitly enabled, with a loud `logger.warn`. By default every response goes through the standard WebAuthn path, closing the bypass.
+- **SEC-4/SEC-5** — `session/token.ts` now derives keys with `hkdfSync('sha256', …)` and uses a 12-byte GCM IV (NIST). Existing tokens are invalidated on upgrade (documented; ephemeral).
+- **SEC-8** — Added `timingSafeEqualBytes` (`crypto.timingSafeEqual` + length guard); used it for RP-ID-hash comparison in both verify paths.
+- **SEC-9** — Registration verify rejects credentials whose COSE algorithm is not in `supportedAlgorithms`.
+- **SEC-6** — New `registration/attestation.ts`: verifies `packed` **self**-attestation; surfaces `fmt` + `attestationVerified` on the result. Cert-chain formats (`packed`-x5c, `fido-u2f`, `tpm`, `android-*`, `apple`) are surfaced with `attestationVerified: false` and documented as future — honest framing over half-trusted verification.
+- Tests: new `tests/registration/verify-response.test.ts` (mobile gate on/off, packed self-attestation, none-attestation, algorithm allowlist) + `timingSafeEqualBytes`. Suite **157 → 163**.
+
+### Verification gate (Phase 03)
+
+| Gate         | Result         |
+| ------------ | -------------- |
+| typecheck    | ✅ clean       |
+| lint         | ✅ clean       |
+| test         | ✅ 163 passed  |
+| build        | ✅ ESM+CJS+DTS |
+| format:check | ✅ clean       |
+
+### Next
+
+Phase 04 (API correctness & hygiene): export error classes as **values** (so `instanceof` works), delete dead `utils/console.ts`, `challenge.ts` → `ConfigurationError`, surface `SUPPORT_CONFIG` + `funding`, export `timingSafeEqualBytes`, move stray root doc, CI Node matrix.

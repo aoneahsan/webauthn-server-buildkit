@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'node:crypto';
+
 /**
  * Concatenate multiple buffers
  */
@@ -15,7 +17,10 @@ export function concatBuffers(...buffers: Uint8Array[]): Uint8Array {
 }
 
 /**
- * Compare two buffers for equality
+ * Compare two buffers for equality (variable-time).
+ *
+ * For security-sensitive comparisons (hashes, MACs, tags) prefer
+ * {@link timingSafeEqualBytes}, which is constant-time.
  */
 export function buffersEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) {
@@ -29,6 +34,18 @@ export function buffersEqual(a: Uint8Array, b: Uint8Array): boolean {
   }
 
   return true;
+}
+
+/**
+ * Constant-time comparison of two byte arrays, for security-sensitive values
+ * (e.g. RP ID hashes). Unequal lengths return `false` without leaking content;
+ * equal-length inputs are compared in constant time via {@link timingSafeEqual}.
+ */
+export function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return timingSafeEqual(a, b);
 }
 
 /**

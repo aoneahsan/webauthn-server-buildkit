@@ -15,7 +15,7 @@ import {
 } from '@/crypto';
 import { base64URLToBuffer, base64URLToString } from '@/utils/base64url';
 import { sha256 } from '@/utils/hash';
-import { buffersEqual, concatBuffers } from '@/utils/buffer';
+import { concatBuffers, timingSafeEqualBytes } from '@/utils/buffer';
 
 /**
  * Options for verifying authentication response
@@ -86,7 +86,7 @@ export function verifyAuthenticationResponse(
     let matchedRpId: string | undefined;
     for (const rpId of rpIds) {
       const expectedRPIDHash = sha256(rpId);
-      if (buffersEqual(authData.rpIdHash, expectedRPIDHash)) {
+      if (timingSafeEqualBytes(authData.rpIdHash, expectedRPIDHash)) {
         rpIdMatch = true;
         matchedRpId = rpId;
         break;
