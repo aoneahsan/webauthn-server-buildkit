@@ -299,16 +299,16 @@
         {
           "id": "phase06.3",
           "title": "Commit release; push to origin main (authorized)",
-          "status": "in_progress",
+          "status": "complete",
           "awaitingUser": false,
-          "note": "Release commit made; push to origin main next."
+          "note": "Release commit df260b6; pushed all 7 commits to remote 'o' (github aoneahsan/webauthn-server-buildkit) main. Local and remote in sync."
         },
         {
           "id": "phase06.4",
           "title": "npm publish (REQUIRES explicit user go-ahead) + verify on npmjs.com",
           "status": "blocked",
           "awaitingUser": true,
-          "note": "Awaiting explicit user go-ahead before running npm publish (irreversible)."
+          "note": "User approved publishing. BLOCKED on npm auth: `npm whoami` returns 401 both before and after setting the documented global token (npm_EzXz...) — the token is expired/revoked. Network/read is fine (npm view works). Resume: (a) `npm login` or set a VALID token then `npm publish`, or (b) run `npm publish` from an authenticated environment, or (c) create a GitHub Release to trigger publish.yml CI (needs a valid NPM_TOKEN repo secret). All gates green; `npm pack --dry-run` clean; package.json is 2.2.0."
         }
       ]
     }
@@ -353,8 +353,8 @@
     {
       "date": "2026-05-26",
       "phase": "phase06",
-      "summary": "Release prep: bumped package.json to 2.2.0 (built VERSION confirms). Final gate green (typecheck/lint/format/166 tests/build). npm pack --dry-run clean (10 files, no stray content). Release commit made + pushed. npm publish is BLOCKED pending explicit user go-ahead (irreversible). Commit shas are in git log (runHistory 'commit' fields left as 'pending').",
-      "commit": "pending"
+      "summary": "Release prep: bumped package.json to 2.2.0 (built VERSION confirms). Final gate green (typecheck/lint/format/166 tests/build). npm pack --dry-run clean (10 files, no stray content). Release commit df260b6 + all 7 commits pushed to remote 'o' main. User approved npm publish, but it is BLOCKED: npm auth returns 401 even after setting the documented global token (expired/revoked) — needs a valid token or an authenticated environment. Commit shas are in git log.",
+      "commit": "df260b6"
     }
   ],
   "newFindings": [
