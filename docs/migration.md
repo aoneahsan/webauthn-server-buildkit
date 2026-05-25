@@ -1,6 +1,62 @@
 # Migration Guide
 
-This guide helps you upgrade between major versions of webauthn-server-buildkit.
+This guide helps you upgrade between versions of webauthn-server-buildkit.
+
+## Migrating from v2.1.x to v2.2.0
+
+v2.2.0 is a minor release, but two security fixes change runtime behaviour.
+
+### 1. Existing session tokens are invalidated
+
+Session-token key derivation changed from a bare HMAC to **HKDF-SHA256**, and the
+AES-GCM IV is now 12 bytes. Tokens issued by 2.1.x can no longer be decrypted, so
+`validateSession`/`refreshSession` will reject them.
+
+**Migration:** none required in code — affected users simply re-authenticate once.
+Session tokens are short-lived, so plan the deploy like any session-store rotation
+(optionally force re-login).
+
+### 2. Mobile attestation is now opt-in
+
+The non-standard mobile JSON attestation path is **disabled by default**. If you
+relied on it (typically with the `capacitor-biometric-authentication` client sending
+a JSON `{ publicKey, credentialId }` payload), enable it explicitly:
+
+```typescript
+const webauthn = new WebAuthnServer({
+  // ...existing config...
+  enableMobileAttestation: true,
+});
+```
+
+Note this path performs **no** cryptographic attestation; enable it only on a
+trusted client/transport. With it disabled, those registrations now go through the
+standard WebAuthn path and will fail to parse (as intended).
+
+### 3. Error classes and COSE enums are now value exports
+
+Previously these were exported `type`-only, so `instanceof` and enum-member access
+did not work at runtime. If you worked around this (e.g. matching on `error.name` or
+hardcoding algorithm numbers), you can now use the real values:
+
+```typescript
+import { VerificationError, COSEAlgorithmIdentifier } from 'webauthn-server-buildkit';
+
+if (err instanceof VerificationError) {
+  /* ... */
+}
+const alg = COSEAlgorithmIdentifier.ES256; // -7
+```
+
+### 4. New result fields
+
+`verifyRegistration` now returns `registrationInfo.fmt` and
+`registrationInfo.attestationVerified`. These are additive and optional.
+
+### 5. Toolchain / engine
+
+No source API change, but the package is now built with TypeScript 6 / ESLint 10 and
+its CI runs on Node 24.x. The runtime engine requirement is unchanged (`>=24.13.0`).
 
 ## Migrating from v1.x to v2.x
 

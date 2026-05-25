@@ -137,3 +137,27 @@ Phase 04 (API correctness & hygiene): export error classes as **values** (so `in
 ### Next
 
 Phase 05 (documentation): README, CHANGELOG 2.2.0, api-reference, migration, AI-INTEGRATION-GUIDE, audit-records, and sync CLAUDE.md/AGENTS.md at all levels.
+
+## 2026-05-26 — Session 1 (Phase 05: documentation refresh)
+
+- **README** — Current State (2.2.0/166), features, config (`enableMobileAttestation`), Supported Algorithms (EdDSA now implemented; RSA/ES512 verified), replaced the inaccurate "Mobile Attestation Support" section (it imported a non-exported `isMobileAttestation` and described default-on behaviour) with an honest **Attestation** section, Security Considerations (HKDF + mobile opt-in), error-handling value-export note, Node 24.13 requirement. Also corrected `createAuthenticationOptions`/`createRegistrationOptions` examples to pass a params object.
+- **CHANGELOG** — `[2.2.0]` with explicit **Upgrade notes** (session-token invalidation, mobile opt-in) + Security/Fixed/Changed/Added.
+- **docs/migration.md** — new "v2.1.x → v2.2.0" section.
+- **docs/api-reference.md** — `enableMobileAttestation` in config; opt-in/internal note on the mobile functions.
+- **AI-INTEGRATION-GUIDE.md** — `enableMobileAttestation` option + opt-in security note (matters for the capacitor client).
+- **docs/audit-records.md** — appended the 2026-05-26 deep audit (16 findings fixed) + verification.
+- **CLAUDE.md/AGENTS.md sync** — package root files updated (2.2.0/166, security posture, `Last Updated: 2026-05-26`); created `.claude/AGENTS.md` mirror; bumped `.claude/CLAUDE.md` date. Parent `01-biometrics-package` CLAUDE.md + AGENTS.md version refs → 2.2.0 (those files are in the separate `01-code` workspace repo, so they are NOT part of the package commits).
+
+### Verification gate (Phase 05)
+
+| Gate         | Result         |
+| ------------ | -------------- |
+| typecheck    | ✅ clean       |
+| lint         | ✅ clean       |
+| test         | ✅ 166 passed  |
+| build        | ✅ ESM+CJS+DTS |
+| format:check | ✅ clean       |
+
+### Next
+
+Phase 06 (release): bump package.json → 2.2.0, final gate + `npm pack --dry-run`, commit + push, then `npm publish` **only after explicit user go-ahead**.

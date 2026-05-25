@@ -2,7 +2,7 @@
 
 > AI agent instructions for the server-side WebAuthn package.
 
-**Last Updated:** 2026-04-03
+**Last Updated:** 2026-05-26
 
 ## Project Overview
 
@@ -10,11 +10,22 @@
 
 ## Current Verified State
 
-- Package version: `2.1.0`
-- Tests: 131 tests passing (Vitest)
+- Package version: `2.2.0`
+- Tests: 166 tests passing (Vitest)
 - Build: `tsup` for ESM, CommonJS, and DTS output generation
 - Node.js engine requirement: `>=24.13.0`
+- Toolchain: TypeScript 6, ESLint 10 (typescript-eslint flat config), Vitest 4, Prettier 3
 - Primary production dependency: `cbor-x`
+
+### Security posture (as of v2.2.0)
+
+- Signature verification imports COSE keys via JWK; RSA, P-521 (ES512) and Ed25519 verify correctly.
+- Mobile JSON attestation is **opt-in** (`enableMobileAttestation`, default `false`); standard WebAuthn path runs by default.
+- Session tokens: HKDF-SHA256 key derivation + 12-byte GCM IV.
+- Constant-time RP-ID-hash comparison; algorithm allowlist enforced at registration.
+- Attestation: `none` + `packed` self-attestation verified; cert-chain formats reported but not trust-anchored.
+- Error classes + COSE enums are runtime value exports.
+- Active v2.2.0 audit/fix tracker: `docs/features/package-polish-v2.2.0/00-tracker.json`.
 
 ## Architecture
 
@@ -37,7 +48,7 @@
 After making changes to this package:
 
 1. Run `yarn build` to verify the build succeeds.
-2. Run `yarn test` to verify all 131 tests pass.
+2. Run `yarn test` to verify all 166 tests pass.
 3. Run `yarn lint` and `yarn typecheck` for code quality.
 4. Re-verify any local consumer (frontend-test-app, backend-test-app) only after the package build succeeds.
 

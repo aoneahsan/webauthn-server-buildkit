@@ -236,35 +236,45 @@
       "id": "phase05",
       "title": "Documentation refresh",
       "file": "docs/features/package-polish-v2.2.0/phase05-docs.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-26",
       "subTasks": [
         {
           "id": "phase05.1",
           "title": "Readme.md: update API, config (enableMobileAttestation), security notes, supported algorithms/attestation, version",
-          "status": "pending"
+          "status": "complete",
+          "note": "Current State (2.2.0/166 tests), features, config, algorithms (EdDSA now implemented), Attestation section (replaced inaccurate mobile section + removed non-exported isMobileAttestation example), security notes (HKDF/opt-in), error-handling value-export note, Node 24.13 requirement, and fixed createAuth/RegOptions param-object usage in examples."
         },
         {
           "id": "phase05.2",
           "title": "CHANGELOG.md: 2.2.0 entry (deps, security fixes, session-token invalidation note, breaking-ish notes)",
-          "status": "pending"
+          "status": "complete",
+          "note": "Added [2.2.0] with Upgrade notes + Security/Fixed/Changed/Added."
         },
         {
           "id": "phase05.3",
           "title": "docs/api-reference.md + docs/migration.md + AI-INTEGRATION-GUIDE.md alignment",
-          "status": "pending"
+          "status": "complete",
+          "note": "api-reference: enableMobileAttestation + mobile opt-in/internal note. migration: new 2.1->2.2 section. AI guide: enableMobileAttestation option + opt-in security note."
         },
         {
           "id": "phase05.4",
           "title": "docs/audit-records.md: append this audit + resolution",
-          "status": "pending"
+          "status": "complete",
+          "note": "Appended 2026-05-26 deep audit (16 findings fixed) + verification summary."
         },
         {
           "id": "phase05.5",
           "title": "Update CLAUDE.md + AGENTS.md (root pkg, .claude, monorepo root) verified state + Last Updated; sync both",
-          "status": "pending"
+          "status": "complete",
+          "note": "Package CLAUDE.md + AGENTS.md: 2.2.0/166 tests + security posture, Last Updated 2026-05-26. Created .claude/AGENTS.md mirror; bumped .claude/CLAUDE.md date. Parent 01-biometrics-package CLAUDE.md + AGENTS.md version ref -> 2.2.0 (NOTE: those live in the separate 01-code workspace repo, not the package repo)."
         },
-        { "id": "phase05.6", "title": "Verify gate + commit", "status": "pending" }
+        {
+          "id": "phase05.6",
+          "title": "Verify gate + commit",
+          "status": "complete",
+          "note": "166 tests pass; typecheck/lint/format/build clean."
+        }
       ]
     },
     {
@@ -329,15 +339,21 @@
       "phase": "phase04",
       "summary": "API correctness & hygiene: API-1 fixed — error classes AND COSE enums (both were type-only, so unusable as values/instanceof by consumers) are now value exports; interfaces/aliases stay type-only; SUPPORT_CONFIG + timingSafeEqualBytes exported. Verified in built CJS. Deleted dead utils/console.ts; challenge.ts throws ConfigurationError; package.json funding added; stray SimpleWebAuthn doc moved out of root to docs/reference/. CI-1: ci.yml + publish.yml Node matrix -> 24.x and yarn --immutable (Yarn 4). Public-API smoke test added. Suite 163 -> 166. Gate green.",
       "commit": "pending"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase05",
+      "summary": "Documentation refresh for v2.2.0: README (Current State, config incl. enableMobileAttestation, honest Attestation section replacing the inaccurate mobile section + removed non-exported isMobileAttestation example, EdDSA-implemented, Node 24.13, value-export note, fixed param-object usage in examples), CHANGELOG [2.2.0] with upgrade notes, migration 2.1->2.2 section, api-reference + AI-INTEGRATION-GUIDE mobile opt-in notes, audit-records appended. Synced package CLAUDE.md/AGENTS.md (2.2.0/166, security posture, dates) + created .claude/AGENTS.md; bumped parent workspace version refs (separate 01-code repo).",
+      "commit": "pending"
     }
   ],
   "newFindings": [
     "CI-1 [low]: .github/workflows/ci.yml tests Node 20.x/22.x but package engine requires >=24.13.0 — bump CI matrix to 24.x (Phase 04/05)."
   ],
   "nextSuggestion": {
-    "phase": "phase05",
-    "subTask": "phase05.1",
-    "rationale": "Phases 01-04 complete. Begin documentation refresh: README (config incl. enableMobileAttestation, error instanceof, supported algorithms/attestation), CHANGELOG 2.2.0 (incl. session-token invalidation + behaviour changes), api-reference, migration, AI-INTEGRATION-GUIDE, audit-records, and sync CLAUDE.md/AGENTS.md at all levels."
+    "phase": "phase06",
+    "subTask": "phase06.1",
+    "rationale": "Phases 01-05 complete. Begin release: bump package.json to 2.2.0, run the final verification gate + npm pack --dry-run, commit + push, then npm publish ONLY after explicit user go-ahead (phase06.4)."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md. 3) Find the first phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, vitest, nodejs-best-practices, documentation-writer, simplify as relevant). 6) Do the work, run the verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker update. 8) Do NOT npm publish without explicit user confirmation (phase06.4)."
 }

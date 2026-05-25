@@ -46,6 +46,12 @@ const webauthn = new WebAuthnServer({
   encryptionSecret: process.env.ENCRYPTION_SECRET!, // Min 32 chars
 });
 
+// NOTE: If your native client sends a standard WebAuthn (CBOR) attestation, the
+// config above is all you need. If it sends the non-standard mobile JSON
+// attestation format, add `enableMobileAttestation: true` — but that path performs
+// NO cryptographic attestation (it trusts the client payload), so only enable it
+// on a fully trusted client/transport. It is disabled by default.
+
 // In-memory storage for demo (use database in production)
 const users = new Map();
 const credentials = new Map();
@@ -339,6 +345,7 @@ const webauthn = new WebAuthnServer({
   // Optional
   sessionDuration: number,  // Session duration in ms (default: 24h)
   attestationType: 'none' | 'direct' | 'indirect' | 'enterprise',
+  enableMobileAttestation: boolean, // default false — opt-in to the non-standard mobile JSON path (no cryptographic attestation)
   userVerification: 'required' | 'preferred' | 'discouraged',
   authenticatorSelection: {
     residentKey: 'required' | 'preferred' | 'discouraged',

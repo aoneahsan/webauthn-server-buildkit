@@ -21,14 +21,11 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 
 ## Current State
 
-- Package version: `2.1.0`
-- Verified on: `2026-03-24`
-- Tests: `131/131` passing via the `test` script in the last verification pass
-- Build: the `build` script succeeds in the last verification pass
-- Output formats:
-  - ESM bundle
-  - CommonJS bundle
-  - Type declaration outputs
+- Package version: `2.2.0`
+- Verified on: `2026-05-26`
+- Tests: `166/166` passing via the `test` script in the last verification pass
+- Build: the `build` script succeeds (ESM + CommonJS + type declarations)
+- Toolchain: TypeScript 6, ESLint 10, Vitest 4
 
 ## Features
 
@@ -36,8 +33,8 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 
 - **Full WebAuthn Level 3 Implementation** - Complete server-side implementation following the latest W3C standards
 - **Secure by Default** - Built-in AES-256-GCM session encryption, cryptographically secure challenge generation
-- **Algorithm Support** - ES256, RS256, EdDSA, and more COSE algorithms
-- **Attestation Support** - Full attestation verification with multiple formats
+- **Algorithm Support** - ES256/384/512, RS256/384/512, PS256/384/512 and Ed25519 (EdDSA), all verified via Node's native crypto
+- **Attestation** - `none` and `packed` self-attestation are cryptographically verified; certificate-chain formats are parsed and reported (not trust-anchored — see [Attestation](#attestation))
 
 ### 🛠️ Developer Experience
 
@@ -106,7 +103,9 @@ async function handleRegistration(user: UserModel) {
 // Authentication flow
 async function handleAuthentication(credentials: WebAuthnCredential[]) {
   // 1. Generate authentication options
-  const { options, challenge } = await webauthn.createAuthenticationOptions(credentials);
+  const { options, challenge } = await webauthn.createAuthenticationOptions({
+    allowCredentials: credentials,
+  });
 
   // 2. Send options to client
   // ... client performs WebAuthn authentication ...
@@ -161,6 +160,7 @@ const webauthn = new WebAuthnServer({
   // Optional
   sessionDuration: 86400000, // Session duration in ms (default: 24h)
   attestationType: 'none', // Attestation preference
+  enableMobileAttestation: false, // Opt-in to the non-standard mobile JSON path (default: false; see Attestation)
   userVerification: 'preferred', // User verification requirement
   authenticatorSelection: {
     // Authenticator selection criteria
@@ -324,7 +324,9 @@ app.post('/api/register/options', async (req, res) => {
   //   (transports from registrationInfo.credential or authenticator response)
   // You get all this data when you save the credential after successful registration
   const credentials = await getUserCredentials(user.id);
-  const { options } = await webauthn.createRegistrationOptions(user, credentials);
+  const { options } = await webauthn.createRegistrationOptions(user, {
+    excludeCredentials: credentials,
+  });
   req.session.challenge = options.challenge;
   res.json(options);
 });
@@ -344,7 +346,9 @@ app.post('/api/register/verify', async (req, res) => {
 // Authentication endpoint
 app.post('/api/authenticate/options', async (req, res) => {
   const credentials = await getCredentialsByUsername(req.body.username);
-  const { options } = await webauthn.createAuthenticationOptions(credentials);
+  const { options } = await webauthn.createAuthenticationOptions({
+    allowCredentials: credentials,
+  });
   req.session.challenge = options.challenge;
   res.json(options);
 });
@@ -385,12 +389,12 @@ new WebAuthnServer(config: WebAuthnServerConfig)
 
 ##### Registration
 
-- `createRegistrationOptions(user, excludeCredentials?)`: Generate registration options
+- `createRegistrationOptions(user, params?)`: Generate registration options (`params.excludeCredentials`, `params.authenticatorSelection`, `params.attestation`, …)
 - `verifyRegistration(response, challenge, origin?)`: Verify registration response
 
 ##### Authentication
 
-- `createAuthenticationOptions(allowCredentials?)`: Generate authentication options
+- `createAuthenticationOptions(params?)`: Generate authentication options (`params.allowCredentials`, `params.userVerification`, `params.rpId`, …)
 - `verifyAuthentication(response, challenge, credential, origin?)`: Verify authentication response
 
 ##### Session Management
@@ -417,63 +421,43 @@ new WebAuthnServer(config: WebAuthnServerConfig)
 - PS256 (RSASSA-PSS with SHA-256)
 - PS384 (RSASSA-PSS with SHA-384)
 - PS512 (RSASSA-PSS with SHA-512)
+- EdDSA (Ed25519)
 
-Note: EdDSA (Ed25519) is defined but not yet implemented.
+All algorithms are verified through Node's native crypto — COSE public keys are imported via JWK, so RSA (any modulus size) and P-521 (ES512) work correctly. Use `supportedAlgorithms` to restrict which algorithms a credential may register with (registration rejects credentials outside the list).
 
-## Mobile Attestation Support
+## Attestation
 
-v2.0 adds full support for mobile platform attestation from iOS and Android apps. The package automatically handles the simplified attestation format used by mobile SDKs.
+### What is verified
 
-### Mobile Attestation Functions
+| Format                                                                         | Behaviour                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `none`                                                                         | Accepted (no statement to verify). `attestationVerified` is `false`.                                                                                                                              |
+| `packed` (self-attestation)                                                    | The signature over `authData \|\| clientDataHash` is verified with the credential public key. `attestationVerified` is `true`.                                                                    |
+| `packed` (x5c), `fido-u2f`, `tpm`, `android-key`, `android-safetynet`, `apple` | Parsed and reported, but the certificate chain is **not** trust-anchored in this release. `attestationVerified` is `false` — verify the chain yourself if you require hardware-attestation trust. |
 
-```typescript
-import {
-  isMobileAttestation,
-  validateMobileAttestation,
-  isCborParsingError,
-} from 'webauthn-server-buildkit';
+`verifyRegistration` returns `registrationInfo.fmt` and `registrationInfo.attestationVerified` so you can branch on the outcome.
 
-// Detect and handle mobile attestation
-async function verifyRegistration(response, challenge) {
-  if (isMobileAttestation(response)) {
-    // Use mobile attestation validation
-    return await validateMobileAttestation(response, challenge, 'example.com');
-  }
+### Mobile attestation (opt-in)
 
-  try {
-    // Standard WebAuthn verification
-    return await webauthn.verifyRegistration(response, challenge);
-  } catch (error) {
-    // Fall back to mobile attestation if CBOR parsing fails
-    if (isCborParsingError(error)) {
-      return await validateMobileAttestation(response, challenge, 'example.com');
-    }
-    throw error;
-  }
-}
-```
+Some native clients (for example the companion `capacitor-biometric-authentication` package) send a **non-standard JSON** payload instead of a CBOR WebAuthn attestation. This path is **disabled by default** (`enableMobileAttestation: false`) because it trusts a client-supplied `{ publicKey, credentialId }` object **without verifying a challenge signature** — it provides no cryptographic attestation guarantee. With it disabled, every registration is handled by the standard WebAuthn path, so the path cannot be used to bypass verification.
 
-### Mobile Origin Configuration
-
-Configure origins for mobile apps:
+Enable it only if you fully control the client and transport and enforce freshness/authenticity by other means:
 
 ```typescript
 const webauthn = new WebAuthnServer({
+  rpName: 'My App',
+  rpID: 'example.com',
   origin: [
-    'https://example.com', // Web
+    'https://example.com',
     'ios-app://com.example.app', // iOS app bundle identifier
     'android-app://com.example.app', // Android app package name
   ],
-  // ...
+  encryptionSecret: process.env.ENCRYPTION_SECRET,
+  enableMobileAttestation: true, // ⚠️ no cryptographic attestation — see above
 });
 ```
 
-### Platform Detection
-
-The library automatically detects the platform from the origin URL and validates accordingly:
-
-- **iOS**: Origins starting with `ios-app://`
-- **Android**: Origins starting with `android-app://`
+When enabled, a warning is logged each time a credential is accepted via the mobile path.
 
 ## Security Considerations
 
@@ -481,8 +465,8 @@ The library automatically detects the platform from the origin URL and validates
 2. **HTTPS Required**: Always use HTTPS in production for WebAuthn
 3. **Origin Validation**: The package validates origins to prevent phishing
 4. **Counter Tracking**: Authenticator counters are tracked to detect cloned credentials
-5. **Session Security**: Sessions are encrypted with AES-256-GCM
-6. **Mobile Security**: Mobile attestation includes public key and signature validation
+5. **Session Security**: Session tokens are encrypted with AES-256-GCM; keys are derived with HKDF-SHA256 and a 12-byte IV. Upgrading from 2.1.x invalidates existing tokens (users re-authenticate once)
+6. **Mobile Attestation**: The mobile JSON path is opt-in and provides NO cryptographic attestation — keep it disabled unless you understand the trade-off (see [Attestation](#attestation))
 
 ## Error Handling
 
@@ -508,10 +492,12 @@ try {
 }
 ```
 
+All error classes extend `WebAuthnError` (exposing `code` and `statusCode`) and are exported as **runtime values**, so `instanceof` checks work. The `COSEAlgorithmIdentifier`, `COSEKeyType`, and `COSEEllipticCurve` enums are likewise value exports.
+
 ## Requirements
 
-- Node.js 20.0.0 or higher
-- TypeScript 5.0 or higher (for TypeScript projects)
+- Node.js 24.13.0 or higher (see `engines` in `package.json`)
+- TypeScript 5.5+ recommended (the package is built and type-checked with TypeScript 6)
 
 ## Frontend Package
 

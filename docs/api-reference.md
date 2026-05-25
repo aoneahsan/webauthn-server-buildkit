@@ -223,6 +223,7 @@ interface WebAuthnServerConfig {
   sessionDuration?: number; // Session duration in ms (default: 24h)
   encryptionSecret: string; // Secret for session encryption (min 32 chars)
   attestationType?: AttestationConveyancePreference; // Default: 'none'
+  enableMobileAttestation?: boolean; // Default: false (opt-in to the non-standard mobile JSON path; no cryptographic attestation)
   userVerification?: UserVerificationRequirement; // Default: 'preferred'
   authenticatorSelection?: AuthenticatorSelectionCriteria;
   supportedAlgorithms?: COSEAlgorithmIdentifier[]; // Default: ES256, RS256
@@ -319,6 +320,15 @@ interface StorageAdapter {
 ```
 
 ## Mobile Attestation Functions
+
+> **Opt-in & not cryptographically verified.** The mobile JSON attestation path is
+> handled internally by `verifyRegistration` only when `enableMobileAttestation: true`
+> is set on the server config (default `false`). It trusts a client-supplied
+> `{ publicKey, credentialId }` payload **without** verifying a challenge signature,
+> so enable it only on a trusted client/transport. These helper functions are
+> internal to the registration module and are **not** exported from the package
+> entry point; call `verifyRegistration` (with the flag enabled) rather than using
+> them directly.
 
 These functions handle attestation data from mobile platforms (iOS/Android) that may use a simplified format instead of standard WebAuthn attestation objects.
 
