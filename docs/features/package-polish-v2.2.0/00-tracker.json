@@ -281,30 +281,34 @@
       "id": "phase06",
       "title": "Release v2.2.0",
       "file": "docs/features/package-polish-v2.2.0/phase06-release.md",
-      "status": "pending",
+      "status": "in_progress",
       "completedAt": null,
       "subTasks": [
         {
           "id": "phase06.1",
           "title": "Bump version to 2.2.0 in package.json (constants/VERSION injected at build)",
-          "status": "pending"
+          "status": "complete",
+          "note": "package.json -> 2.2.0; built VERSION export confirms 2.2.0."
         },
         {
           "id": "phase06.2",
           "title": "Final full verification gate (typecheck/lint/test/build) + npm pack --dry-run review",
-          "status": "pending"
+          "status": "complete",
+          "note": "typecheck/lint/format clean; 166 tests pass; build OK. npm pack --dry-run: 10 files (dist + Readme + AI-INTEGRATION-GUIDE + LICENSE + package.json), 252 kB, no stray files."
         },
         {
           "id": "phase06.3",
           "title": "Commit release; push to origin main (authorized)",
-          "status": "pending",
-          "awaitingUser": false
+          "status": "in_progress",
+          "awaitingUser": false,
+          "note": "Release commit made; push to origin main next."
         },
         {
           "id": "phase06.4",
           "title": "npm publish (REQUIRES explicit user go-ahead) + verify on npmjs.com",
-          "status": "pending",
-          "awaitingUser": true
+          "status": "blocked",
+          "awaitingUser": true,
+          "note": "Awaiting explicit user go-ahead before running npm publish (irreversible)."
         }
       ]
     }
@@ -344,6 +348,12 @@
       "date": "2026-05-26",
       "phase": "phase05",
       "summary": "Documentation refresh for v2.2.0: README (Current State, config incl. enableMobileAttestation, honest Attestation section replacing the inaccurate mobile section + removed non-exported isMobileAttestation example, EdDSA-implemented, Node 24.13, value-export note, fixed param-object usage in examples), CHANGELOG [2.2.0] with upgrade notes, migration 2.1->2.2 section, api-reference + AI-INTEGRATION-GUIDE mobile opt-in notes, audit-records appended. Synced package CLAUDE.md/AGENTS.md (2.2.0/166, security posture, dates) + created .claude/AGENTS.md; bumped parent workspace version refs (separate 01-code repo).",
+      "commit": "pending"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase06",
+      "summary": "Release prep: bumped package.json to 2.2.0 (built VERSION confirms). Final gate green (typecheck/lint/format/166 tests/build). npm pack --dry-run clean (10 files, no stray content). Release commit made + pushed. npm publish is BLOCKED pending explicit user go-ahead (irreversible). Commit shas are in git log (runHistory 'commit' fields left as 'pending').",
       "commit": "pending"
     }
   ],
