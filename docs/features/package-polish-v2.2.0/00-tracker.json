@@ -281,8 +281,8 @@
       "id": "phase06",
       "title": "Release v2.2.0",
       "file": "docs/features/package-polish-v2.2.0/phase06-release.md",
-      "status": "in_progress",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-26",
       "subTasks": [
         {
           "id": "phase06.1",
@@ -306,9 +306,9 @@
         {
           "id": "phase06.4",
           "title": "npm publish (REQUIRES explicit user go-ahead) + verify on npmjs.com",
-          "status": "blocked",
-          "awaitingUser": true,
-          "note": "User approved publishing. BLOCKED on npm auth and no autonomous path available this session: `npm whoami` 401 before and after setting the documented global token (expired/revoked); `yarn npm whoami` unauthenticated; `gh` CLI not installed (can't create a Release to trigger publish.yml CI); env vars NPM_TOKEN/NODE_AUTH_TOKEN/YARN_NPM_AUTH_TOKEN/GITHUB_TOKEN all unset. Network/read is fine (npm view works). REQUIRES the user to authenticate. Resume: (a) `npm login` (or set a VALID token via `npm config set //registry.npmjs.org/:_authToken <token>`) then `npm publish`; or (b) `npm publish` from an already-authenticated terminal; or (c) install gh + create a v2.2.0 Release (needs a valid NPM_TOKEN repo secret). All gates green; `npm pack --dry-run` clean; package.json is 2.2.0; everything committed + pushed."
+          "status": "complete",
+          "awaitingUser": false,
+          "note": "PUBLISHED 2026-05-26. User supplied a fresh npm token. The documented global token was expired (401); the new token authenticated (whoami=aoneahsan). `npm publish` initially returned ENEEDAUTH on the PUT despite a valid ~/.npmrc; resolved by publishing with an explicit temp --userconfig containing the token + always-auth (token kept in /tmp, never committed, removed after). Verified live: `npm view webauthn-server-buildkit version` = 2.2.0, dist-tags.latest = 2.2.0."
         }
       ]
     }
@@ -353,17 +353,25 @@
     {
       "date": "2026-05-26",
       "phase": "phase06",
-      "summary": "Release prep: bumped package.json to 2.2.0 (built VERSION confirms). Final gate green (typecheck/lint/format/166 tests/build). npm pack --dry-run clean (10 files, no stray content). Release commit df260b6 + all 7 commits pushed to remote 'o' main. User approved npm publish, but it is BLOCKED: npm auth returns 401 even after setting the documented global token (expired/revoked) — needs a valid token or an authenticated environment. Commit shas are in git log.",
+      "summary": "Release prep: bumped package.json to 2.2.0 (built VERSION confirms). Final gate green (typecheck/lint/format/166 tests/build). npm pack --dry-run clean (10 files, no stray content). Release commit df260b6 + all 7 commits pushed to remote 'o' main. (Publish initially blocked on auth — resolved next entry.)",
       "commit": "df260b6"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase06-publish",
+      "summary": "PUBLISHED webauthn-server-buildkit@2.2.0 to npm. User provided a fresh npm token (the documented global token was expired/401). New token authenticated (whoami=aoneahsan). Plain `npm publish` returned ENEEDAUTH on the PUT despite a valid ~/.npmrc; resolved by publishing with an explicit temp --userconfig (token in /tmp, never committed, removed after) + always-auth. Verified live: npm view version = 2.2.0, dist-tags.latest = 2.2.0. Tracker pushed. TASK COMPLETE.",
+      "commit": "post-df260b6 (tracker finalize)"
     }
   ],
   "newFindings": [
-    "CI-1 [low]: .github/workflows/ci.yml tests Node 20.x/22.x but package engine requires >=24.13.0 — bump CI matrix to 24.x (Phase 04/05)."
+    "CI-1 [low]: .github/workflows/ci.yml tested Node 20.x/22.x but engine requires >=24.13.0 — FIXED in phase04 (matrix -> 24.x).",
+    "NPM-AUTH [resolved]: the npm token documented in global rules is expired (401). Future publishes need a fresh token; see project memory 'npm-publish-token-expired'. Also: `npm publish` may need an explicit --userconfig/always-auth to send the token on the PUT in this environment."
   ],
+  "status": "COMPLETE",
   "nextSuggestion": {
-    "phase": "phase06",
-    "subTask": "phase06.1",
-    "rationale": "Phases 01-05 complete. Begin release: bump package.json to 2.2.0, run the final verification gate + npm pack --dry-run, commit + push, then npm publish ONLY after explicit user go-ahead (phase06.4)."
+    "phase": "done",
+    "subTask": null,
+    "rationale": "All 6 phases complete and webauthn-server-buildkit@2.2.0 is published + verified live on npm. No remaining work. If re-run: confirm `npm view webauthn-server-buildkit version` is 2.2.0 and stop."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md. 3) Find the first phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, vitest, nodejs-best-practices, documentation-writer, simplify as relevant). 6) Do the work, run the verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker update. 8) Do NOT npm publish without explicit user confirmation (phase06.4)."
 }
