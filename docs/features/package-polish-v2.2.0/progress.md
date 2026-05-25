@@ -113,3 +113,27 @@ Phase 03 (security hardening): mobile-attestation opt-in (`enableMobileAttestati
 ### Next
 
 Phase 04 (API correctness & hygiene): export error classes as **values** (so `instanceof` works), delete dead `utils/console.ts`, `challenge.ts` → `ConfigurationError`, surface `SUPPORT_CONFIG` + `funding`, export `timingSafeEqualBytes`, move stray root doc, CI Node matrix.
+
+## 2026-05-26 — Session 1 (Phase 04: API correctness & hygiene)
+
+- **API-1** — Restructured `index.ts`. The error classes **and the COSE enums** (`COSEAlgorithmIdentifier`/`COSEKeyType`/`COSEEllipticCurve`) were both exported `type`-only, so consumers couldn't `instanceof` errors or use enum members. They're now value exports; interfaces/type-aliases stay `export type`. Verified in the built CJS (instanceof works, `COSEAlgorithmIdentifier.ES256 === -7`). Added `SUPPORT_CONFIG` + `timingSafeEqualBytes` exports.
+- **HYG-1** — Deleted dead `src/utils/console.ts`.
+- **HYG-5** — `challenge.ts` throws `ConfigurationError` (typed) instead of generic `Error`.
+- **HYG-2** — Added `package.json` `funding` field (aoneahsan.com/payment).
+- **HYG-4** — Moved stray `simplewebauthn-server-documentation-part.md` out of root → `docs/reference/simplewebauthn-server-reference.md`.
+- **CI-1** — `ci.yml` + `publish.yml`: Node matrix → `24.x` (engine ≥24.13.0); `yarn install --frozen-lockfile` → `--immutable` (Yarn 4).
+- Test: new `tests/index-exports.test.ts` smoke test. Suite **163 → 166**.
+
+### Verification gate (Phase 04)
+
+| Gate         | Result                                            |
+| ------------ | ------------------------------------------------- |
+| typecheck    | ✅ clean                                          |
+| lint         | ✅ clean                                          |
+| test         | ✅ 166 passed                                     |
+| build        | ✅ ESM+CJS+DTS (instanceof/enum verified in dist) |
+| format:check | ✅ clean                                          |
+
+### Next
+
+Phase 05 (documentation): README, CHANGELOG 2.2.0, api-reference, migration, AI-INTEGRATION-GUIDE, audit-records, and sync CLAUDE.md/AGENTS.md at all levels.

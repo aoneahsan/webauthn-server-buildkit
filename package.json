@@ -13,6 +13,10 @@
     "url": "https://github.com/aoneahsan/webauthn-server-buildkit/issues"
   },
   "homepage": "https://github.com/aoneahsan/webauthn-server-buildkit#readme",
+  "funding": {
+    "type": "individual",
+    "url": "https://aoneahsan.com/payment?project-id=webauthn-server-buildkit&project-identifier=webauthn-server-buildkit"
+  },
   "type": "module",
   "keywords": [
     "webauthn",

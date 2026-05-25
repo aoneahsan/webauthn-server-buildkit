@@ -12,7 +12,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        # Package engine requires Node >= 24.13.0.
+        node-version: [24.x]
 
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +24,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Run linting
         run: yarn lint
@@ -38,7 +39,7 @@ jobs:
         run: yarn build
 
       - name: Upload coverage reports to Codecov
-        if: matrix.node-version == '22.x'
+        if: matrix.node-version == '24.x'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage/coverage-final.json

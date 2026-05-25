@@ -191,35 +191,45 @@
       "id": "phase04",
       "title": "API correctness & code hygiene",
       "file": "docs/features/package-polish-v2.2.0/phase04-api-hygiene.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-26",
       "subTasks": [
         {
           "id": "phase04.1",
           "title": "API-1: Export error classes as VALUES (instanceof works) + VERSION/SUPPORT_CONFIG as values; keep type-only for pure types",
-          "status": "pending"
+          "status": "complete",
+          "note": "Restructured index.ts: error classes + COSE enums (also previously type-only!) + functions + SUPPORT_CONFIG + timingSafeEqualBytes are value exports; interfaces/aliases are type-only. Verified in built CJS: instanceof works, enum members accessible. Smoke test added."
         },
         {
           "id": "phase04.2",
           "title": "HYG-1: Delete dead utils/console.ts; HYG-5: challenge.ts throws ConfigurationError not generic Error",
-          "status": "pending"
+          "status": "complete",
+          "note": "Deleted src/utils/console.ts (dead). challenge.ts now throws ConfigurationError."
         },
         {
           "id": "phase04.3",
           "title": "HYG-2: Surface SUPPORT_CONFIG; add package.json funding field",
-          "status": "pending"
+          "status": "complete",
+          "note": "SUPPORT_CONFIG exported from index; package.json funding field added (aoneahsan.com/payment)."
         },
         {
           "id": "phase04.4",
           "title": "HYG-4: Move/remove stray simplewebauthn-server-documentation-part.md from repo root",
-          "status": "pending"
+          "status": "complete",
+          "note": "git mv -> docs/reference/simplewebauthn-server-reference.md (root cleaned; not shipped)."
         },
         {
           "id": "phase04.5",
           "title": "Unify hash/buffer comparisons; minor cleanups (substr->slice)",
-          "status": "pending"
+          "status": "complete",
+          "note": "substr->substring done in Phase 02. Added CI-1 fixes: ci.yml + publish.yml Node matrix -> 24.x; yarn --frozen-lockfile -> --immutable (Yarn 4)."
         },
-        { "id": "phase04.6", "title": "Verify gate + commit", "status": "pending" }
+        {
+          "id": "phase04.6",
+          "title": "Verify gate + commit",
+          "status": "complete",
+          "note": "166 tests pass; typecheck/lint/format/build clean."
+        }
       ]
     },
     {
@@ -313,15 +323,21 @@
       "phase": "phase03",
       "summary": "Security hardening: SEC-1 mobile attestation is now opt-in (enableMobileAttestation, default false) — the unsigned-JSON bypass is closed by default, gated in verify-response.ts with a loud warning. SEC-4/5 session tokens use HKDF-SHA256 + 12-byte GCM IV (invalidates old tokens, documented). SEC-8 constant-time timingSafeEqualBytes for RP-ID-hash compares. SEC-9 algorithm allowlist enforced at registration. SEC-6 packed self-attestation verified + fmt/attestationVerified surfaced; cert-chain formats honestly flagged (not trust-anchored). New end-to-end registration tests (mobile gate, packed, alg allowlist). Suite 157 -> 163. Gate green.",
       "commit": "pending"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase04",
+      "summary": "API correctness & hygiene: API-1 fixed — error classes AND COSE enums (both were type-only, so unusable as values/instanceof by consumers) are now value exports; interfaces/aliases stay type-only; SUPPORT_CONFIG + timingSafeEqualBytes exported. Verified in built CJS. Deleted dead utils/console.ts; challenge.ts throws ConfigurationError; package.json funding added; stray SimpleWebAuthn doc moved out of root to docs/reference/. CI-1: ci.yml + publish.yml Node matrix -> 24.x and yarn --immutable (Yarn 4). Public-API smoke test added. Suite 163 -> 166. Gate green.",
+      "commit": "pending"
     }
   ],
   "newFindings": [
     "CI-1 [low]: .github/workflows/ci.yml tests Node 20.x/22.x but package engine requires >=24.13.0 — bump CI matrix to 24.x (Phase 04/05)."
   ],
   "nextSuggestion": {
-    "phase": "phase04",
-    "subTask": "phase04.1",
-    "rationale": "Phases 01-03 complete. Begin API correctness & hygiene: export error classes as VALUES (instanceof), delete dead utils/console.ts, challenge.ts -> ConfigurationError, surface SUPPORT_CONFIG + funding, move stray root doc, export timingSafeEqualBytes."
+    "phase": "phase05",
+    "subTask": "phase05.1",
+    "rationale": "Phases 01-04 complete. Begin documentation refresh: README (config incl. enableMobileAttestation, error instanceof, supported algorithms/attestation), CHANGELOG 2.2.0 (incl. session-token invalidation + behaviour changes), api-reference, migration, AI-INTEGRATION-GUIDE, audit-records, and sync CLAUDE.md/AGENTS.md at all levels."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md. 3) Find the first phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, vitest, nodejs-best-practices, documentation-writer, simplify as relevant). 6) Do the work, run the verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker update. 8) Do NOT npm publish without explicit user confirmation (phase06.4)."
 }

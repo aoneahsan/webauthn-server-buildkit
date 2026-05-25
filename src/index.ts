@@ -43,11 +43,27 @@ export { WebAuthnServer } from './server';
 // Storage adapters
 export { MemoryStorageAdapter } from './adapters';
 
-// Types
+// Error classes and COSE enums — runtime VALUES (so consumers can `instanceof`
+// errors and use enum members).
+export {
+  WebAuthnError,
+  RegistrationError,
+  AuthenticationError,
+  VerificationError,
+  ConfigurationError,
+  StorageError,
+  SessionError,
+  COSEAlgorithmIdentifier,
+  COSEEllipticCurve,
+  COSEKeyType,
+} from './types';
+
+// Types (type-only)
 export type {
   // Configuration
   WebAuthnServerConfig,
   PreferredAuthenticatorType,
+  InternalConfig,
 
   // Base types
   Base64URLString,
@@ -60,6 +76,9 @@ export type {
   AttestationFormat,
   PublicKeyCredentialType,
   ClientDataType,
+  AuthenticatorDataFlags,
+  ParsedAuthenticatorData,
+  ParsedClientDataJSON,
 
   // Models
   UserModel,
@@ -77,6 +96,7 @@ export type {
   AuthenticatorSelectionCriteria,
 
   // Responses
+  AttestationObject,
   RegistrationCredentialJSON,
   AuthenticationCredentialJSON,
   AuthenticatorAttestationResponseJSON,
@@ -87,34 +107,12 @@ export type {
 
   // Storage
   StorageAdapter,
-
-  // Errors
-  WebAuthnError,
-  RegistrationError,
-  AuthenticationError,
-  VerificationError,
-  ConfigurationError,
-  StorageError,
-  SessionError,
-  AttestationObject,
-  AuthenticatorDataFlags,
-  ParsedAuthenticatorData,
-  COSEAlgorithmIdentifier,
-  COSEEllipticCurve,
-  COSEKeyType,
-  InternalConfig,
-  ParsedClientDataJSON,
 } from './types';
 
-// Utility functions
+// Crypto functions (runtime values)
 export {
   generateChallenge,
   generateRandomId,
-  COSEEC2Key,
-  COSEKeyCommon,
-  COSEOKPKey,
-  COSEPublicKey,
-  COSERSAKey,
   decodeCBOR,
   decodeCBORFirst,
   encodeCBOR,
@@ -125,6 +123,10 @@ export {
   verifySignature,
 } from './crypto';
 
+// COSE key shapes (type-only)
+export type { COSEEC2Key, COSEKeyCommon, COSEOKPKey, COSEPublicKey, COSERSAKey } from './crypto';
+
+// Utility functions
 export {
   bufferToBase64URL,
   base64URLToBuffer,
@@ -134,6 +136,7 @@ export {
   bufferToHex,
   bufferToNumber,
   buffersEqual,
+  timingSafeEqualBytes,
   concatBuffers,
   hexToBuffer,
   numberToBuffer,
@@ -142,6 +145,9 @@ export {
   sha512,
   verifyHash,
 } from './utils';
+
+// Support / funding info
+export { SUPPORT_CONFIG } from './config/support';
 
 // Registration and Authentication parameter types
 export type { GenerateRegistrationOptionsParams } from './registration';

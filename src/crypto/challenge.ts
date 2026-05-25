@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { bufferToBase64URL } from '@/utils/base64url';
+import { ConfigurationError } from '@/types';
 import type { Base64URLString } from '@/types';
 
 /**
@@ -7,11 +8,11 @@ import type { Base64URLString } from '@/types';
  */
 export function generateChallenge(size: number = 32): Base64URLString {
   if (size < 16) {
-    throw new Error('Challenge size must be at least 16 bytes');
+    throw new ConfigurationError('Challenge size must be at least 16 bytes');
   }
 
   if (size > 64) {
-    throw new Error('Challenge size must not exceed 64 bytes');
+    throw new ConfigurationError('Challenge size must not exceed 64 bytes');
   }
 
   const buffer = randomBytes(size);
