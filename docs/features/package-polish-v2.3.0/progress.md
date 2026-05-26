@@ -12,7 +12,7 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Phase 3 — Spec-compliance & correctness:** ✅ complete
 - **Phase 4 — Extensions, API & hygiene:** ✅ complete
 - **Phase 5 — Attestation foundation:** ✅ complete
-- **Phase 6 — Attestation formats (+ FIDO MDS):** ⏳ pending
+- **Phase 6 — Attestation formats (+ FIDO MDS):** ✅ complete
 - **Phase 7 — Documentation refresh:** ⏳ pending
 - **Phase 8 — Release v2.3.0:** ⏳ pending
 
@@ -85,3 +85,15 @@ _Delegated to a sub-agent; scope and full gate verified in the main thread._
 - **Tests (+45 → 265):** `tests/attestation/{asn1,x509,metadata}.test.ts`.
 - Gate green: typecheck/lint/test (265)/build/format. Committed + pushed.
 - **Next:** Phase 6 — per-format attestation verification + FIDO MDS (the largest phase).
+
+### 2026-05-27 — Phase 6 (full attestation verification + FIDO MDS)
+
+_Single comprehensive sub-agent (kept the six formats coherent on shared X.509/ASN.1 primitives); the dispatcher, the Apple verifier, and the shared helpers were reviewed in the main thread and the full gate re-run._
+
+- **All six formats** under `src/attestation/formats/`: `apple` (chain to bundled Apple root + nonce-ext binding + key match — trust-anchored without MDS), `fido-u2f` (U2F sig-base + chain), `packed` (self path kept; x5c with leaf-requirements + AAGUID ext), `android-key` (KeyDescription `attestationChallenge` ext), `tpm` (full `TPMS_ATTEST`/`TPMT_PUBLIC` parse + AIK sig + EKU), `android-safetynet` (JWS — **deprecated, docs recommend Play Integrity**).
+- **Honest framing (security invariant):** `attestationVerified: true` **only** when trust-anchored — Apple via its bundled root, the cert-chain formats via roots supplied through the RP's `MetadataService`. No `metadataService`/roots → `false` (never a false positive, never a throw). Throws happen only for cryptographically-invalid statements.
+- **Wiring:** `verifyAttestationStatement` dispatches by `fmt`; `verifyRegistrationResponse` passes `authData`/`aaguid`/`metadataService` and surfaces `trustPath`. **FUNC-N4:** `requireTrustedAttestation` (default false) throws `ATTESTATION_NOT_TRUSTED` when a requested attestation can't be anchored; otherwise warns.
+- **Tests (+46 → 311):** a real signed-cert builder mints chains with dynamic custom extensions; every format has a trust-anchored happy path (`attestationVerified === true`) plus negative/throw paths. Zero new runtime deps; zero regressions.
+- Caveats for docs: TPM AIK SAN and android-key Keymaster authorization-list constraints are not additionally asserted (the security-critical bindings are); android-safetynet needs an RP-supplied GlobalSign root.
+- Gate green: typecheck/lint/test (311)/build/format. Committed + pushed.
+- **Next:** Phase 7 — documentation refresh (parallelized across sub-agents).

@@ -131,6 +131,13 @@ export interface VerifiedRegistrationInfo {
   attestationObject?: Uint8Array;
   clientDataJSON?: Uint8Array;
   /**
+   * The verified attestation certificate chain (leaf-first) as PEM strings.
+   * Present only for certificate-chain attestation formats (`apple`, `packed`
+   * x5c, `fido-u2f`, `android-key`, `tpm`, `android-safetynet`) that were
+   * cryptographically verified AND trust-anchored to a supplied/bundled root.
+   */
+  trustPath?: string[];
+  /**
    * Client extension outputs parsed from `response.clientExtensionResults`.
    * At minimum surfaces `credProps.rk` (whether a discoverable credential was
    * created). Present only when the client returned extension results.

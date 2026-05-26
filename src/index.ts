@@ -7,11 +7,13 @@
  * - **Registration & Authentication**: Standard WebAuthn ceremony verification
  *   (challenge, origin, RP-ID hash, flags, signature counter, signature) with
  *   ES256/384/512, RS/PS256-512 and Ed25519, and pinned algorithms.
- * - **Attestation**: `none` accepted; `packed` self-attestation cryptographically
- *   verified. Certificate-chain formats (`packed` x5c, `fido-u2f`, `tpm`,
- *   `android-key`, `android-safetynet`, `apple`) are surfaced via `fmt` /
- *   `attestationVerified` but are **not yet trust-anchored** here — verify them
- *   out-of-band if you require attestation trust.
+ * - **Attestation**: full per-format verification — `none` accepted; `packed`
+ *   self-attestation, `packed` x5c, `fido-u2f`, `android-key`, `tpm`,
+ *   `android-safetynet` and `apple` are cryptographically verified. Cert-chain
+ *   formats report `attestationVerified: true` only when trust-anchored to a
+ *   root supplied via `metadataService` (FIDO MDS); `apple` uses the bundled
+ *   Apple WebAuthn Root CA. Set `requireTrustedAttestation` to reject
+ *   non-trust-anchored attestations when `attestationType !== 'none'`.
  * - **Session Management**: Encrypted session tokens (AES-256-GCM with
  *   HKDF-SHA256 key derivation), managed via `WebAuthnServer`.
  * - **Flexible Storage Adapters**: Memory adapter included; custom adapters
@@ -132,6 +134,16 @@ export type {
 
 // Attestation foundation — trust-anchor provider + bundled Apple root (runtime values).
 export { StaticMetadataService, APPLE_WEBAUTHN_ROOT_CA_PEM } from './attestation';
+
+// Per-format attestation verifiers (runtime values).
+export {
+  verifyAppleAttestation,
+  verifyFidoU2fAttestation,
+  verifyPackedAttestation,
+  verifyAndroidKeyAttestation,
+  verifyTpmAttestation,
+  verifyAndroidSafetyNetAttestation,
+} from './attestation';
 
 // Attestation foundation — X.509 helpers (Node built-in crypto wrappers, runtime values).
 export {

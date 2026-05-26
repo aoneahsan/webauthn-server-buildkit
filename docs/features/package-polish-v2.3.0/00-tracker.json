@@ -279,48 +279,56 @@
       "id": "phase06",
       "title": "Attestation formats (full verification + FIDO MDS)",
       "file": "docs/features/package-polish-v2.3.0/phase06-attestation-formats.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-27",
       "subTasks": [
         {
           "id": "phase06.1",
           "title": "apple: chain to Apple WebAuthn Root CA; nonce ext OID 1.2.840.113635.100.8.2 == hash(authData||clientDataHash); leaf key == credential key",
-          "status": "pending"
+          "status": "complete",
+          "note": "apple.ts: chain to bundled Apple root (+ RP roots), nonce ext binding (constant-time), leaf key == credential key. Trust-anchored without MDS. attestationVerified=true on success."
         },
         {
           "id": "phase06.2",
           "title": "fido-u2f: reconstruct U2F sig base; verify ES256 with attestation cert; chain validate",
-          "status": "pending"
+          "status": "complete",
+          "note": "fido-u2f.ts: 0x00||rpIdHash||clientDataHash||credentialId||(0x04||x||y) sig base, ES256 verify with x5c[0]; P-256 only; trust-anchored only with MDS root, else attestationVerified=false (honest)."
         },
         {
           "id": "phase06.3",
           "title": "packed-x5c: verify sig with leaf key; cert requirements; AAGUID ext OID 1.3.6.1.4.1.45724.1.1.4 == authData AAGUID; chain via MDS",
-          "status": "pending"
+          "status": "complete",
+          "note": "packed.ts: self path kept (verified via credential key); x5c path verifies sig with leaf, enforces leaf requirements (v3/OU/BC CA=false), AAGUID ext match; trust-anchored only with MDS root, else false."
         },
         {
           "id": "phase06.4",
           "title": "android-key: leaf key == credential key; Android Key Attestation ext OID 1.3.6.1.4.1.11129.2.1.17 (challenge==clientDataHash); chain to Google roots",
-          "status": "pending"
+          "status": "complete",
+          "note": "android-key.ts: sig + leaf key == credential key + KeyDescription ext attestationChallenge == clientDataHash; trust-anchored with MDS Google roots. Keymaster authorization-list constraints not additionally enforced (documented caveat)."
         },
         {
           "id": "phase06.5",
           "title": "tpm: certInfo (TPMS_ATTEST) + pubArea (TPMT_PUBLIC) parse; pubArea==credential key; extraData==hash(attToBeSigned); AIK cert SAN/EKU; chain",
-          "status": "pending"
+          "status": "complete",
+          "note": "tpm.ts + tpm-structs.ts: full TPMS_ATTEST/TPMT_PUBLIC parse; pubArea key == credential key; certInfo.attested.name == nameAlg||digest(pubArea); extraData == hash(attToBeSigned); AIK sig + EKU 2.23.133.8.3; chain via MDS. Full happy-path fixture tested. AIK SAN manufacturer/model/version not additionally asserted (documented caveat)."
         },
         {
           "id": "phase06.6",
           "title": "android-safetynet: JWS verify chain to GlobalSign; nonce; ctsProfileMatch; timestamp. Document Play Integrity as preferred successor.",
-          "status": "pending"
+          "status": "complete",
+          "note": "android-safetynet.ts: JWS parse + sig verify with header x5c[0]; leaf CN attest.android.com; nonce == b64(sha256(authData||clientDataHash)); ctsProfileMatch; timestamp freshness; chain to RP-supplied GlobalSign root (none bundled). DEPRECATED — docs recommend Play Integrity."
         },
         {
           "id": "phase06.7",
           "title": "Wire all formats into verifyAttestationStatement; FUNC-N4: enforce attestationType policy (require trust-anchored when != none, or warn)",
-          "status": "pending"
+          "status": "complete",
+          "note": "registration/attestation.ts dispatches by fmt (FORMAT_VERIFIERS), derives aaguid, keeps none + packed-self. verify-response passes authData/aaguid/metadataService, surfaces trustPath. FUNC-N4: requireTrustedAttestation config (default false) -> throws ATTESTATION_NOT_TRUSTED when attestationType!=none && !verified; otherwise warns (Phase 3)."
         },
         {
           "id": "phase06.8",
-          "title": "Tests per format (fixtures) + Verify gate + commit (may span multiple sessions — one commit per format-group is acceptable)",
-          "status": "pending"
+          "title": "Tests per format (fixtures) + Verify gate + commit",
+          "status": "complete",
+          "note": "tests/attestation/formats/* with a real DER cert-builder minting signed certs + dynamic custom extensions; every format has a trust-anchored happy path (attestationVerified===true) + negative/throw paths. Suite 265 -> 311. Gate green, zero regressions. Implemented via a single comprehensive sub-agent (coherent crypto); dispatcher + apple + shared helpers reviewed in main thread; gate re-run."
         }
       ]
     },
@@ -425,6 +433,12 @@
       "date": "2026-05-27",
       "phase": "phase05",
       "summary": "Attestation foundation (delegated sub-agent; scope + gate verified in main thread). New src/attestation/: asn1.ts (strict in-house DER reader + findExtension), x509.ts (sync Node X509Certificate chain verification + publicKeyMatchesCOSE, fail-closed), metadata.ts (StaticMetadataService), roots/apple-webauthn-root-ca.ts (REAL Apple WebAuthn Root CA, fetched + openssl-verified), types.ts (Phase 6 contract). src/types/metadata.ts (SYNCHRONOUS MetadataService interface — keeps verifyRegistrationResponse sync, no breaking async). config.metadataService wired; public API exported. Zero new runtime deps. Tests: tests/attestation/{asn1,x509,metadata} (42) + index-exports (3); suite 220 -> 265. Gate green. registration/attestation.ts intentionally untouched (Phase 6 wires it).",
+      "commit": "f770a9d"
+    },
+    {
+      "date": "2026-05-27",
+      "phase": "phase06",
+      "summary": "Full per-format attestation verification + FIDO MDS (single comprehensive sub-agent for coherence; dispatcher + apple + shared helpers reviewed in main thread; gate re-run). All 6 formats implemented under src/attestation/formats/: apple (bundled-root + nonce + key, trust-anchored w/o MDS), fido-u2f (U2F sig base + chain), packed (self + x5c w/ AAGUID ext + leaf reqs), android-key (KeyDescription challenge ext), tpm (full TPMS_ATTEST/TPMT_PUBLIC parse + AIK), android-safetynet (JWS, deprecated -> Play Integrity). Honest framing: attestationVerified=true ONLY when trust-anchored (apple via bundled root; others via RP metadataService roots); never a false positive; throws only on cryptographically-invalid statements. Dispatcher + verify-response wired; FUNC-N4 requireTrustedAttestation (default false). Tests: tests/attestation/formats/* with a real signed-cert builder, every format has a trust-anchored happy path + negative paths; suite 265 -> 311, zero regressions. Gate green, zero new deps. Caveats for docs: TPM SAN + android-key authz-list not additionally asserted; safetynet needs RP GlobalSign root.",
       "commit": "pending"
     }
   ],
@@ -433,9 +447,9 @@
   ],
   "status": "IN_PROGRESS",
   "nextSuggestion": {
-    "phase": "phase06",
-    "subTask": "phase06.1",
-    "rationale": "Phases 0-5 complete and committed; attestation foundation ready. Next: Phase 6 per-format verification wired into src/registration/attestation.ts using the foundation (asn1/x509/metadata) — apple (Apple root + nonce ext), fido-u2f (ES256 sig base), packed-x5c (sig + AAGUID ext + chain via MDS), android-key (key-attestation ext + Google roots), tpm (certInfo/pubArea + AIK), android-safetynet (JWS; deprecated -> recommend Play Integrity). Surface attestationVerified=true only when trust-anchored; honest framing (false, not throw) when no metadataService/roots supplied. Then Phase 7 docs, Phase 8 release."
+    "phase": "phase07",
+    "subTask": "phase07.1",
+    "rationale": "Phases 0-6 complete and committed; all six attestation formats verified + FIDO MDS provider integrated (311 tests). Next: Phase 7 documentation refresh — README (2.3.0 state, full attestation + MetadataService usage, all new config/result fields, honest capability matrix incl. TPM/android-key caveats + Play Integrity recommendation, usernameless guide), CHANGELOG [2.3.0] + upgrade notes, docs/api-reference.md, docs/migration.md (2.2->2.3), AI-INTEGRATION-GUIDE.md, docs/audit-records.md, and CLAUDE.md + AGENTS.md at all levels. Doc files are independent -> parallelizable across sub-agents. Then Phase 8 release (version bump 2.3.0, gate, npm publish — awaitingUser unless authorized)."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
 }

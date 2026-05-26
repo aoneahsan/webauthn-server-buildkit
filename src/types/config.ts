@@ -137,11 +137,28 @@ export interface WebAuthnServerConfig {
    * MDS data — the package never fetches it. Use {@link StaticMetadataService}
    * for a fixed set of roots, e.g. `{ defaultRoots: [APPLE_WEBAUTHN_ROOT_CA_PEM] }`.
    *
-   * When absent, certificate-chain attestation formats remain
-   * `attestationVerified: false` (honest framing preserved). Attestation format
-   * verification lands in a later phase.
+   * When absent, certificate-chain attestation formats are still
+   * cryptographically verified but report `attestationVerified: false` because
+   * no trust anchor is available (honest framing preserved). `apple` is the
+   * exception — its root is bundled, so it trust-anchors without this service.
    */
   metadataService?: MetadataService;
+
+  /**
+   * Require a trust-anchored attestation when `attestationType !== 'none'`
+   * (default: `false`).
+   *
+   * When `true` and the relying party requested attestation, registration is
+   * rejected with `ATTESTATION_NOT_TRUSTED` unless the attestation statement was
+   * cryptographically verified AND trust-anchored to a supplied/bundled root.
+   * When `false` (the default), a non-trust-anchored attestation is allowed but
+   * logged as a warning. Has no effect when `attestationType === 'none'`.
+   *
+   * ⚠️ For certificate-chain formats other than `apple`, enabling this requires
+   * a {@link metadataService} that supplies the authenticator's roots — without
+   * one, those formats can never be trust-anchored and registration will fail.
+   */
+  requireTrustedAttestation?: boolean;
 
   /**
    * Enable debug logging

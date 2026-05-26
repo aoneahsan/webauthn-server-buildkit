@@ -403,6 +403,7 @@ export class WebAuthnServer {
       enableMobileAttestation: config.enableMobileAttestation ?? false,
       enforceChallengeStore: config.enforceChallengeStore ?? true,
       allowCrossOriginIframe: config.allowCrossOriginIframe ?? false,
+      requireTrustedAttestation: config.requireTrustedAttestation ?? false,
       originVerifier: config.originVerifier,
       userVerification: config.userVerification || 'preferred',
       authenticatorSelection: {

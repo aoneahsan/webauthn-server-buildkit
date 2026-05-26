@@ -1,80 +1,88 @@
-import { AttestationFormat, AttestationObject, VerificationError } from '@/types';
-import { COSEPublicKey, verifySignature } from '@/crypto';
-import { concatBuffers } from '@/utils/buffer';
+import { AttestationFormat, AttestationObject, MetadataService, VerificationError } from '@/types';
+import { COSEPublicKey, parseAuthenticatorData } from '@/crypto';
+import type { AttestationVerificationResult, AttestationVerifierInput } from '@/attestation';
+import {
+  verifyAndroidKeyAttestation,
+  verifyAndroidSafetyNetAttestation,
+  verifyAppleAttestation,
+  verifyFidoU2fAttestation,
+  verifyPackedAttestation,
+  verifyTpmAttestation,
+} from '@/attestation/formats';
+
+export type { AttestationVerificationResult } from '@/attestation';
 
 /**
- * Result of attestation-statement verification.
- */
-export interface AttestationVerificationResult {
-  fmt: AttestationFormat;
-  /**
-   * `true` only when this library cryptographically verified the attestation
-   * statement. See {@link verifyAttestationStatement} for which formats qualify.
-   */
-  attestationVerified: boolean;
-}
-
-/**
- * Read a field from an attStmt that may have decoded as a `Map` (cbor-x with
- * `mapsAsObjects: false`) or a plain object.
- */
-function readAttField(attStmt: unknown, key: string): unknown {
-  if (attStmt instanceof Map) {
-    return attStmt.get(key);
-  }
-  if (attStmt && typeof attStmt === 'object') {
-    return (attStmt as Record<string, unknown>)[key];
-  }
-  return undefined;
-}
-
-/**
- * Verify the attestation statement of a registration.
+ * Verify the attestation statement of a registration, dispatching by format to
+ * the per-format verifiers (Phase 6).
  *
- * Verified by this library:
- * - `none` — no statement; nothing to verify (returns `attestationVerified: false`).
- * - `packed` self-attestation (no `x5c`) — verifies the `sig` over
- *   `authData || clientDataHash` using the credential public key.
+ * Cryptographic verification + trust anchoring per format:
+ * - `none` — no statement; nothing to verify (`attestationVerified: false`).
+ * - `packed` self-attestation (no `x5c`) — `sig` over `authData ‖ clientDataHash`
+ *   with the credential key; `attestationVerified: true` on success.
+ * - `packed` (x5c), `fido-u2f`, `android-key`, `tpm` — cryptographically
+ *   verified, then `attestationVerified: true` **only** when the certificate
+ *   chain anchors to a root supplied via `metadataService`. Without a trust
+ *   anchor the statement verifies cryptographically but reports
+ *   `attestationVerified: false` (honest framing).
+ * - `apple` — chain + nonce + key verified against the bundled Apple WebAuthn
+ *   Root CA; trust-anchored without a `metadataService`.
+ * - `android-safetynet` — JWS verified; trust-anchored only with an RP-supplied
+ *   GlobalSign root. Deprecated by Google (prefer Play Integrity).
  *
- * NOT trust-anchored here (returned with `attestationVerified: false`, not
- * rejected): `packed` with `x5c`, `fido-u2f`, `tpm`, `android-key`,
- * `android-safetynet`, `apple`. These require X.509 certificate-chain validation
- * against format-specific roots; relying parties that need attestation trust
- * must verify the chain out-of-band. (Full chain verification is a documented
- * future enhancement.)
- *
- * @throws {@link VerificationError} only when a statement it *does* verify is
- * cryptographically invalid (a present-but-wrong `packed` self-attestation).
+ * @throws {@link VerificationError} only when a present statement is
+ * cryptographically invalid (bad signature, nonce/key/challenge mismatch, or a
+ * malformed structure) — never merely because a trust anchor is missing.
  */
 export function verifyAttestationStatement(params: {
   attestationObject: AttestationObject;
   clientDataHash: Uint8Array;
   credentialPublicKey: COSEPublicKey;
+  /** The 16-byte AAGUID; derived from `attestationObject.authData` when omitted. */
+  aaguid?: Uint8Array;
+  /** Trust-anchor / FIDO MDS provider supplied by the relying party. */
+  metadataService?: MetadataService;
 }): AttestationVerificationResult {
-  const { attestationObject, clientDataHash, credentialPublicKey } = params;
+  const { attestationObject, clientDataHash, credentialPublicKey, metadataService } = params;
   const fmt = attestationObject.fmt;
 
-  if (fmt === 'packed') {
-    const x5c = readAttField(attestationObject.attStmt, 'x5c');
-    const sig = readAttField(attestationObject.attStmt, 'sig');
-
-    // Only self-attestation (no x5c) is cryptographically verified here.
-    if (!x5c && sig instanceof Uint8Array) {
-      const signatureBase = concatBuffers(attestationObject.authData, clientDataHash);
-      if (!verifySignature(sig, signatureBase, credentialPublicKey)) {
-        throw new VerificationError(
-          'Packed self-attestation signature is invalid',
-          'ATTESTATION_SIGNATURE_INVALID',
-        );
-      }
-      return { fmt, attestationVerified: true };
-    }
-
-    // packed with x5c: certificate-chain trust is not validated here.
+  // `none`: structurally accepted, nothing to cryptographically verify.
+  if (fmt === 'none') {
     return { fmt, attestationVerified: false };
   }
 
-  // `none` and all certificate-chain formats: structurally accepted, not
-  // cryptographically trust-anchored by this library.
-  return { fmt, attestationVerified: false };
+  // Derive the AAGUID from the authenticator data when the caller did not supply
+  // it (keeps the historical call shape working).
+  const aaguid = params.aaguid ?? parseAuthenticatorData(attestationObject.authData).aaguid;
+
+  const verifierInput: AttestationVerifierInput = {
+    fmt,
+    attStmt: attestationObject.attStmt,
+    authData: attestationObject.authData,
+    clientDataHash,
+    credentialPublicKey,
+    aaguid,
+    metadataService,
+  };
+
+  const verifier = FORMAT_VERIFIERS[fmt];
+  if (!verifier) {
+    throw new VerificationError(
+      `Unsupported attestation format: ${fmt}`,
+      'ATTESTATION_UNSUPPORTED_FORMAT',
+    );
+  }
+  return verifier(verifierInput);
 }
+
+/** Dispatch table from attestation format to its verifier. */
+const FORMAT_VERIFIERS: Partial<
+  Record<AttestationFormat, (input: AttestationVerifierInput) => AttestationVerificationResult>
+> = {
+  packed: verifyPackedAttestation,
+  'fido-u2f': verifyFidoU2fAttestation,
+  'android-key': verifyAndroidKeyAttestation,
+  tpm: verifyTpmAttestation,
+  apple: verifyAppleAttestation,
+  'android-safetynet': verifyAndroidSafetyNetAttestation,
+};

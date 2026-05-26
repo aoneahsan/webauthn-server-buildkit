@@ -19,6 +19,16 @@ export type { StaticMetadataServiceOptions } from './metadata';
 // Bundled Apple WebAuthn Root CA.
 export { APPLE_WEBAUTHN_ROOT_CA_PEM } from './roots/apple-webauthn-root-ca';
 
+// Per-format attestation verifiers (Phase 6).
+export {
+  verifyAppleAttestation,
+  verifyFidoU2fAttestation,
+  verifyPackedAttestation,
+  verifyAndroidKeyAttestation,
+  verifyTpmAttestation,
+  verifyAndroidSafetyNetAttestation,
+} from './formats';
+
 // X.509 helpers (Node built-in crypto wrappers).
 export {
   parseCert,

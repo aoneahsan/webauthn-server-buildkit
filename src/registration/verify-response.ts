@@ -189,21 +189,29 @@ export function verifyRegistrationResponse(
       );
     }
 
-    // Verify the attestation statement (bounded: none + packed self-attestation;
-    // certificate-chain formats are surfaced but not trust-anchored here).
+    // Verify the attestation statement. Dispatches by format; certificate-chain
+    // formats are cryptographically verified and trust-anchored against roots
+    // supplied via `config.metadataService` (apple uses the bundled Apple root).
     const attestation = verifyAttestationStatement({
       attestationObject,
       clientDataHash: sha256(clientDataJSON),
       credentialPublicKey,
+      aaguid: authData.aaguid,
+      metadataService: config.metadataService,
     });
 
-    // The relying party requested attestation but this library could not
-    // trust-anchor the statement. Warn so the policy gap is visible. (Hard
-    // enforcement via trust-anchored verification is added in a later phase.)
+    // FUNC-N4: when the relying party requested attestation but the statement
+    // could not be trust-anchored, either reject (secure policy) or warn.
     if (config.attestationType !== 'none' && !attestation.attestationVerified) {
+      if (config.requireTrustedAttestation) {
+        throw new VerificationError(
+          'Requested attestation could not be trust-anchored',
+          'ATTESTATION_NOT_TRUSTED',
+        );
+      }
       config.logger?.(
         'warn',
-        `Attestation "${config.attestationType}" was requested but the "${attestation.fmt}" statement is not trust-anchored by this library (attestationVerified=false). Verify it out-of-band if you rely on attestation.`,
+        `Attestation "${config.attestationType}" was requested but the "${attestation.fmt}" statement is not trust-anchored (attestationVerified=false). Supply a metadataService with the authenticator's roots, set requireTrustedAttestation to reject, or verify out-of-band.`,
         { fmt: attestation.fmt },
       );
     }
@@ -234,6 +242,12 @@ export function verifyRegistrationResponse(
     // Add AAGUID if present
     if (authData.aaguid) {
       registrationInfo.aaguid = bufferToBase64URL(authData.aaguid);
+    }
+
+    // Surface the verified certificate chain (leaf-first PEMs) when a
+    // cert-chain attestation format was trust-anchored.
+    if (attestation.trustPath) {
+      registrationInfo.trustPath = attestation.trustPath;
     }
 
     // Surface client extension outputs (e.g. credProps.rk) when the client
