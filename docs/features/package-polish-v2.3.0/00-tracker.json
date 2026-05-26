@@ -105,33 +105,38 @@
       "id": "phase02",
       "title": "Critical security (challenge lifecycle + algorithm pinning + session hardening)",
       "file": "docs/features/package-polish-v2.3.0/phase02-critical-security.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-26",
       "subTasks": [
         {
           "id": "phase02.1",
           "title": "SEC-N1: storage-backed challenge single-use/expiry/operation enforcement in server.ts verify wrappers (secure-by-default + config switch)",
-          "status": "pending"
+          "status": "complete",
+          "note": "Added enforceChallengeStore config (default true). New private consumeChallengeFromStore() in server.ts: find -> reject CHALLENGE_NOT_FOUND if absent, CHALLENGE_OPERATION_MISMATCH if wrong op, CHALLENGE_EXPIRED if expired (deletes bad ones). verifyRegistration/verifyAuthentication now consume the challenge in a finally (delete regardless of outcome) so it can never be replayed."
         },
         {
           "id": "phase02.2",
           "title": "SEC-N2/N3: alg<->crv consistency in cose.ts; persist registered alg; enforce supportedAlgorithms + exact alg (incl. RSA padding) at authentication",
-          "status": "pending"
+          "status": "complete",
+          "note": "cose.ts: assertAlgorithmConsistent() rejects a declared alg inconsistent with kty/crv (COSE_ALG_MISMATCH) — blocks a P-256 key declaring ES512 or an RSA key declaring ES256/PSS-vs-PKCS1 swap. authentication/verify-response.ts: enforces supportedAlgorithms allowlist at auth (UNSUPPORTED_CREDENTIAL_ALGORITHM) and pins credential.alg when set (ALGORITHM_MISMATCH). WebAuthnCredential.alg + VerifiedRegistrationInfo.credential.alg added; registration now returns alg."
         },
         {
           "id": "phase02.3",
           "title": "SEC-N7: validate session-token field lengths (iv=12, tag=16, salt=32) before decipher",
-          "status": "pending"
+          "status": "complete",
+          "note": "token.ts parseSessionToken validates iv/tag/salt lengths before createDecipheriv; rejects malformed tokens with a generic SessionError."
         },
         {
           "id": "phase02.4",
           "title": "HYG-N3: re-check stored-session expiry after adapter fetch",
-          "status": "pending"
+          "status": "complete",
+          "note": "manager.ts validateSession re-validates storedSession.expiresAt after find() (defense-in-depth for custom adapters that don't filter expiry; the bundled MemoryStorageAdapter already filters in find())."
         },
         {
           "id": "phase02.5",
           "title": "Tests: auth round-trip (success), counter regression, RP-ID/origin mismatch, UV-required, bad signature, challenge single-use, alg pinning; Verify gate + commit",
-          "status": "pending"
+          "status": "complete",
+          "note": "New tests/authentication/verify-response.test.ts (15: round-trip, bad sig, cred-id/challenge/origin/RPID mismatch, UV-required, counter, alg allowlist+pin, challenge single-use/operation/expired/disabled). token.test.ts +3 field-validation. New tests/session/manager.test.ts (2). Suite 166 -> 186. Gate green: typecheck/lint/build/format clean."
         }
       ]
     },
@@ -368,21 +373,29 @@
       "date": "2026-05-26",
       "phase": "phase00",
       "summary": "Confirmed v2.2.0 polish complete + published. Established green baseline (166 tests). Verified all 11 deps already at latest stable. Ran fresh deep audit (general-purpose agent) finding NEW issues beyond v2.2.0's 16: SEC-N1 stored-challenge never validated (replay), SEC-N2/N3 alg not pinned at auth, SEC-N4 crossOrigin unchecked, SEC-N5 BE/BS+UV downgrade, FUNC-N1 userHandle unvalidated/undiscarded webAuthnUserID, plus correctness/API/hygiene items + a full per-format attestation spec. Confirmed 3 scope decisions with user (full attestation+MDS, tests approved, secure-by-default). Invoked skills: security-review, security-best-practices, nodejs-best-practices, vitest. Scaffolded resumable plan: overview, findings, tracker, progress, 8 phase files.",
-      "commit": "pending"
+      "commit": "97d0f99"
     },
     {
       "date": "2026-05-26",
       "phase": "phase01",
       "summary": "Dependency verification: confirmed all 11 deps at latest stable (no bumps needed — refreshed during v2.2.0 today). yarn install --immutable clean (no lockfile drift). No banned deps; only cbor-x in production; engine >=24.13.0, pm yarn@4.14.1 intact. Formatted the new plan files (prettier) so format:check is repo-wide clean. Gate green. Phase 0 + Phase 1 committed together as the first green checkpoint.",
+      "commit": "97d0f99"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase02",
+      "summary": "Critical security. SEC-N1: storage-backed challenge lifecycle — verifyRegistration/verifyAuthentication now find+validate (existence/operation/expiry) and consume-once the stored challenge (secure-by-default via enforceChallengeStore, default true; finally-delete prevents replay). SEC-N2/N3: cose.ts rejects alg inconsistent with kty/crv (COSE_ALG_MISMATCH); auth path now enforces supportedAlgorithms allowlist + pins credential.alg (ALGORITHM_MISMATCH); registration returns credential.alg. SEC-N7: session-token iv/tag/salt length validation. HYG-N3: stored-session expiry re-check. Tests: new tests/authentication/verify-response.test.ts (15) + tests/session/manager.test.ts (2) + token field validation (3); suite 166 -> 186. Gate green (typecheck/lint/build/format).",
       "commit": "pending"
     }
   ],
-  "newFindings": [],
+  "newFindings": [
+    "IMPL-1 [info]: The bundled MemoryStorageAdapter already filters expiry inside challenges.find()/sessions.find() (returns null for expired). The new server-side CHALLENGE_EXPIRED + stored-session-expiry checks are therefore defense-in-depth for CUSTOM adapters that don't filter; tested via find()-override stubs."
+  ],
   "status": "IN_PROGRESS",
   "nextSuggestion": {
-    "phase": "phase02",
-    "subTask": "phase02.1",
-    "rationale": "Phases 0 + 1 complete and committed. Next: Phase 2 critical security — start with SEC-N1 (storage-backed challenge single-use/expiry/operation enforcement in the WebAuthnServer verify wrappers, secure-by-default + enforceChallengeStore switch), then SEC-N2/N3 (alg<->crv consistency + allowlist/exact-alg enforcement at authentication), SEC-N7 (session-token field validation), HYG-N3 (stored-session expiry re-check), plus the approved auth-path + challenge-lifecycle regression tests."
+    "phase": "phase03",
+    "subTask": "phase03.1",
+    "rationale": "Phases 0-2 complete and committed. Next: Phase 3 spec-compliance & correctness — userHandle validation + return + return generated webAuthnUserID (FUNC-N1/API-N2), crossOrigin rejection (SEC-N4), COSE key length validation (FUNC-N2), trailing-byte rejection (FUNC-N5), BE/BS+UV+counter signals (SEC-N5/N6), origin/android:apk-key-hash handling (FUNC-N3), attestationType warn (FUNC-N4), error-code routing (FUNC-N6), plus tests."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
 }

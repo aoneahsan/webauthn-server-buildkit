@@ -1,6 +1,7 @@
 import type {
   AttestationFormat,
   Base64URLString,
+  COSEAlgorithmIdentifier,
   PublicKeyCredentialType,
   AuthenticatorTransportFuture,
 } from './base';
@@ -77,6 +78,8 @@ export interface VerifiedRegistrationInfo {
     publicKey: Uint8Array;
     counter: number;
     transports?: AuthenticatorTransportFuture[];
+    /** COSE algorithm the credential registered with. Persist this on `WebAuthnCredential.alg` to pin the algorithm at authentication. */
+    alg?: COSEAlgorithmIdentifier;
   };
   credentialDeviceType: 'singleDevice' | 'multiDevice';
   credentialBackedUp: boolean;

@@ -65,6 +65,21 @@ export interface WebAuthnServerConfig {
   enableMobileAttestation?: boolean;
 
   /**
+   * Enforce that the verification challenge exists in the configured storage
+   * adapter — unexpired and scoped to the matching operation — and consume it
+   * once (default: `true` when a `storageAdapter` is configured).
+   *
+   * When enabled, `verifyRegistration` / `verifyAuthentication` reject a
+   * challenge that is absent from storage (`CHALLENGE_NOT_FOUND`), expired
+   * (`CHALLENGE_EXPIRED`), or issued for a different operation
+   * (`CHALLENGE_OPERATION_MISMATCH`), and delete it after the attempt so it can
+   * never be replayed. Set to `false` to manage challenge lifecycle yourself
+   * (the library then only compares the caller-supplied `expectedChallenge`).
+   * Has no effect when no `storageAdapter` is configured.
+   */
+  enforceChallengeStore?: boolean;
+
+  /**
    * User verification requirement (default: 'preferred')
    */
   userVerification?: UserVerificationRequirement;

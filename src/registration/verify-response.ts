@@ -198,6 +198,7 @@ export function verifyRegistrationResponse(
         publicKey: authData.credentialPublicKey,
         counter: authData.counter,
         transports,
+        alg: credentialAlg,
       },
       credentialDeviceType: authData.flags.backupEligibility ? 'multiDevice' : 'singleDevice',
       credentialBackedUp: authData.flags.backupState,

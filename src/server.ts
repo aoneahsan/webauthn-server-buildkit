@@ -12,6 +12,7 @@ import {
   ChallengeData,
   COSEAlgorithmIdentifier,
   ConfigurationError,
+  VerificationError,
   Base64URLString,
   SessionData,
   StorageAdapter,
@@ -114,6 +115,10 @@ export class WebAuthnServer {
     verified: boolean;
     registrationInfo?: VerifiedRegistrationInfo;
   }> {
+    // Enforce a one-time, unexpired, registration-scoped challenge from storage
+    // (secure-by-default; disable with `enforceChallengeStore: false`).
+    await this.consumeChallengeFromStore(expectedChallenge, 'registration');
+
     const params: VerifyRegistrationResponseParams = {
       response,
       expectedChallenge,
@@ -122,14 +127,15 @@ export class WebAuthnServer {
       requireUserVerification: this.config.userVerification === 'required',
     };
 
-    const result = verifyRegistrationResponse(this.config, params);
-
-    // Clean up challenge if storage is available
-    if (this.config.storageAdapter && result.verified) {
-      await this.config.storageAdapter.challenges.delete(expectedChallenge);
+    try {
+      return verifyRegistrationResponse(this.config, params);
+    } finally {
+      // Consume the challenge once, regardless of the verification outcome, so
+      // it can never be replayed.
+      if (this.config.storageAdapter) {
+        await this.config.storageAdapter.challenges.delete(expectedChallenge).catch(() => false);
+      }
     }
-
-    return result;
   }
 
   /**
@@ -181,6 +187,10 @@ export class WebAuthnServer {
     verified: boolean;
     authenticationInfo?: VerifiedAuthenticationInfo;
   }> {
+    // Enforce a one-time, unexpired, authentication-scoped challenge from
+    // storage (secure-by-default; disable with `enforceChallengeStore: false`).
+    await this.consumeChallengeFromStore(expectedChallenge, 'authentication');
+
     const params: VerifyAuthenticationResponseParams = {
       response,
       expectedChallenge,
@@ -190,7 +200,15 @@ export class WebAuthnServer {
       requireUserVerification: this.config.userVerification === 'required',
     };
 
-    const result = verifyAuthenticationResponse(this.config, params);
+    let result: { verified: boolean; authenticationInfo?: VerifiedAuthenticationInfo };
+    try {
+      result = verifyAuthenticationResponse(this.config, params);
+    } finally {
+      // Consume the challenge once, regardless of the verification outcome.
+      if (this.config.storageAdapter) {
+        await this.config.storageAdapter.challenges.delete(expectedChallenge).catch(() => false);
+      }
+    }
 
     // Update counter and last used if verified and storage is available
     if (this.config.storageAdapter && result.verified && result.authenticationInfo) {
@@ -199,12 +217,44 @@ export class WebAuthnServer {
         result.authenticationInfo.newCounter,
       );
       await this.config.storageAdapter.credentials.updateLastUsed(credential.id);
-
-      // Clean up challenge
-      await this.config.storageAdapter.challenges.delete(expectedChallenge);
     }
 
     return result;
+  }
+
+  /**
+   * When a storage adapter is configured and `enforceChallengeStore` is enabled
+   * (the default), require the challenge to exist in storage, be unexpired, and
+   * match the expected operation. Expired/mismatched challenges are deleted so
+   * they cannot be retried. No-op when no storage adapter is configured or
+   * enforcement is disabled.
+   */
+  private async consumeChallengeFromStore(
+    expectedChallenge: string,
+    operation: ChallengeData['operation'],
+  ): Promise<void> {
+    const storage = this.config.storageAdapter;
+    if (!storage || !this.config.enforceChallengeStore) {
+      return;
+    }
+
+    const stored = await storage.challenges.find(expectedChallenge);
+    if (!stored) {
+      throw new VerificationError('Challenge not found or already used', 'CHALLENGE_NOT_FOUND');
+    }
+
+    if (stored.operation !== operation) {
+      await storage.challenges.delete(expectedChallenge).catch(() => false);
+      throw new VerificationError(
+        `Challenge was issued for "${stored.operation}", not "${operation}"`,
+        'CHALLENGE_OPERATION_MISMATCH',
+      );
+    }
+
+    if (new Date(stored.expiresAt).getTime() <= Date.now()) {
+      await storage.challenges.delete(expectedChallenge).catch(() => false);
+      throw new VerificationError('Challenge expired', 'CHALLENGE_EXPIRED');
+    }
   }
 
   /**
@@ -316,6 +366,7 @@ export class WebAuthnServer {
       encryptionSecret: config.encryptionSecret,
       attestationType: config.attestationType || 'none',
       enableMobileAttestation: config.enableMobileAttestation ?? false,
+      enforceChallengeStore: config.enforceChallengeStore ?? true,
       userVerification: config.userVerification || 'preferred',
       authenticatorSelection: {
         residentKey: 'preferred',

@@ -11,6 +11,7 @@ import {
   parseAuthenticatorData,
   validateAuthenticatorDataFlags,
   parseCOSEPublicKey,
+  getCOSEAlgorithmIdentifier,
   verifySignature,
 } from '@/crypto';
 import { base64URLToBuffer, base64URLToString } from '@/utils/base64url';
@@ -111,8 +112,23 @@ export function verifyAuthenticationResponse(
       }
     }
 
-    // Parse public key
+    // Parse public key and enforce the configured algorithm allowlist at
+    // authentication (not just at registration). Also pin the algorithm to the
+    // one the credential registered with, when known.
     const publicKey = parseCOSEPublicKey(credential.publicKey);
+    const credentialAlg = getCOSEAlgorithmIdentifier(publicKey);
+    if (!config.supportedAlgorithms.includes(credentialAlg)) {
+      throw new VerificationError(
+        `Credential algorithm ${String(credentialAlg)} is not in the configured supportedAlgorithms`,
+        'UNSUPPORTED_CREDENTIAL_ALGORITHM',
+      );
+    }
+    if (credential.alg !== undefined && credential.alg !== credentialAlg) {
+      throw new AuthenticationError(
+        `Asserted algorithm ${String(credentialAlg)} does not match the registered algorithm ${String(credential.alg)}`,
+        'ALGORITHM_MISMATCH',
+      );
+    }
 
     // Create signature base
     const clientDataHash = sha256(clientDataJSON);

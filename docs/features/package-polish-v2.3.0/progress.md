@@ -8,7 +8,7 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 
 - **Phase 0 — Planning & scaffolding:** ✅ complete
 - **Phase 1 — Deps & toolchain:** ✅ complete (all deps already at latest stable)
-- **Phase 2 — Critical security:** ⏳ pending
+- **Phase 2 — Critical security:** ✅ complete
 - **Phase 3 — Spec-compliance & correctness:** ⏳ pending
 - **Phase 4 — Extensions, API & hygiene:** ⏳ pending
 - **Phase 5 — Attestation foundation:** ⏳ pending
@@ -38,3 +38,13 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - Verification gate green (166 tests; typecheck/lint/build/format all clean).
 - Committed Phase 0 + Phase 1 together as the first green checkpoint.
 - **Next:** Phase 2 — critical security (challenge lifecycle, algorithm pinning at auth, session hardening) + the approved regression tests.
+
+### 2026-05-26 — Phase 2 (critical security)
+
+- **SEC-N1 (challenge replay):** `WebAuthnServer.verifyRegistration` / `verifyAuthentication` now validate the stored challenge (existence, operation, expiry) via a new `consumeChallengeFromStore()` and consume it once in a `finally` so it can never be replayed. Controlled by `enforceChallengeStore` (default `true` when a storage adapter is configured; set `false` to manage challenges yourself). New codes: `CHALLENGE_NOT_FOUND`, `CHALLENGE_OPERATION_MISMATCH`, `CHALLENGE_EXPIRED`.
+- **SEC-N2/N3 (algorithm pinning):** `cose.ts` rejects a COSE `alg` inconsistent with the key's `kty`/`crv` (`COSE_ALG_MISMATCH`) — closes the P-256-declaring-ES512 and RSA-padding-swap vectors. The authentication path now enforces the `supportedAlgorithms` allowlist (not just registration) and pins `credential.alg` when set (`ALGORITHM_MISMATCH`). `WebAuthnCredential.alg` + `VerifiedRegistrationInfo.credential.alg` added; registration returns the algorithm.
+- **SEC-N7:** session-token `iv`/`tag`/`salt` length validation before the cipher primitives.
+- **HYG-N3:** stored-session expiry re-checked after adapter fetch (defense-in-depth; the bundled memory adapter already filters in `find()`).
+- **Tests (+20 → 186):** new `tests/authentication/verify-response.test.ts` (round-trip + every negative path + alg pinning + challenge lifecycle), `tests/session/manager.test.ts`, and session-token field-validation tests.
+- Gate green: typecheck/lint/test (186)/build/format all clean. Committed + pushed.
+- **Next:** Phase 3 — spec-compliance & correctness (userHandle/webAuthnUserID, crossOrigin, COSE length validation, downgrade signals, origin handling).

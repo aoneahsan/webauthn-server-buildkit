@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createSessionToken, parseSessionToken } from '@/session/token';
 import type { SessionData } from '@/types';
+import { bufferToBase64URL, base64URLToBuffer } from '@/utils/base64url';
 
 describe('Session Token', () => {
   const mockSessionData: SessionData = {
@@ -119,6 +120,31 @@ describe('Session Token', () => {
 
     it('should handle undefined data gracefully', () => {
       expect(() => parseSessionToken('', secret)).toThrow();
+    });
+  });
+
+  describe('field validation (SEC-N7)', () => {
+    /** Re-encode a valid token with one cryptographic field set to the wrong length. */
+    function tamper(field: 'iv' | 'tag' | 'salt', bytes: number): string {
+      const token = createSessionToken('session123', mockSessionData, secret);
+      const outer = JSON.parse(Buffer.from(base64URLToBuffer(token)).toString('utf8')) as Record<
+        string,
+        string
+      >;
+      outer[field] = bufferToBase64URL(new Uint8Array(bytes).fill(1));
+      return bufferToBase64URL(Buffer.from(JSON.stringify(outer)));
+    }
+
+    it('rejects a token whose IV is not 12 bytes', () => {
+      expect(() => parseSessionToken(tamper('iv', 8), secret)).toThrow(/Invalid/);
+    });
+
+    it('rejects a token whose auth tag is not 16 bytes', () => {
+      expect(() => parseSessionToken(tamper('tag', 8), secret)).toThrow(/Invalid/);
+    });
+
+    it('rejects a token whose salt is not 32 bytes', () => {
+      expect(() => parseSessionToken(tamper('salt', 16), secret)).toThrow(/Invalid/);
     });
   });
 });

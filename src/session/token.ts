@@ -5,6 +5,8 @@ import { bufferToBase64URL, base64URLToBuffer } from '@/utils/base64url';
 const ALGORITHM = 'aes-256-gcm';
 // AES-256-GCM uses a 96-bit (12-byte) IV — the value recommended by NIST SP 800-38D.
 const IV_LENGTH = 12;
+// AES-GCM authentication tag is 128-bit (16 bytes).
+const TAG_LENGTH = 16;
 const SALT_LENGTH = 32;
 const KEY_LENGTH = 32;
 const HKDF_INFO = 'webauthn-server-buildkit/session-token';
@@ -96,6 +98,13 @@ export function parseSessionToken(
     const iv = base64URLToBuffer(tokenData.iv);
     const encrypted = base64URLToBuffer(tokenData.data);
     const tag = base64URLToBuffer(tokenData.tag);
+
+    // Validate field shapes before handing them to the cipher primitives so a
+    // malformed token (e.g. a zero-length IV or oversized tag) is rejected
+    // up-front rather than producing a confusing low-level crypto error.
+    if (iv.length !== IV_LENGTH || tag.length !== TAG_LENGTH || salt.length !== SALT_LENGTH) {
+      throw new SessionError('Invalid session token', 'INVALID_TOKEN');
+    }
 
     // Derive key
     const key = deriveKey(secret, Buffer.from(salt));

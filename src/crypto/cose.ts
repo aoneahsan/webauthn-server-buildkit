@@ -145,33 +145,96 @@ export function parseCOSEPublicKey(publicKeyBytes: Uint8Array): COSEPublicKey {
   }
 }
 
+/** RSA-family COSE algorithms (PKCS#1 v1.5 and PSS). */
+const RSA_ALGORITHMS: ReadonlySet<COSEAlgorithmIdentifier> = new Set([
+  COSEAlgorithmIdentifier.RS256,
+  COSEAlgorithmIdentifier.RS384,
+  COSEAlgorithmIdentifier.RS512,
+  COSEAlgorithmIdentifier.PS256,
+  COSEAlgorithmIdentifier.PS384,
+  COSEAlgorithmIdentifier.PS512,
+]);
+
 /**
- * Get the algorithm identifier from a COSE key
+ * The canonical ECDSA algorithm for an EC2 curve.
+ */
+function ec2CanonicalAlg(crv: COSEEllipticCurve): COSEAlgorithmIdentifier {
+  switch (crv) {
+    case COSEEllipticCurve.P256:
+      return COSEAlgorithmIdentifier.ES256;
+    case COSEEllipticCurve.P384:
+      return COSEAlgorithmIdentifier.ES384;
+    case COSEEllipticCurve.P521:
+      return COSEAlgorithmIdentifier.ES512;
+    default:
+      throw new VerificationError(
+        `Cannot determine algorithm for EC2 curve: ${String(crv)}`,
+        'COSE_UNKNOWN_ALGORITHM',
+      );
+  }
+}
+
+/**
+ * Reject a declared COSE `alg` that is inconsistent with the key's type/curve.
+ *
+ * Without this, an attacker-supplied key could declare an `alg` that selects a
+ * different digest or padding scheme than its actual shape implies (e.g. a
+ * P-256 key declaring ES512, or an RSA key declaring ES256), decoupling the
+ * verification algorithm from the key.
+ */
+function assertAlgorithmConsistent(coseKey: COSEPublicKey, alg: COSEAlgorithmIdentifier): void {
+  switch (coseKey.kty) {
+    case COSEKeyType.EC2: {
+      const expected = ec2CanonicalAlg(coseKey.crv);
+      if (alg !== expected) {
+        throw new VerificationError(
+          `COSE EC2 key on its curve declares an incompatible algorithm (${String(alg)})`,
+          'COSE_ALG_MISMATCH',
+        );
+      }
+      return;
+    }
+    case COSEKeyType.RSA: {
+      if (!RSA_ALGORITHMS.has(alg)) {
+        throw new VerificationError(
+          `COSE RSA key declares a non-RSA algorithm (${String(alg)})`,
+          'COSE_ALG_MISMATCH',
+        );
+      }
+      return;
+    }
+    case COSEKeyType.OKP: {
+      if (coseKey.crv !== COSEEllipticCurve.Ed25519 || alg !== COSEAlgorithmIdentifier.EdDSA) {
+        throw new VerificationError(
+          `COSE OKP key declares an incompatible algorithm (${String(alg)})`,
+          'COSE_ALG_MISMATCH',
+        );
+      }
+      return;
+    }
+  }
+}
+
+/**
+ * Get the algorithm identifier from a COSE key.
+ *
+ * When the key declares an explicit `alg`, it is validated against the key
+ * type/curve (see {@link assertAlgorithmConsistent}) before being trusted; when
+ * absent, the canonical algorithm is inferred from the key type/curve.
  */
 export function getCOSEAlgorithmIdentifier(coseKey: COSEPublicKey): COSEAlgorithmIdentifier {
-  if (coseKey.alg) {
+  if (coseKey.alg !== undefined) {
+    assertAlgorithmConsistent(coseKey, coseKey.alg);
     return coseKey.alg;
   }
 
   // Infer algorithm from key type and curve
   switch (coseKey.kty) {
     case COSEKeyType.EC2:
-      switch (coseKey.crv) {
-        case COSEEllipticCurve.P256:
-          return COSEAlgorithmIdentifier.ES256;
-        case COSEEllipticCurve.P384:
-          return COSEAlgorithmIdentifier.ES384;
-        case COSEEllipticCurve.P521:
-          return COSEAlgorithmIdentifier.ES512;
-        default:
-          throw new VerificationError(
-            `Cannot infer algorithm for EC2 curve: ${coseKey.crv}`,
-            'COSE_UNKNOWN_ALGORITHM',
-          );
-      }
+      return ec2CanonicalAlg(coseKey.crv);
 
     case COSEKeyType.RSA:
-      // Default to RS256 for RSA keys
+      // Default to RS256 for RSA keys that omit `alg`.
       return COSEAlgorithmIdentifier.RS256;
 
     case COSEKeyType.OKP:
@@ -179,7 +242,7 @@ export function getCOSEAlgorithmIdentifier(coseKey: COSEPublicKey): COSEAlgorith
         return COSEAlgorithmIdentifier.EdDSA;
       }
       throw new VerificationError(
-        `Cannot infer algorithm for OKP curve: ${coseKey.crv}`,
+        `Cannot infer algorithm for OKP curve: ${String(coseKey.crv)}`,
         'COSE_UNKNOWN_ALGORITHM',
       );
 

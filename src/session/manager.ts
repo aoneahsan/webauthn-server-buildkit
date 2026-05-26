@@ -81,6 +81,13 @@ export class SessionManager {
           throw new SessionError('Session not found', 'SESSION_NOT_FOUND');
         }
 
+        // Defense-in-depth: re-validate the stored session's expiry in case a
+        // custom adapter returns an expired record (the token's own expiry was
+        // already checked above).
+        if (new Date(storedSession.expiresAt) < new Date()) {
+          throw new SessionError('Session expired', 'SESSION_EXPIRED');
+        }
+
         // Use stored session data
         return {
           valid: true,

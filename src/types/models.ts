@@ -1,4 +1,9 @@
-import type { AuthenticatorTransportFuture, Base64URLString, CredentialDeviceType } from './base';
+import type {
+  AuthenticatorTransportFuture,
+  Base64URLString,
+  COSEAlgorithmIdentifier,
+  CredentialDeviceType,
+} from './base';
 
 /**
  * User model interface
@@ -19,6 +24,13 @@ export interface WebAuthnCredential {
   transports?: AuthenticatorTransportFuture[];
   deviceType: CredentialDeviceType;
   backedUp: boolean;
+  /**
+   * COSE algorithm the credential registered with (e.g. ES256 = -7). When set,
+   * `verifyAuthenticationResponse` enforces that the asserted key uses the same
+   * algorithm (`ALGORITHM_MISMATCH`). Populated from
+   * `VerifiedRegistrationInfo.credential.alg`.
+   */
+  alg?: COSEAlgorithmIdentifier;
   userId: string | number;
   webAuthnUserID: Base64URLString;
   createdAt: Date;
