@@ -84,6 +84,12 @@ export function parseAuthenticatorData(authData: Uint8Array): ParsedAuthenticato
     // Any bytes after the public key are extension data (present iff ED flag set).
     if (flags.extensionData && remainingBytes.length > 0) {
       parsed.extensionsData = authData.slice(offset);
+    } else if (!flags.extensionData && remainingBytes.length > 0) {
+      // ED flag unset but bytes remain after the COSE key — malformed/ambiguous.
+      throw new VerificationError(
+        'Unexpected trailing bytes after credential public key',
+        'AUTHENTICATOR_DATA_TRAILING_BYTES',
+      );
     }
   } else if (flags.extensionData) {
     // Extension data present without attested credential data.

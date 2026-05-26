@@ -31,6 +31,13 @@ export interface WebAuthnCredential {
    * `VerifiedRegistrationInfo.credential.alg`.
    */
   alg?: COSEAlgorithmIdentifier;
+  /**
+   * Whether user verification was performed at registration. When set,
+   * `verifyAuthenticationResponse` reports `userVerificationDowngraded` if a
+   * later assertion presents UV=false. Populated from
+   * `VerifiedRegistrationInfo.userVerified`.
+   */
+  userVerified?: boolean;
   userId: string | number;
   webAuthnUserID: Base64URLString;
   createdAt: Date;

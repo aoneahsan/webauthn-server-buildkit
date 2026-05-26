@@ -80,6 +80,21 @@ export interface WebAuthnServerConfig {
   enforceChallengeStore?: boolean;
 
   /**
+   * Allow ceremonies performed in a cross-origin iframe (`clientData.crossOrigin
+   * === true`). Default `false` — cross-origin ceremonies are rejected, per the
+   * W3C recommendation, unless you explicitly opt in.
+   */
+  allowCrossOriginIframe?: boolean;
+
+  /**
+   * Optional custom origin matcher. When provided, it replaces the default
+   * exact-string match against `origin` for verifying `clientData.origin` (useful
+   * for advanced normalization or native `android:apk-key-hash:` origins).
+   * Return `true` to accept the origin.
+   */
+  originVerifier?: (origin: string) => boolean;
+
+  /**
    * User verification requirement (default: 'preferred')
    */
   userVerification?: UserVerificationRequirement;
@@ -129,10 +144,14 @@ export interface WebAuthnServerConfig {
  * Internal configuration with defaults applied
  */
 export interface InternalConfig extends Required<
-  Omit<WebAuthnServerConfig, 'storageAdapter' | 'preferredAuthenticatorType' | 'logger' | 'rpIcon'>
+  Omit<
+    WebAuthnServerConfig,
+    'storageAdapter' | 'preferredAuthenticatorType' | 'logger' | 'rpIcon' | 'originVerifier'
+  >
 > {
   storageAdapter?: StorageAdapter;
   preferredAuthenticatorType?: PreferredAuthenticatorType;
   logger?: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) => void;
   rpIcon?: string;
+  originVerifier?: (origin: string) => boolean;
 }

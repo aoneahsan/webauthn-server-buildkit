@@ -117,10 +117,21 @@ export function verifyRegistrationResponse(
       throw new VerificationError('Challenge mismatch', 'CHALLENGE_MISMATCH');
     }
 
-    // Verify origin
+    // Verify origin (a custom originVerifier overrides exact-string matching).
     const origins = Array.isArray(expectedOrigin) ? expectedOrigin : [expectedOrigin];
-    if (!origins.includes(clientData.origin)) {
+    const originAllowed = config.originVerifier
+      ? config.originVerifier(clientData.origin)
+      : origins.includes(clientData.origin);
+    if (!originAllowed) {
       throw new VerificationError('Origin mismatch', 'ORIGIN_MISMATCH');
+    }
+
+    // Reject cross-origin (iframe) ceremonies unless explicitly allowed.
+    if (clientData.crossOrigin === true && !config.allowCrossOriginIframe) {
+      throw new VerificationError(
+        'Cross-origin (iframe) ceremony is not allowed',
+        'CROSS_ORIGIN_NOT_ALLOWED',
+      );
     }
 
     // Decode attestation object
@@ -187,6 +198,17 @@ export function verifyRegistrationResponse(
       clientDataHash: sha256(clientDataJSON),
       credentialPublicKey,
     });
+
+    // The relying party requested attestation but this library could not
+    // trust-anchor the statement. Warn so the policy gap is visible. (Hard
+    // enforcement via trust-anchored verification is added in a later phase.)
+    if (config.attestationType !== 'none' && !attestation.attestationVerified) {
+      config.logger?.(
+        'warn',
+        `Attestation "${config.attestationType}" was requested but the "${attestation.fmt}" statement is not trust-anchored by this library (attestationVerified=false). Verify it out-of-band if you rely on attestation.`,
+        { fmt: attestation.fmt },
+      );
+    }
 
     // Build credential info
     const credentialId = bufferToBase64URL(authData.credentialId);

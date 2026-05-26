@@ -71,6 +71,8 @@ export class WebAuthnServer {
   ): Promise<{
     options: PublicKeyCredentialCreationOptionsJSON;
     challenge: string;
+    /** The generated WebAuthn user handle (`options.user.id`). Persist this as `WebAuthnCredential.webAuthnUserID` to support usernameless (discoverable-credential) login. */
+    webAuthnUserId: string;
   }> {
     const fullParams: GenerateRegistrationOptionsParams = {
       user,
@@ -101,6 +103,7 @@ export class WebAuthnServer {
     return {
       options,
       challenge: options.challenge,
+      webAuthnUserId: options.user.id,
     };
   }
 
@@ -367,6 +370,8 @@ export class WebAuthnServer {
       attestationType: config.attestationType || 'none',
       enableMobileAttestation: config.enableMobileAttestation ?? false,
       enforceChallengeStore: config.enforceChallengeStore ?? true,
+      allowCrossOriginIframe: config.allowCrossOriginIframe ?? false,
+      originVerifier: config.originVerifier,
       userVerification: config.userVerification || 'preferred',
       authenticatorSelection: {
         residentKey: 'preferred',

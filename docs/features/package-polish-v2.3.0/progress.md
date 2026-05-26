@@ -9,7 +9,7 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Phase 0 — Planning & scaffolding:** ✅ complete
 - **Phase 1 — Deps & toolchain:** ✅ complete (all deps already at latest stable)
 - **Phase 2 — Critical security:** ✅ complete
-- **Phase 3 — Spec-compliance & correctness:** ⏳ pending
+- **Phase 3 — Spec-compliance & correctness:** ✅ complete
 - **Phase 4 — Extensions, API & hygiene:** ⏳ pending
 - **Phase 5 — Attestation foundation:** ⏳ pending
 - **Phase 6 — Attestation formats (+ FIDO MDS):** ⏳ pending
@@ -48,3 +48,17 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Tests (+20 → 186):** new `tests/authentication/verify-response.test.ts` (round-trip + every negative path + alg pinning + challenge lifecycle), `tests/session/manager.test.ts`, and session-token field-validation tests.
 - Gate green: typecheck/lint/test (186)/build/format all clean. Committed + pushed.
 - **Next:** Phase 3 — spec-compliance & correctness (userHandle/webAuthnUserID, crossOrigin, COSE length validation, downgrade signals, origin handling).
+
+### 2026-05-26 — Phase 3 (spec-compliance & correctness)
+
+- **FUNC-N1 / API-N2 (usernameless):** `verifyAuthenticationResponse` reads and validates `userHandle` against `credential.webAuthnUserID` (`USER_HANDLE_MISMATCH`) and returns it; `createRegistrationOptions` now returns `webAuthnUserId` so the RP can persist the WebAuthn user handle.
+- **SEC-N4 (crossOrigin):** both verify paths reject `clientData.crossOrigin === true` unless `allowCrossOriginIframe` (new config, default false) — `CROSS_ORIGIN_NOT_ALLOWED`.
+- **FUNC-N2 (COSE validation):** `=== undefined` / `instanceof` guards + byte-length validation (EC2 32/48/66 per curve, RSA modulus ≥ 256, Ed25519 32).
+- **FUNC-N5:** reject trailing bytes after the COSE key when the ED flag is unset (`AUTHENTICATOR_DATA_TRAILING_BYTES`).
+- **SEC-N5/N6:** advisory `backupStateChanged` / `userVerificationDowngraded` / `counterSupported` in `VerifiedAuthenticationInfo` (`WebAuthnCredential.userVerified` added as the registration-time source). No hard rejection — RP decides policy.
+- **FUNC-N3:** optional `originVerifier(origin)` matcher (supports normalization + native `android:apk-key-hash:` origins).
+- **FUNC-N4:** warn when a requested attestation type isn't trust-anchored (full enforcement lands with the attestation phases).
+- **FUNC-N6:** `isCborParsingError` branches on `error.code` before message text.
+- **Tests (+17 → 203):** new `tests/crypto/cose.test.ts` (length validation, alg/crv consistency, trailing bytes) + auth verify-response additions (userHandle, crossOrigin, advisory signals, originVerifier).
+- Gate green: typecheck/lint/test (203)/build/format. Committed + pushed.
+- **Next:** Phase 4 — extensions, API surface & hygiene.

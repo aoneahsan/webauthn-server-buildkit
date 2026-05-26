@@ -282,3 +282,121 @@ describe('verifyAuthentication — challenge lifecycle (SEC-N1)', () => {
     expect(result.verified).toBe(true);
   });
 });
+
+describe('verifyAuthentication — userHandle (FUNC-N1)', () => {
+  it('returns the userHandle and accepts a matching credential owner', async () => {
+    const { response, credential } = fixture();
+    const withHandle = {
+      ...response,
+      response: { ...response.response, userHandle: credential.webAuthnUserID },
+    };
+    const result = await makeServer().verifyAuthentication(withHandle, challenge, credential);
+    expect(result.verified).toBe(true);
+    expect(result.authenticationInfo?.userHandle).toBe(credential.webAuthnUserID);
+  });
+
+  it('rejects a userHandle that does not match the credential owner', async () => {
+    const { response, credential } = fixture();
+    const mismatched = {
+      ...response,
+      response: {
+        ...response.response,
+        userHandle: bufferToBase64URL(new Uint8Array(16).fill(9)),
+      },
+    };
+    await expect(
+      makeServer().verifyAuthentication(mismatched, challenge, credential),
+    ).rejects.toThrow(/User handle/);
+  });
+});
+
+describe('verifyAuthentication — crossOrigin (SEC-N4)', () => {
+  function crossOriginResponse() {
+    const { authData, privateKey, credId, credential } = fixture();
+    const cdj = stringToBase64URL(
+      JSON.stringify({ type: 'webauthn.get', challenge, origin: ORIGIN, crossOrigin: true }),
+    );
+    const sig = nodeSign(
+      'sha256',
+      concatBuffers(authData, sha256(base64URLToBuffer(cdj))),
+      privateKey,
+    );
+    const response = {
+      id: bufferToBase64URL(credId),
+      rawId: bufferToBase64URL(credId),
+      response: {
+        authenticatorData: bufferToBase64URL(authData),
+        clientDataJSON: cdj,
+        signature: bufferToBase64URL(sig),
+      },
+      clientExtensionResults: {},
+      type: 'public-key' as const,
+    };
+    return { response, credential };
+  }
+
+  it('rejects a cross-origin ceremony by default', async () => {
+    const { response, credential } = crossOriginResponse();
+    await expect(
+      makeServer().verifyAuthentication(response, challenge, credential),
+    ).rejects.toThrow(/Cross-origin/);
+  });
+
+  it('accepts a cross-origin ceremony when allowCrossOriginIframe is true', async () => {
+    const { response, credential } = crossOriginResponse();
+    const result = await makeServer({ allowCrossOriginIframe: true }).verifyAuthentication(
+      response,
+      challenge,
+      credential,
+    );
+    expect(result.verified).toBe(true);
+  });
+});
+
+describe('verifyAuthentication — advisory signals (SEC-N5/N6)', () => {
+  it('reports counterSupported=false when both counters are 0', async () => {
+    const { response, credential } = fixture({ counter: 0, credCounter: 0 });
+    const result = await makeServer().verifyAuthentication(response, challenge, credential);
+    expect(result.authenticationInfo?.counterSupported).toBe(false);
+  });
+
+  it('reports backupStateChanged when the stored backup state differs', async () => {
+    const { response, credential } = fixture();
+    const result = await makeServer().verifyAuthentication(response, challenge, {
+      ...credential,
+      backedUp: true,
+    });
+    expect(result.authenticationInfo?.backupStateChanged).toBe(true);
+  });
+
+  it('reports userVerificationDowngraded when UV drops from registration', async () => {
+    const { response, credential } = fixture({ uv: false });
+    const result = await makeServer().verifyAuthentication(response, challenge, {
+      ...credential,
+      userVerified: true,
+    });
+    expect(result.authenticationInfo?.userVerificationDowngraded).toBe(true);
+  });
+});
+
+describe('verifyAuthentication — originVerifier (FUNC-N3)', () => {
+  it('uses a custom originVerifier in place of exact-string matching', async () => {
+    const { response, credential } = fixture();
+    const result = await makeServer({
+      origin: 'https://not-the-real-origin.example',
+      originVerifier: (o) => o === ORIGIN,
+    }).verifyAuthentication(response, challenge, credential);
+    expect(result.verified).toBe(true);
+  });
+
+  it('rejects when the custom originVerifier returns false', async () => {
+    const { response, credential } = fixture();
+    await expect(
+      makeServer({ originVerifier: () => false }).verifyAuthentication(
+        response,
+        challenge,
+        credential,
+      ),
+    ).rejects.toThrow(/Origin mismatch/);
+  });
+});

@@ -65,6 +65,22 @@ const COSE_KEY_PARAMS = {
   n: -1,
   e: -2,
 } as const;
+// NOTE: `crv`/`n` (both -1) and `x`/`e` (both -2) intentionally collide — the
+// COSE spec reuses these label numbers across key types, disambiguated by `kty`.
+
+/** Expected EC2 coordinate byte length for a curve, or undefined if unsupported. */
+function ec2CoordinateLength(crv: number): number | undefined {
+  switch (crv) {
+    case COSEEllipticCurve.P256:
+      return 32;
+    case COSEEllipticCurve.P384:
+      return 48;
+    case COSEEllipticCurve.P521:
+      return 66;
+    default:
+      return undefined;
+  }
+}
 
 /**
  * Parse a COSE public key from CBOR
@@ -82,21 +98,32 @@ export function parseCOSEPublicKey(publicKeyBytes: Uint8Array): COSEPublicKey {
     throw new VerificationError('COSE public key must be a CBOR map', 'COSE_INVALID_FORMAT');
   }
 
-  const kty = coseKey.get(COSE_KEY_PARAMS.kty) as number;
+  const kty = coseKey.get(COSE_KEY_PARAMS.kty) as number | undefined;
   const alg = coseKey.get(COSE_KEY_PARAMS.alg) as number | undefined;
 
-  if (!kty) {
+  if (kty === undefined) {
     throw new VerificationError('COSE public key missing key type (kty)', 'COSE_MISSING_KTY');
   }
 
   switch (kty as COSEKeyType) {
     case COSEKeyType.EC2: {
-      const crv = coseKey.get(COSE_KEY_PARAMS.crv) as number;
-      const x = coseKey.get(COSE_KEY_PARAMS.x) as Uint8Array;
-      const y = coseKey.get(COSE_KEY_PARAMS.y) as Uint8Array;
+      const crv = coseKey.get(COSE_KEY_PARAMS.crv) as number | undefined;
+      const x = coseKey.get(COSE_KEY_PARAMS.x) as Uint8Array | undefined;
+      const y = coseKey.get(COSE_KEY_PARAMS.y) as Uint8Array | undefined;
 
-      if (!crv || !x || !y) {
+      if (crv === undefined || !(x instanceof Uint8Array) || !(y instanceof Uint8Array)) {
         throw new VerificationError('COSE EC2 key missing required parameters', 'COSE_EC2_INVALID');
+      }
+
+      const coordLen = ec2CoordinateLength(crv);
+      if (coordLen === undefined) {
+        throw new VerificationError(`Unsupported EC2 curve: ${String(crv)}`, 'COSE_EC2_INVALID');
+      }
+      if (x.length !== coordLen || y.length !== coordLen) {
+        throw new VerificationError(
+          `COSE EC2 key coordinate length (${x.length}/${y.length}) invalid for its curve (expected ${coordLen})`,
+          'COSE_EC2_INVALID',
+        );
       }
 
       return {
@@ -109,11 +136,18 @@ export function parseCOSEPublicKey(publicKeyBytes: Uint8Array): COSEPublicKey {
     }
 
     case COSEKeyType.RSA: {
-      const n = coseKey.get(COSE_KEY_PARAMS.n) as Uint8Array;
-      const e = coseKey.get(COSE_KEY_PARAMS.e) as Uint8Array;
+      const n = coseKey.get(COSE_KEY_PARAMS.n) as Uint8Array | undefined;
+      const e = coseKey.get(COSE_KEY_PARAMS.e) as Uint8Array | undefined;
 
-      if (!n || !e) {
+      if (!(n instanceof Uint8Array) || !(e instanceof Uint8Array)) {
         throw new VerificationError('COSE RSA key missing required parameters', 'COSE_RSA_INVALID');
+      }
+      // RSA-2048 modulus is 256 bytes; reject anything smaller as too weak/malformed.
+      if (n.length < 256) {
+        throw new VerificationError(
+          `COSE RSA modulus too small (${n.length} bytes; expected >= 256 for 2048-bit)`,
+          'COSE_RSA_INVALID',
+        );
       }
 
       return {
@@ -125,11 +159,17 @@ export function parseCOSEPublicKey(publicKeyBytes: Uint8Array): COSEPublicKey {
     }
 
     case COSEKeyType.OKP: {
-      const crv = coseKey.get(COSE_KEY_PARAMS.crv) as number;
-      const x = coseKey.get(COSE_KEY_PARAMS.x) as Uint8Array;
+      const crv = coseKey.get(COSE_KEY_PARAMS.crv) as number | undefined;
+      const x = coseKey.get(COSE_KEY_PARAMS.x) as Uint8Array | undefined;
 
-      if (!crv || !x) {
+      if (crv === undefined || !(x instanceof Uint8Array)) {
         throw new VerificationError('COSE OKP key missing required parameters', 'COSE_OKP_INVALID');
+      }
+      if (crv === COSEEllipticCurve.Ed25519 && x.length !== 32) {
+        throw new VerificationError(
+          `COSE OKP Ed25519 public key must be 32 bytes (got ${x.length})`,
+          'COSE_OKP_INVALID',
+        );
       }
 
       return {

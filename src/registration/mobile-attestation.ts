@@ -172,6 +172,13 @@ export function isCborParsingError(error: unknown): boolean {
     return false;
   }
 
+  // Prefer stable error codes (VerificationError.code) over message text — the
+  // latter is brittle across refactors and localization.
+  const code = (error as { code?: unknown }).code;
+  if (typeof code === 'string' && (code.startsWith('COSE_') || code.startsWith('CBOR_'))) {
+    return true;
+  }
+
   const errorMessage = error.message.toLowerCase();
   return (
     errorMessage.includes('cbor') ||

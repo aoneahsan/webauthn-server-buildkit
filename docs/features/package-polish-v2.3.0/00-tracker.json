@@ -144,48 +144,56 @@
       "id": "phase03",
       "title": "Spec-compliance & correctness",
       "file": "docs/features/package-polish-v2.3.0/phase03-spec-correctness.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-26",
       "subTasks": [
         {
           "id": "phase03.1",
           "title": "FUNC-N1 + API-N2: read/validate userHandle; return userHandle in VerifiedAuthenticationInfo; return generated webAuthnUserID + alg from registration",
-          "status": "pending"
+          "status": "complete",
+          "note": "verifyAuthenticationResponse reads response.response.userHandle and rejects USER_HANDLE_MISMATCH when it does not equal credential.webAuthnUserID; returns userHandle in VerifiedAuthenticationInfo. createRegistrationOptions now returns webAuthnUserId (= options.user.id). alg returned in registration (Phase 2)."
         },
         {
           "id": "phase03.2",
           "title": "SEC-N4: reject crossOrigin===true unless allowCrossOriginIframe (default false)",
-          "status": "pending"
+          "status": "complete",
+          "note": "Both verify paths reject CROSS_ORIGIN_NOT_ALLOWED when clientData.crossOrigin===true unless allowCrossOriginIframe (new config, default false)."
         },
         {
           "id": "phase03.3",
           "title": "FUNC-N2: COSE key === undefined guards + byte-length validation (P-256/384/521, Ed25519, RSA)",
-          "status": "pending"
+          "status": "complete",
+          "note": "parseCOSEPublicKey uses === undefined / instanceof Uint8Array guards + validates EC2 coord length per curve (32/48/66), RSA modulus >= 256 bytes, Ed25519 x === 32."
         },
         {
           "id": "phase03.4",
           "title": "FUNC-N5: reject unexpected trailing bytes after COSE key when ED flag unset",
-          "status": "pending"
+          "status": "complete",
+          "note": "authenticator-data.ts throws AUTHENTICATOR_DATA_TRAILING_BYTES when !extensionData && remainingBytes > 0."
         },
         {
           "id": "phase03.5",
           "title": "SEC-N5/N6: surface backupStateChanged + userVerificationDowngraded + counterSupported signals",
-          "status": "pending"
+          "status": "complete",
+          "note": "VerifiedAuthenticationInfo now carries advisory backupStateChanged / userVerificationDowngraded / counterSupported (no hard rejection). WebAuthnCredential.userVerified added as the registration-time UV source."
         },
         {
           "id": "phase03.6",
           "title": "FUNC-N3: origin handling incl. android:apk-key-hash + documented normalization/matcher",
-          "status": "pending"
+          "status": "complete",
+          "note": "Added optional originVerifier(origin) config that overrides exact-string matching in both verify paths (supports normalization + native android:apk-key-hash: origins, which also work as exact entries in the origin allowlist)."
         },
         {
           "id": "phase03.7",
           "title": "FUNC-N6: tag CBOR/COSE errors with stable code; branch on code not message",
-          "status": "pending"
+          "status": "complete",
+          "note": "isCborParsingError now checks error.code (COSE_*/CBOR_*) before falling back to message-substring matching."
         },
         {
           "id": "phase03.8",
           "title": "Tests for the above + Verify gate + commit",
-          "status": "pending"
+          "status": "complete",
+          "note": "New tests/crypto/cose.test.ts (9: COSE length validation, alg/crv consistency, authenticator-data trailing bytes) + auth verify-response additions (8: userHandle match/mismatch, crossOrigin reject/allow, advisory signals, originVerifier). Suite 186 -> 203. Gate green."
         }
       ]
     },
@@ -385,6 +393,12 @@
       "date": "2026-05-26",
       "phase": "phase02",
       "summary": "Critical security. SEC-N1: storage-backed challenge lifecycle — verifyRegistration/verifyAuthentication now find+validate (existence/operation/expiry) and consume-once the stored challenge (secure-by-default via enforceChallengeStore, default true; finally-delete prevents replay). SEC-N2/N3: cose.ts rejects alg inconsistent with kty/crv (COSE_ALG_MISMATCH); auth path now enforces supportedAlgorithms allowlist + pins credential.alg (ALGORITHM_MISMATCH); registration returns credential.alg. SEC-N7: session-token iv/tag/salt length validation. HYG-N3: stored-session expiry re-check. Tests: new tests/authentication/verify-response.test.ts (15) + tests/session/manager.test.ts (2) + token field validation (3); suite 166 -> 186. Gate green (typecheck/lint/build/format).",
+      "commit": "b51ef0d"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase03",
+      "summary": "Spec-compliance & correctness. FUNC-N1/API-N2: userHandle read + validated against credential.webAuthnUserID (USER_HANDLE_MISMATCH) + returned; createRegistrationOptions returns webAuthnUserId. SEC-N4: crossOrigin rejected unless allowCrossOriginIframe (CROSS_ORIGIN_NOT_ALLOWED). FUNC-N2: COSE key === undefined guards + byte-length validation per curve/kty. FUNC-N5: trailing-byte rejection (AUTHENTICATOR_DATA_TRAILING_BYTES). SEC-N5/N6: advisory backupStateChanged/userVerificationDowngraded/counterSupported (WebAuthnCredential.userVerified added). FUNC-N3: optional originVerifier matcher. FUNC-N4: warn when requested attestation isn't trust-anchored. FUNC-N6: isCborParsingError branches on error.code. Tests: new tests/crypto/cose.test.ts (9) + auth additions (8); suite 186 -> 203. Gate green.",
       "commit": "pending"
     }
   ],
@@ -393,9 +407,9 @@
   ],
   "status": "IN_PROGRESS",
   "nextSuggestion": {
-    "phase": "phase03",
-    "subTask": "phase03.1",
-    "rationale": "Phases 0-2 complete and committed. Next: Phase 3 spec-compliance & correctness — userHandle validation + return + return generated webAuthnUserID (FUNC-N1/API-N2), crossOrigin rejection (SEC-N4), COSE key length validation (FUNC-N2), trailing-byte rejection (FUNC-N5), BE/BS+UV+counter signals (SEC-N5/N6), origin/android:apk-key-hash handling (FUNC-N3), attestationType warn (FUNC-N4), error-code routing (FUNC-N6), plus tests."
+    "phase": "phase04",
+    "subTask": "phase04.1",
+    "rationale": "Phases 0-3 complete and committed. Next: Phase 4 extensions, API & hygiene — parse + return clientExtensionResults (credProps.rk) + modernize the extension output type (GAP-N3/HYG-N6); typed WebAuthnErrorCode union (API-N1); optional excludeCredentials duplicate rejection (GAP-N4); hygiene (COSE_KEY_PARAMS comment done, honest index.ts JSDoc HYG-N2, single clientDataJSON decode HYG-N4, verifyHash dedup HYG-N5, document buffersEqual non-security API-N4, confirm session-token export policy API-N3); plus tests. Then Phases 5-6 (attestation foundation + full per-format verification with FIDO MDS — the large multi-session effort), 7 (docs), 8 (release)."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
 }

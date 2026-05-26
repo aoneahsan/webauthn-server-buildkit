@@ -55,6 +55,21 @@ export function verifyAuthenticationResponse(
       throw new AuthenticationError('Credential ID mismatch', 'CREDENTIAL_ID_MISMATCH');
     }
 
+    // For discoverable (resident) credentials the authenticator returns a
+    // userHandle; verify it maps to the credential owner so usernameless login
+    // cannot assert someone else's account.
+    const userHandle = response.response.userHandle;
+    if (
+      userHandle !== undefined &&
+      credential.webAuthnUserID &&
+      userHandle !== credential.webAuthnUserID
+    ) {
+      throw new AuthenticationError(
+        'User handle does not match the credential owner',
+        'USER_HANDLE_MISMATCH',
+      );
+    }
+
     // Decode client data JSON
     const clientDataJSON = base64URLToBuffer(response.response.clientDataJSON);
     const clientData = JSON.parse(
@@ -71,10 +86,21 @@ export function verifyAuthenticationResponse(
       throw new VerificationError('Challenge mismatch', 'CHALLENGE_MISMATCH');
     }
 
-    // Verify origin
+    // Verify origin (a custom originVerifier overrides exact-string matching).
     const origins = Array.isArray(expectedOrigin) ? expectedOrigin : [expectedOrigin];
-    if (!origins.includes(clientData.origin)) {
+    const originAllowed = config.originVerifier
+      ? config.originVerifier(clientData.origin)
+      : origins.includes(clientData.origin);
+    if (!originAllowed) {
       throw new VerificationError('Origin mismatch', 'ORIGIN_MISMATCH');
+    }
+
+    // Reject cross-origin (iframe) ceremonies unless explicitly allowed.
+    if (clientData.crossOrigin === true && !config.allowCrossOriginIframe) {
+      throw new VerificationError(
+        'Cross-origin (iframe) ceremony is not allowed',
+        'CROSS_ORIGIN_NOT_ALLOWED',
+      );
     }
 
     // Decode authenticator data
@@ -147,12 +173,22 @@ export function verifyAuthenticationResponse(
       );
     }
 
+    // Advisory signals (no hard rejection — the relying party decides policy).
+    const counterSupported = !(authData.counter === 0 && credential.counter === 0);
+    const backupStateChanged = authData.flags.backupState !== credential.backedUp;
+    const userVerificationDowngraded =
+      credential.userVerified === true && !authData.flags.userVerified;
+
     const authenticationInfo: VerifiedAuthenticationInfo = {
       newCounter: authData.counter,
       origin: clientData.origin,
       rpID: matchedRpId,
       userVerified: authData.flags.userVerified,
       credentialID: response.id,
+      userHandle,
+      backupStateChanged,
+      userVerificationDowngraded,
+      counterSupported,
     };
 
     // Log if debug is enabled

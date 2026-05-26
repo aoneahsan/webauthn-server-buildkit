@@ -111,4 +111,23 @@ export interface VerifiedAuthenticationInfo {
   rpID?: string;
   userVerified: boolean;
   credentialID: Base64URLString;
+  /** The `userHandle` returned by the authenticator (for discoverable credentials), if present. */
+  userHandle?: Base64URLString;
+  /**
+   * Advisory: the authenticator's backup state (BS) flag differs from the
+   * credential's stored `backedUp` value — a possible credential migration/clone
+   * signal. The relying party decides policy.
+   */
+  backupStateChanged?: boolean;
+  /**
+   * Advisory: the credential registered with user verification but this
+   * assertion presented UV=false. The relying party decides policy.
+   */
+  userVerificationDowngraded?: boolean;
+  /**
+   * `false` when both the stored and asserted signature counters are 0, meaning
+   * counter-based clone detection is effectively a no-op for this authenticator
+   * (common for platform passkeys).
+   */
+  counterSupported?: boolean;
 }
