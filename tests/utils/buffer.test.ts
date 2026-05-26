@@ -64,4 +64,22 @@ describe('buffer utils', () => {
       expect(timingSafeEqualBytes(new Uint8Array([1, 2]), new Uint8Array([1, 2, 3]))).toBe(false);
     });
   });
+
+  describe('buffersEqual vs timingSafeEqualBytes (API-N4)', () => {
+    // buffersEqual is variable-time (non-security); timingSafeEqualBytes is the
+    // constant-time primitive for secret comparisons. They must agree on the
+    // equality result for every case below.
+    it.each([
+      [[1, 2, 3], [1, 2, 3], true],
+      [[1, 2, 3], [1, 2, 4], false],
+      [[1, 2], [1, 2, 3], false],
+      [[], [], true],
+      [[0xff], [0xff], true],
+    ] as Array<[number[], number[], boolean]>)('both report %j == %j as %s', (a, b, expected) => {
+      const av = new Uint8Array(a);
+      const bv = new Uint8Array(b);
+      expect(buffersEqual(av, bv)).toBe(expected);
+      expect(timingSafeEqualBytes(av, bv)).toBe(expected);
+    });
+  });
 });

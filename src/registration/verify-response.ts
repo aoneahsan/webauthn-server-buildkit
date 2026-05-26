@@ -14,7 +14,7 @@ import {
   parseCOSEPublicKey,
   validateAuthenticatorDataFlags,
 } from '@/crypto';
-import { base64URLToBuffer, base64URLToString, bufferToBase64URL } from '@/utils/base64url';
+import { base64URLToBuffer, bufferToBase64URL } from '@/utils/base64url';
 import { sha256 } from '@/utils/hash';
 import { timingSafeEqualBytes } from '@/utils/buffer';
 import {
@@ -101,11 +101,9 @@ export function verifyRegistrationResponse(
     }
 
     // Standard WebAuthn verification path
-    // Decode client data JSON
+    // Decode client data JSON once, deriving the string from the same bytes.
     const clientDataJSON = base64URLToBuffer(response.response.clientDataJSON);
-    const clientData = JSON.parse(
-      base64URLToString(response.response.clientDataJSON),
-    ) as ParsedClientDataJSON;
+    const clientData = JSON.parse(new TextDecoder().decode(clientDataJSON)) as ParsedClientDataJSON;
 
     // Verify client data type
     if (clientData.type !== 'webauthn.create') {
@@ -236,6 +234,13 @@ export function verifyRegistrationResponse(
     // Add AAGUID if present
     if (authData.aaguid) {
       registrationInfo.aaguid = bufferToBase64URL(authData.aaguid);
+    }
+
+    // Surface client extension outputs (e.g. credProps.rk) when the client
+    // returned them, so the relying party knows whether a discoverable
+    // credential was created.
+    if (response.clientExtensionResults && typeof response.clientExtensionResults === 'object') {
+      registrationInfo.clientExtensionResults = response.clientExtensionResults;
     }
 
     // Log if debug is enabled

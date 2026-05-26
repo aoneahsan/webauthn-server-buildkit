@@ -10,7 +10,7 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Phase 1 — Deps & toolchain:** ✅ complete (all deps already at latest stable)
 - **Phase 2 — Critical security:** ✅ complete
 - **Phase 3 — Spec-compliance & correctness:** ✅ complete
-- **Phase 4 — Extensions, API & hygiene:** ⏳ pending
+- **Phase 4 — Extensions, API & hygiene:** ✅ complete
 - **Phase 5 — Attestation foundation:** ⏳ pending
 - **Phase 6 — Attestation formats (+ FIDO MDS):** ⏳ pending
 - **Phase 7 — Documentation refresh:** ⏳ pending
@@ -62,3 +62,15 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Tests (+17 → 203):** new `tests/crypto/cose.test.ts` (length validation, alg/crv consistency, trailing bytes) + auth verify-response additions (userHandle, crossOrigin, advisory signals, originVerifier).
 - Gate green: typecheck/lint/test (203)/build/format. Committed + pushed.
 - **Next:** Phase 4 — extensions, API surface & hygiene.
+
+### 2026-05-27 — Phase 4 (extensions, API surface & hygiene)
+
+_Implemented via a delegated general-purpose sub-agent; diff reviewed and the full gate re-run in the main thread before committing._
+
+- **GAP-N3/HYG-N6:** both verify paths now return `clientExtensionResults`; `AuthenticationExtensionsClientOutputs` modernized (`credProps.rk`, `prf`, `largeBlob`; legacy `hmacCreateSecret` kept `@deprecated`).
+- **API-N1:** exported an open `WebAuthnErrorCode` union (`WebAuthnErrorCode | (string & {})`) enumerating every thrown code; typed the error `code` fields; documented `statusCode`. Open union keeps existing string codes assignable — no caller break.
+- **GAP-N4:** `verifyRegistration` accepts an optional `{ existingCredentialIds }`; rejects `CREDENTIAL_ALREADY_REGISTERED`. Backward compatible.
+- **Hygiene:** honest `index.ts` banner (HYG-N2); single `clientDataJSON` decode in registration (HYG-N4); `verifyHash` delegates to `crypto.timingSafeEqual` (HYG-N5); `buffersEqual` NON-constant-time warning (API-N4); session-token encapsulation documented (API-N3).
+- **Tests (+17 → 220):** new `tests/extensions-api.test.ts`, `tests/utils/hash.test.ts`, buffer additions.
+- Gate green: typecheck/lint/test (220)/build/format. Committed + pushed.
+- **Next:** Phase 5 — attestation foundation (DER reader, X509 chain helper, MetadataService, Apple root).

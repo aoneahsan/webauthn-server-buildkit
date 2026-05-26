@@ -50,13 +50,43 @@ export interface AuthenticationCredentialJSON {
 }
 
 /**
- * Client extension results
+ * Client extension outputs returned by the authenticator/client, mirroring the
+ * WebAuthn `AuthenticationExtensionsClientOutputs` dictionary. Only the
+ * extensions the client actually processed are present; everything is optional.
  */
 export interface AuthenticationExtensionsClientOutputs {
+  /** FIDO AppID extension result (legacy U2F app-id compatibility). */
   appid?: boolean;
+  /**
+   * Credential Properties extension. `rk` (resident key) is the only reliable
+   * signal of whether a discoverable credential was actually created.
+   */
   credProps?: {
     rk?: boolean;
   };
+  /**
+   * Pseudo-Random Function extension (the modern replacement for the legacy
+   * `hmac-secret`). `results` values are base64url-encoded when present.
+   */
+  prf?: {
+    enabled?: boolean;
+    results?: {
+      first?: string;
+      second?: string;
+    };
+  };
+  /**
+   * Large Blob storage extension. `blob` is base64url-encoded when read back.
+   */
+  largeBlob?: {
+    supported?: boolean;
+    blob?: string;
+    written?: boolean;
+  };
+  /**
+   * @deprecated Legacy `hmac-secret` creation flag. Use {@link prf} instead;
+   * retained only for backward compatibility with older clients.
+   */
   hmacCreateSecret?: boolean;
 }
 
@@ -100,6 +130,12 @@ export interface VerifiedRegistrationInfo {
   attestationVerified?: boolean;
   attestationObject?: Uint8Array;
   clientDataJSON?: Uint8Array;
+  /**
+   * Client extension outputs parsed from `response.clientExtensionResults`.
+   * At minimum surfaces `credProps.rk` (whether a discoverable credential was
+   * created). Present only when the client returned extension results.
+   */
+  clientExtensionResults?: AuthenticationExtensionsClientOutputs;
 }
 
 /**
@@ -130,4 +166,10 @@ export interface VerifiedAuthenticationInfo {
    * (common for platform passkeys).
    */
   counterSupported?: boolean;
+  /**
+   * Client extension outputs parsed from `response.clientExtensionResults`
+   * (e.g. `appid`, `prf`, `largeBlob`). Present only when the client returned
+   * extension results.
+   */
+  clientExtensionResults?: AuthenticationExtensionsClientOutputs;
 }

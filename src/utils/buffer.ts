@@ -17,10 +17,14 @@ export function concatBuffers(...buffers: Uint8Array[]): Uint8Array {
 }
 
 /**
- * Compare two buffers for equality (variable-time).
+ * Compare two buffers for equality (NON-constant-time).
  *
- * For security-sensitive comparisons (hashes, MACs, tags) prefer
- * {@link timingSafeEqualBytes}, which is constant-time.
+ * WARNING: this short-circuits on the first differing byte, so its runtime
+ * leaks how many leading bytes matched. It MUST NOT be used to compare secret
+ * or attacker-influenced values (hashes, MACs, GCM tags, RP-ID hashes,
+ * signatures). For any security-sensitive comparison use
+ * {@link timingSafeEqualBytes}, which is constant-time. This helper is intended
+ * only for non-secret equality checks.
  */
 export function buffersEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) {

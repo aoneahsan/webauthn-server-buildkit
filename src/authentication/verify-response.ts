@@ -191,6 +191,12 @@ export function verifyAuthenticationResponse(
       counterSupported,
     };
 
+    // Surface client extension outputs (e.g. appid, prf, largeBlob) when the
+    // client returned them.
+    if (response.clientExtensionResults && typeof response.clientExtensionResults === 'object') {
+      authenticationInfo.clientExtensionResults = response.clientExtensionResults;
+    }
+
     // Log if debug is enabled
     if (config.debug && config.logger) {
       config.logger('debug', 'Authentication verified successfully', {

@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 /**
  * Create SHA-256 hash of data
@@ -28,7 +28,8 @@ export function sha512(data: string | Uint8Array): Uint8Array {
 }
 
 /**
- * Verify that a hash matches the expected value
+ * Hash `data` with the given algorithm and compare it to `expectedHash` in
+ * constant time (via `crypto.timingSafeEqual`). Unequal lengths return `false`.
  */
 export function verifyHash(
   data: string | Uint8Array,
@@ -53,11 +54,5 @@ export function verifyHash(
     return false;
   }
 
-  // Constant-time comparison
-  let result = 0;
-  for (let i = 0; i < actualHash.length; i++) {
-    result |= actualHash[i]! ^ expectedHash[i]!;
-  }
-
-  return result === 0;
+  return timingSafeEqual(actualHash, expectedHash);
 }

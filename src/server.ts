@@ -13,6 +13,7 @@ import {
   COSEAlgorithmIdentifier,
   ConfigurationError,
   VerificationError,
+  RegistrationError,
   Base64URLString,
   SessionData,
   StorageAdapter,
@@ -108,12 +109,23 @@ export class WebAuthnServer {
   }
 
   /**
-   * Verify registration response
+   * Verify registration response.
+   *
+   * @param response - The registration credential returned by the client.
+   * @param expectedChallenge - The challenge issued for this ceremony.
+   * @param expectedOrigin - Override the configured origin(s) for this verify.
+   * @param options - Optional verification controls.
+   * @param options.existingCredentialIds - The set of credential IDs already
+   *   registered for the user (base64url). When provided and the verified
+   *   credential's ID is in this set, verification fails with
+   *   `CREDENTIAL_ALREADY_REGISTERED` (enforces `excludeCredentials`). Omit to
+   *   skip the duplicate check.
    */
   async verifyRegistration(
     response: RegistrationCredentialJSON,
     expectedChallenge: string,
     expectedOrigin?: string | string[],
+    options?: { existingCredentialIds?: string[] },
   ): Promise<{
     verified: boolean;
     registrationInfo?: VerifiedRegistrationInfo;
@@ -130,8 +142,9 @@ export class WebAuthnServer {
       requireUserVerification: this.config.userVerification === 'required',
     };
 
+    let result: { verified: boolean; registrationInfo?: VerifiedRegistrationInfo };
     try {
-      return verifyRegistrationResponse(this.config, params);
+      result = verifyRegistrationResponse(this.config, params);
     } finally {
       // Consume the challenge once, regardless of the verification outcome, so
       // it can never be replayed.
@@ -139,6 +152,20 @@ export class WebAuthnServer {
         await this.config.storageAdapter.challenges.delete(expectedChallenge).catch(() => false);
       }
     }
+
+    // Reject a credential the user has already registered (excludeCredentials
+    // enforcement). Off unless the caller supplies the existing-ID set.
+    const existingCredentialIds = options?.existingCredentialIds;
+    if (
+      existingCredentialIds &&
+      result.verified &&
+      result.registrationInfo &&
+      existingCredentialIds.includes(result.registrationInfo.credential.id)
+    ) {
+      throw new RegistrationError('Credential already registered', 'CREDENTIAL_ALREADY_REGISTERED');
+    }
+
+    return result;
   }
 
   /**
@@ -261,7 +288,12 @@ export class WebAuthnServer {
   }
 
   /**
-   * Create a session after successful authentication
+   * Create a session after successful authentication.
+   *
+   * Session-token minting and verification are intentionally encapsulated
+   * behind `WebAuthnServer` (`createSession` / `validateSession` /
+   * `refreshSession` / `revokeSession`) so the encryption secret and token
+   * format stay internal. The low-level token helpers are not exported.
    */
   async createSession(
     userId: string | number,

@@ -1,14 +1,26 @@
 /**
  * WebAuthn Server Buildkit
  *
- * A comprehensive WebAuthn server implementation for Node.js/TypeScript.
- * Provides secure, type-safe biometric authentication with:
+ * A framework-independent WebAuthn server library for Node.js/TypeScript.
+ * Provides type-safe, secure-by-default biometric authentication with:
  *
- * - **Registration and Authentication Flows**: Complete WebAuthn Level 3 support
- * - **Session Management**: Encrypted tokens using AES-256-GCM
- * - **Flexible Storage Adapters**: Memory adapter included, custom adapters supported
- * - **Mobile Attestation Support**: iOS and Android platform validation
- * - **Comprehensive Crypto**: CBOR/COSE encoding, signature verification
+ * - **Registration & Authentication**: Standard WebAuthn ceremony verification
+ *   (challenge, origin, RP-ID hash, flags, signature counter, signature) with
+ *   ES256/384/512, RS/PS256-512 and Ed25519, and pinned algorithms.
+ * - **Attestation**: `none` accepted; `packed` self-attestation cryptographically
+ *   verified. Certificate-chain formats (`packed` x5c, `fido-u2f`, `tpm`,
+ *   `android-key`, `android-safetynet`, `apple`) are surfaced via `fmt` /
+ *   `attestationVerified` but are **not yet trust-anchored** here — verify them
+ *   out-of-band if you require attestation trust.
+ * - **Session Management**: Encrypted session tokens (AES-256-GCM with
+ *   HKDF-SHA256 key derivation), managed via `WebAuthnServer`.
+ * - **Flexible Storage Adapters**: Memory adapter included; custom adapters
+ *   supported. Challenges are enforced single-use and unexpired by default.
+ * - **Crypto**: CBOR/COSE decoding and signature verification using Node's
+ *   built-in `crypto`.
+ * - **Optional mobile JSON path**: an opt-in (`enableMobileAttestation`,
+ *   default off) non-standard JSON registration path that does NOT perform
+ *   cryptographic WebAuthn attestation.
  *
  * @example
  * ```typescript
@@ -60,6 +72,9 @@ export {
 
 // Types (type-only)
 export type {
+  // Error codes
+  WebAuthnErrorCode,
+
   // Configuration
   WebAuthnServerConfig,
   PreferredAuthenticatorType,

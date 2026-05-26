@@ -6,7 +6,7 @@
   "fromVersion": "2.2.0",
   "targetVersion": "2.3.0",
   "createdAt": "2026-05-26",
-  "lastUpdated": "2026-05-26",
+  "lastUpdated": "2026-05-27",
   "overview": "docs/features/package-polish-v2.3.0/00-overview.md",
   "findings": "docs/features/package-polish-v2.3.0/findings.md",
   "progress": "docs/features/package-polish-v2.3.0/progress.md",
@@ -201,30 +201,39 @@
       "id": "phase04",
       "title": "Extensions, API surface & hygiene",
       "file": "docs/features/package-polish-v2.3.0/phase04-extensions-api-hygiene.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-27",
       "subTasks": [
         {
           "id": "phase04.1",
           "title": "GAP-N3 + HYG-N6: parse + return clientExtensionResults (credProps.rk); modernize AuthenticationExtensionsClientOutputs (prf, largeBlob)",
-          "status": "pending"
+          "status": "complete",
+          "note": "Both verify paths return clientExtensionResults on VerifiedRegistrationInfo/VerifiedAuthenticationInfo. AuthenticationExtensionsClientOutputs modernized: credProps{rk}, prf{enabled,results}, largeBlob{supported,blob,written}; hmacCreateSecret kept @deprecated."
         },
         {
           "id": "phase04.2",
           "title": "API-N1: export WebAuthnErrorCode union/enum; type WebAuthnError.code; document statusCode",
-          "status": "pending"
+          "status": "complete",
+          "note": "WebAuthnErrorCode open union (WebAuthnErrorCode | (string & {})) enumerating all thrown codes; exported from index.ts as a type; code params typed; statusCode JSDoc'd. Open union keeps existing string codes assignable (no caller break)."
         },
         {
           "id": "phase04.3",
           "title": "GAP-N4: optional excludeCredentials duplicate rejection in verifyRegistration",
-          "status": "pending"
+          "status": "complete",
+          "note": "verifyRegistration gained optional 4th param { existingCredentialIds?: string[] }; throws CREDENTIAL_ALREADY_REGISTERED when the verified credential id is in the set. Backward compatible (off when omitted)."
         },
         {
           "id": "phase04.4",
           "title": "HYG-N1/N2/N4/N5 + API-N3/N4: COSE_KEY_PARAMS comment; honest index.ts JSDoc; single clientDataJSON decode; verifyHash dedup; document buffersEqual non-security; confirm session-token export policy",
-          "status": "pending"
+          "status": "complete",
+          "note": "HYG-N1 COSE_KEY_PARAMS comment (Phase 3). HYG-N2 index.ts banner rewritten honestly (no 'Complete L3'/overstated mobile). HYG-N4 registration decodes clientDataJSON once. HYG-N5 verifyHash delegates to crypto.timingSafeEqual (export kept). API-N4 buffersEqual NON-constant-time warning. API-N3 session-token kept encapsulated + documented."
         },
-        { "id": "phase04.5", "title": "Tests + Verify gate + commit", "status": "pending" }
+        {
+          "id": "phase04.5",
+          "title": "Tests + Verify gate + commit",
+          "status": "complete",
+          "note": "New tests/extensions-api.test.ts + tests/utils/hash.test.ts + buffer.test.ts additions. Suite 203 -> 220. Gate green (typecheck/lint/build/format). Implemented via a delegated general-purpose sub-agent; diff reviewed; gate re-run in main thread."
+        }
       ]
     },
     {
@@ -399,6 +408,12 @@
       "date": "2026-05-26",
       "phase": "phase03",
       "summary": "Spec-compliance & correctness. FUNC-N1/API-N2: userHandle read + validated against credential.webAuthnUserID (USER_HANDLE_MISMATCH) + returned; createRegistrationOptions returns webAuthnUserId. SEC-N4: crossOrigin rejected unless allowCrossOriginIframe (CROSS_ORIGIN_NOT_ALLOWED). FUNC-N2: COSE key === undefined guards + byte-length validation per curve/kty. FUNC-N5: trailing-byte rejection (AUTHENTICATOR_DATA_TRAILING_BYTES). SEC-N5/N6: advisory backupStateChanged/userVerificationDowngraded/counterSupported (WebAuthnCredential.userVerified added). FUNC-N3: optional originVerifier matcher. FUNC-N4: warn when requested attestation isn't trust-anchored. FUNC-N6: isCborParsingError branches on error.code. Tests: new tests/crypto/cose.test.ts (9) + auth additions (8); suite 186 -> 203. Gate green.",
+      "commit": "929c140"
+    },
+    {
+      "date": "2026-05-27",
+      "phase": "phase04",
+      "summary": "Extensions, API surface & hygiene (implemented via a delegated general-purpose sub-agent; diff reviewed + gate re-run in main thread). GAP-N3/HYG-N6: both verify paths return clientExtensionResults; AuthenticationExtensionsClientOutputs modernized (credProps/prf/largeBlob; hmacCreateSecret @deprecated). API-N1: exported open WebAuthnErrorCode union, typed error codes, documented statusCode. GAP-N4: optional excludeCredentials duplicate rejection (CREDENTIAL_ALREADY_REGISTERED) via verifyRegistration 4th param. HYG-N2 honest index.ts banner; HYG-N4 single clientDataJSON decode; HYG-N5 verifyHash delegates to crypto.timingSafeEqual; API-N4 buffersEqual non-security warning; API-N3 session-token encapsulation documented. Tests: new tests/extensions-api.test.ts + tests/utils/hash.test.ts; suite 203 -> 220. Gate green.",
       "commit": "pending"
     }
   ],
@@ -407,9 +422,9 @@
   ],
   "status": "IN_PROGRESS",
   "nextSuggestion": {
-    "phase": "phase04",
-    "subTask": "phase04.1",
-    "rationale": "Phases 0-3 complete and committed. Next: Phase 4 extensions, API & hygiene — parse + return clientExtensionResults (credProps.rk) + modernize the extension output type (GAP-N3/HYG-N6); typed WebAuthnErrorCode union (API-N1); optional excludeCredentials duplicate rejection (GAP-N4); hygiene (COSE_KEY_PARAMS comment done, honest index.ts JSDoc HYG-N2, single clientDataJSON decode HYG-N4, verifyHash dedup HYG-N5, document buffersEqual non-security API-N4, confirm session-token export policy API-N3); plus tests. Then Phases 5-6 (attestation foundation + full per-format verification with FIDO MDS — the large multi-session effort), 7 (docs), 8 (release)."
+    "phase": "phase05",
+    "subTask": "phase05.1",
+    "rationale": "Phases 0-4 complete and committed. Next: Phase 5 attestation foundation — minimal in-house DER/ASN.1 reader (src/attestation/asn1.ts), X509 chain helper on Node crypto.X509Certificate (src/attestation/x509.ts), pluggable MetadataService/trust-anchor provider (src/attestation/metadata.ts) + bundled Apple WebAuthn Root CA, and config wiring (metadataService?). Then Phase 6 per-format verification (apple, fido-u2f, packed-x5c, android-key, tpm, android-safetynet) + FIDO MDS, Phase 7 docs, Phase 8 release."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
 }
