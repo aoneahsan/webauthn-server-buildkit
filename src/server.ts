@@ -420,6 +420,7 @@ export class WebAuthnServer {
       storageAdapter: config.storageAdapter,
       preferredAuthenticatorType: config.preferredAuthenticatorType,
       logger: config.logger,
+      metadataService: config.metadataService,
     };
   }
 }

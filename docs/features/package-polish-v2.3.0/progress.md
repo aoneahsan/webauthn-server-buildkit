@@ -11,7 +11,7 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Phase 2 — Critical security:** ✅ complete
 - **Phase 3 — Spec-compliance & correctness:** ✅ complete
 - **Phase 4 — Extensions, API & hygiene:** ✅ complete
-- **Phase 5 — Attestation foundation:** ⏳ pending
+- **Phase 5 — Attestation foundation:** ✅ complete
 - **Phase 6 — Attestation formats (+ FIDO MDS):** ⏳ pending
 - **Phase 7 — Documentation refresh:** ⏳ pending
 - **Phase 8 — Release v2.3.0:** ⏳ pending
@@ -74,3 +74,14 @@ _Implemented via a delegated general-purpose sub-agent; diff reviewed and the fu
 - **Tests (+17 → 220):** new `tests/extensions-api.test.ts`, `tests/utils/hash.test.ts`, buffer additions.
 - Gate green: typecheck/lint/test (220)/build/format. Committed + pushed.
 - **Next:** Phase 5 — attestation foundation (DER reader, X509 chain helper, MetadataService, Apple root).
+
+### 2026-05-27 — Phase 5 (attestation foundation)
+
+_Delegated to a sub-agent; scope and full gate verified in the main thread._
+
+- New `src/attestation/`: `asn1.ts` (strict in-house DER reader + `findExtension`), `x509.ts` (synchronous Node `X509Certificate` chain verification + `publicKeyMatchesCOSE`, fail-closed), `metadata.ts` (`StaticMetadataService`), `roots/apple-webauthn-root-ca.ts` (the **real** Apple WebAuthn Root CA, fetched and openssl-verified), `types.ts` (Phase 6 contract).
+- `src/types/metadata.ts`: a **synchronous** `MetadataService` interface — deliberately sync so `verifyRegistrationResponse` stays synchronous (no breaking async change). Offline-by-default: the RP supplies FIDO MDS roots/entries.
+- `config.metadataService` wired; public API exported. **Zero new runtime dependencies.**
+- **Tests (+45 → 265):** `tests/attestation/{asn1,x509,metadata}.test.ts`.
+- Gate green: typecheck/lint/test (265)/build/format. Committed + pushed.
+- **Next:** Phase 6 — per-format attestation verification + FIDO MDS (the largest phase).

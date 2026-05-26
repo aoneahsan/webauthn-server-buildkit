@@ -240,33 +240,38 @@
       "id": "phase05",
       "title": "Attestation foundation (DER reader, X509 chain, MetadataService, Apple root)",
       "file": "docs/features/package-polish-v2.3.0/phase05-attestation-foundation.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-27",
       "subTasks": [
         {
           "id": "phase05.1",
           "title": "Decide ASN.1 strategy: in-house minimal DER reader vs vetted dep (prefer in-house for AAGUID/Apple-nonce; reassess for TPM/Android-key)",
-          "status": "pending"
+          "status": "complete",
+          "note": "Decision: in-house minimal DER reader (zero new deps). Sufficient for AAGUID/Apple-nonce/android-key extensions. Reassess only if TPM binary structures prove infeasible in Phase 6."
         },
         {
           "id": "phase05.2",
           "title": "Minimal DER/ASN.1 reader (TLV walker, OID match, extension extraction) in src/attestation/asn1.ts",
-          "status": "pending"
+          "status": "complete",
+          "note": "asn1.ts: strict TLV walker (short/long length, rejects indefinite/truncated/overlong/high-tag), readSequence/readSet/decodeOID/readOctetString/readInteger/readBitString, findExtension(certDer, oid). Throws ASN1_PARSE_ERROR on malformed input."
         },
         {
           "id": "phase05.3",
           "title": "X509 chain verification helper (Node crypto.X509Certificate: parse, checkIssued, verify, validity, key extraction) in src/attestation/x509.ts",
-          "status": "pending"
+          "status": "complete",
+          "note": "x509.ts (sync, Node crypto.X509Certificate): parseCert/derToX509/parseCertPem/pemToDer, isValidAt, isIssuedBy (checkIssued+verify), verifyCertChain (validity+linkage+root, fail-closed, no revocation by design), publicKeyMatchesCOSE (EC x/y, RSA n/e, OKP x)."
         },
         {
           "id": "phase05.4",
           "title": "MetadataService / trust-anchor provider interface (RP supplies FIDO MDS entries + roots); bundle Apple WebAuthn Root CA PEM",
-          "status": "pending"
+          "status": "complete",
+          "note": "SYNCHRONOUS MetadataService interface in src/types/metadata.ts (getRootCertificates/getStatement) to keep verifyRegistrationResponse sync. StaticMetadataService in src/attestation/metadata.ts. Real Apple WebAuthn Root CA fetched + openssl-verified (CN=Apple WebAuthn Root CA, EC P-384) bundled as APPLE_WEBAUTHN_ROOT_CA_PEM. config.metadataService wired (offline-by-default; RP supplies FIDO MDS data)."
         },
         {
           "id": "phase05.5",
           "title": "Tests for DER reader + X509 helper + provider; Verify gate + commit",
-          "status": "pending"
+          "status": "complete",
+          "note": "tests/attestation/{asn1,x509,metadata}.test.ts (42) + index-exports (3). Suite 220 -> 265. Gate green. Implemented via a delegated sub-agent; scope + gate verified in main thread. Phase 6 contract: AttestationVerifierInput/AttestationVerificationResult/AttestationFormatVerifier + verifyCertChain/publicKeyMatchesCOSE/findExtension/parseCertPem helpers."
         }
       ]
     },
@@ -414,6 +419,12 @@
       "date": "2026-05-27",
       "phase": "phase04",
       "summary": "Extensions, API surface & hygiene (implemented via a delegated general-purpose sub-agent; diff reviewed + gate re-run in main thread). GAP-N3/HYG-N6: both verify paths return clientExtensionResults; AuthenticationExtensionsClientOutputs modernized (credProps/prf/largeBlob; hmacCreateSecret @deprecated). API-N1: exported open WebAuthnErrorCode union, typed error codes, documented statusCode. GAP-N4: optional excludeCredentials duplicate rejection (CREDENTIAL_ALREADY_REGISTERED) via verifyRegistration 4th param. HYG-N2 honest index.ts banner; HYG-N4 single clientDataJSON decode; HYG-N5 verifyHash delegates to crypto.timingSafeEqual; API-N4 buffersEqual non-security warning; API-N3 session-token encapsulation documented. Tests: new tests/extensions-api.test.ts + tests/utils/hash.test.ts; suite 203 -> 220. Gate green.",
+      "commit": "072a199"
+    },
+    {
+      "date": "2026-05-27",
+      "phase": "phase05",
+      "summary": "Attestation foundation (delegated sub-agent; scope + gate verified in main thread). New src/attestation/: asn1.ts (strict in-house DER reader + findExtension), x509.ts (sync Node X509Certificate chain verification + publicKeyMatchesCOSE, fail-closed), metadata.ts (StaticMetadataService), roots/apple-webauthn-root-ca.ts (REAL Apple WebAuthn Root CA, fetched + openssl-verified), types.ts (Phase 6 contract). src/types/metadata.ts (SYNCHRONOUS MetadataService interface — keeps verifyRegistrationResponse sync, no breaking async). config.metadataService wired; public API exported. Zero new runtime deps. Tests: tests/attestation/{asn1,x509,metadata} (42) + index-exports (3); suite 220 -> 265. Gate green. registration/attestation.ts intentionally untouched (Phase 6 wires it).",
       "commit": "pending"
     }
   ],
@@ -422,9 +433,9 @@
   ],
   "status": "IN_PROGRESS",
   "nextSuggestion": {
-    "phase": "phase05",
-    "subTask": "phase05.1",
-    "rationale": "Phases 0-4 complete and committed. Next: Phase 5 attestation foundation — minimal in-house DER/ASN.1 reader (src/attestation/asn1.ts), X509 chain helper on Node crypto.X509Certificate (src/attestation/x509.ts), pluggable MetadataService/trust-anchor provider (src/attestation/metadata.ts) + bundled Apple WebAuthn Root CA, and config wiring (metadataService?). Then Phase 6 per-format verification (apple, fido-u2f, packed-x5c, android-key, tpm, android-safetynet) + FIDO MDS, Phase 7 docs, Phase 8 release."
+    "phase": "phase06",
+    "subTask": "phase06.1",
+    "rationale": "Phases 0-5 complete and committed; attestation foundation ready. Next: Phase 6 per-format verification wired into src/registration/attestation.ts using the foundation (asn1/x509/metadata) — apple (Apple root + nonce ext), fido-u2f (ES256 sig base), packed-x5c (sig + AAGUID ext + chain via MDS), android-key (key-attestation ext + Google roots), tpm (certInfo/pubArea + AIK), android-safetynet (JWS; deprecated -> recommend Play Integrity). Surface attestationVerified=true only when trust-anchored; honest framing (false, not throw) when no metadataService/roots supplied. Then Phase 7 docs, Phase 8 release."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
 }

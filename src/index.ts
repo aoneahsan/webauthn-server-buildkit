@@ -122,7 +122,51 @@ export type {
 
   // Storage
   StorageAdapter,
+
+  // Metadata / trust-anchor provider
+  MetadataService,
+  MetadataRootQuery,
+  MetadataStatement,
+  MetadataStatusReport,
 } from './types';
+
+// Attestation foundation — trust-anchor provider + bundled Apple root (runtime values).
+export { StaticMetadataService, APPLE_WEBAUTHN_ROOT_CA_PEM } from './attestation';
+
+// Attestation foundation — X.509 helpers (Node built-in crypto wrappers, runtime values).
+export {
+  parseCert,
+  parseCertPem,
+  derToX509,
+  pemToDer,
+  isValidAt,
+  isIssuedBy,
+  verifyCertChain,
+  publicKeyMatchesCOSE,
+} from './attestation';
+
+// Attestation foundation — minimal DER/ASN.1 reader (runtime values).
+export {
+  ASN1_TAG,
+  readTLV,
+  readChildren,
+  readSequence,
+  readSet,
+  decodeOID,
+  readOctetString,
+  readInteger,
+  readBitString,
+  findExtension,
+} from './attestation';
+
+// Attestation foundation — verifier contract + provider options + ASN.1 node (type-only).
+export type {
+  StaticMetadataServiceOptions,
+  AttestationVerifierInput,
+  AttestationVerificationResult,
+  AttestationFormatVerifier,
+  Asn1Node,
+} from './attestation';
 
 // Crypto functions (runtime values)
 export {

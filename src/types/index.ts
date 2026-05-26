@@ -7,6 +7,9 @@ export * from './config';
 // Errors
 export * from './errors';
 
+// Metadata / trust-anchor provider
+export * from './metadata';
+
 // Models
 export * from './models';
 

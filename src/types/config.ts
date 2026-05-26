@@ -3,6 +3,7 @@ import type {
   COSEAlgorithmIdentifier,
   UserVerificationRequirement,
 } from './base';
+import type { MetadataService } from './metadata';
 import type { AuthenticatorSelectionCriteria } from './options';
 import type { StorageAdapter } from './storage';
 
@@ -130,6 +131,19 @@ export interface WebAuthnServerConfig {
   storageAdapter?: StorageAdapter;
 
   /**
+   * Trust-anchor / FIDO Metadata Service provider used to verify
+   * certificate-chain attestation formats (e.g. `apple`, `packed` x5c,
+   * `fido-u2f`). The relying party supplies the (large, frequently-updated) FIDO
+   * MDS data — the package never fetches it. Use {@link StaticMetadataService}
+   * for a fixed set of roots, e.g. `{ defaultRoots: [APPLE_WEBAUTHN_ROOT_CA_PEM] }`.
+   *
+   * When absent, certificate-chain attestation formats remain
+   * `attestationVerified: false` (honest framing preserved). Attestation format
+   * verification lands in a later phase.
+   */
+  metadataService?: MetadataService;
+
+  /**
    * Enable debug logging
    */
   debug?: boolean;
@@ -146,7 +160,12 @@ export interface WebAuthnServerConfig {
 export interface InternalConfig extends Required<
   Omit<
     WebAuthnServerConfig,
-    'storageAdapter' | 'preferredAuthenticatorType' | 'logger' | 'rpIcon' | 'originVerifier'
+    | 'storageAdapter'
+    | 'preferredAuthenticatorType'
+    | 'logger'
+    | 'rpIcon'
+    | 'originVerifier'
+    | 'metadataService'
   >
 > {
   storageAdapter?: StorageAdapter;
@@ -154,4 +173,5 @@ export interface InternalConfig extends Required<
   logger?: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) => void;
   rpIcon?: string;
   originVerifier?: (origin: string) => boolean;
+  metadataService?: MetadataService;
 }
