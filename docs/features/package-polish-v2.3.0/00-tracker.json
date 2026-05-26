@@ -1,0 +1,388 @@
+{
+  "$schema": "package-polish-v2.3.0-tracker",
+  "description": "Resumable tracker for the webauthn-server-buildkit v2.3.0 polish: dependency verification, full security/correctness/completeness audit + fixes, FULL attestation verification with FIDO MDS, regression tests, docs, and npm release. The first phase/sub-task with status 'pending' or 'in_progress' is the next thing to work on. Re-running the originating prompt MUST read this file and resume from the first non-complete sub-task — never restart from scratch.",
+  "module": "package-polish-v2.3.0",
+  "package": "webauthn-server-buildkit",
+  "fromVersion": "2.2.0",
+  "targetVersion": "2.3.0",
+  "createdAt": "2026-05-26",
+  "lastUpdated": "2026-05-26",
+  "overview": "docs/features/package-polish-v2.3.0/00-overview.md",
+  "findings": "docs/features/package-polish-v2.3.0/findings.md",
+  "progress": "docs/features/package-polish-v2.3.0/progress.md",
+  "userDecisions": {
+    "attestation": "FULL attestation + FIDO MDS trust anchoring for all formats (apple, fido-u2f, packed-x5c, android-key, tpm, android-safetynet/Play Integrity). Multi-session. Keep package offline-by-default and lean: in-house minimal DER reader + Node crypto.X509Certificate for chains; bundle only the small static Apple WebAuthn Root CA; expose a pluggable MetadataService/trust-anchor provider so the RP supplies the large FIDO MDS blob (no bundling/fetching at import). One small vetted ASN.1 dependency pre-approved ONLY if TPM/Android-key parsing is infeasible in-house.",
+    "tests": "APPROVED to add regression tests for the security work + the currently-untested authentication path (overrides the standing no-tests-unless-asked rule, scoped to this work).",
+    "compatibility": "Secure-by-default: new protections ON by default, documented as CHANGELOG upgrade notes. Provide config switches to restore legacy behavior where a default change could break existing integrations.",
+    "versioning": "Minor 2.3.0. Document upgrade notes for behavior changes (challenge lifecycle enforcement, alg pinning at auth, crossOrigin rejection, new VerifiedAuthenticationInfo/VerifiedRegistrationInfo fields)."
+  },
+  "knownRisks": [
+    "Full attestation + FIDO MDS is large; sequence simplest-first (apple -> fido-u2f -> packed-x5c -> android-key -> tpm -> android-safetynet), each independently committable.",
+    "Secure-by-default behavior changes may require existing integrations to adjust — mitigated with config switches + documented upgrade notes.",
+    "TPM/android-safetynet may need a vetted ASN.1/JWT dependency if in-house parsing is infeasible (user pre-approved one small dependency).",
+    "android-safetynet is deprecated by Google (Play Integrity successor) — implement for completeness, recommend Play Integrity in docs.",
+    "npm token previously expired — publish may need a fresh token + explicit --userconfig/always-auth (see memory npm-publish-token-expired)."
+  ],
+  "verificationGate": [
+    "yarn typecheck (0 errors)",
+    "yarn lint (0 errors/warnings)",
+    "yarn test (all pass)",
+    "yarn build (0 warnings, ESM+CJS+DTS)",
+    "yarn format:check (clean)"
+  ],
+  "commitPolicy": "ONE commit per completed+verified phase (green checkpoint), tracker + progress update included in the same commit. Push after committing (authorized by project CLAUDE.md). npm publish requires explicit user confirmation at Phase 8.",
+  "baseline": {
+    "date": "2026-05-26",
+    "tests": 166,
+    "typecheck": "clean",
+    "lint": "clean",
+    "build": "success",
+    "depsAtLatestStable": true,
+    "note": "All 11 deps already at latest stable (cbor-x 1.6.4, @types/node 25.9.1, vitest+coverage 4.1.7, eslint 10.4.0, eslint-config-prettier 10.1.8, eslint-plugin-prettier 5.5.5, prettier 3.8.3, tsup 8.5.1, typescript 6.0.3, typescript-eslint 8.60.0)."
+  },
+  "phases": [
+    {
+      "id": "phase00",
+      "title": "Planning & resumable scaffolding",
+      "file": "docs/features/package-polish-v2.3.0/ (tracker + overview + findings + 8 phase files + progress)",
+      "status": "complete",
+      "completedAt": "2026-05-26",
+      "subTasks": [
+        {
+          "id": "phase00.1",
+          "title": "Read codebase, establish green baseline (166 tests, typecheck/lint/build clean)",
+          "status": "complete",
+          "note": "Baseline green; working tree clean."
+        },
+        {
+          "id": "phase00.2",
+          "title": "Run fresh deep audit (security/correctness/completeness/hygiene) beyond v2.2.0's 16 fixes",
+          "status": "complete",
+          "note": "See findings.md — SEC-N1..N7, FUNC-N1..N6, GAP-N1..N4, API-N1..N4, HYG-N1..N6."
+        },
+        {
+          "id": "phase00.3",
+          "title": "Confirm scope decisions with user (attestation depth, tests, compatibility)",
+          "status": "complete",
+          "note": "Full attestation+MDS; tests approved; secure-by-default."
+        },
+        {
+          "id": "phase00.4",
+          "title": "Write overview, findings, tracker, progress, 8 phase files",
+          "status": "complete",
+          "awaitingUser": false
+        }
+      ]
+    },
+    {
+      "id": "phase01",
+      "title": "Dependency verification & toolchain",
+      "file": "docs/features/package-polish-v2.3.0/phase01-dependencies.md",
+      "status": "complete",
+      "completedAt": "2026-05-26",
+      "subTasks": [
+        {
+          "id": "phase01.1",
+          "title": "Confirm every dep is at latest stable (npm view) — already current per baseline",
+          "status": "complete",
+          "note": "All 11 deps confirmed at latest stable on npm (Phase 0)."
+        },
+        {
+          "id": "phase01.2",
+          "title": "Refresh yarn.lock if drifted; confirm no banned deps; engines >=24.13.0 intact",
+          "status": "complete",
+          "note": "yarn install --immutable clean (no drift). No banned deps. Only cbor-x in production. engine >=24.13.0, pm yarn@4.14.1."
+        },
+        {
+          "id": "phase01.3",
+          "title": "Verify gate (typecheck/lint/test/build/format) + commit Phase 0+1",
+          "status": "complete",
+          "note": "Gate green at baseline (166 tests; typecheck/lint/build clean); format:check clean after formatting new plan files. Committed with Phase 0."
+        }
+      ]
+    },
+    {
+      "id": "phase02",
+      "title": "Critical security (challenge lifecycle + algorithm pinning + session hardening)",
+      "file": "docs/features/package-polish-v2.3.0/phase02-critical-security.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase02.1",
+          "title": "SEC-N1: storage-backed challenge single-use/expiry/operation enforcement in server.ts verify wrappers (secure-by-default + config switch)",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.2",
+          "title": "SEC-N2/N3: alg<->crv consistency in cose.ts; persist registered alg; enforce supportedAlgorithms + exact alg (incl. RSA padding) at authentication",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.3",
+          "title": "SEC-N7: validate session-token field lengths (iv=12, tag=16, salt=32) before decipher",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.4",
+          "title": "HYG-N3: re-check stored-session expiry after adapter fetch",
+          "status": "pending"
+        },
+        {
+          "id": "phase02.5",
+          "title": "Tests: auth round-trip (success), counter regression, RP-ID/origin mismatch, UV-required, bad signature, challenge single-use, alg pinning; Verify gate + commit",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase03",
+      "title": "Spec-compliance & correctness",
+      "file": "docs/features/package-polish-v2.3.0/phase03-spec-correctness.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase03.1",
+          "title": "FUNC-N1 + API-N2: read/validate userHandle; return userHandle in VerifiedAuthenticationInfo; return generated webAuthnUserID + alg from registration",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.2",
+          "title": "SEC-N4: reject crossOrigin===true unless allowCrossOriginIframe (default false)",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.3",
+          "title": "FUNC-N2: COSE key === undefined guards + byte-length validation (P-256/384/521, Ed25519, RSA)",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.4",
+          "title": "FUNC-N5: reject unexpected trailing bytes after COSE key when ED flag unset",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.5",
+          "title": "SEC-N5/N6: surface backupStateChanged + userVerificationDowngraded + counterSupported signals",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.6",
+          "title": "FUNC-N3: origin handling incl. android:apk-key-hash + documented normalization/matcher",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.7",
+          "title": "FUNC-N6: tag CBOR/COSE errors with stable code; branch on code not message",
+          "status": "pending"
+        },
+        {
+          "id": "phase03.8",
+          "title": "Tests for the above + Verify gate + commit",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase04",
+      "title": "Extensions, API surface & hygiene",
+      "file": "docs/features/package-polish-v2.3.0/phase04-extensions-api-hygiene.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase04.1",
+          "title": "GAP-N3 + HYG-N6: parse + return clientExtensionResults (credProps.rk); modernize AuthenticationExtensionsClientOutputs (prf, largeBlob)",
+          "status": "pending"
+        },
+        {
+          "id": "phase04.2",
+          "title": "API-N1: export WebAuthnErrorCode union/enum; type WebAuthnError.code; document statusCode",
+          "status": "pending"
+        },
+        {
+          "id": "phase04.3",
+          "title": "GAP-N4: optional excludeCredentials duplicate rejection in verifyRegistration",
+          "status": "pending"
+        },
+        {
+          "id": "phase04.4",
+          "title": "HYG-N1/N2/N4/N5 + API-N3/N4: COSE_KEY_PARAMS comment; honest index.ts JSDoc; single clientDataJSON decode; verifyHash dedup; document buffersEqual non-security; confirm session-token export policy",
+          "status": "pending"
+        },
+        { "id": "phase04.5", "title": "Tests + Verify gate + commit", "status": "pending" }
+      ]
+    },
+    {
+      "id": "phase05",
+      "title": "Attestation foundation (DER reader, X509 chain, MetadataService, Apple root)",
+      "file": "docs/features/package-polish-v2.3.0/phase05-attestation-foundation.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase05.1",
+          "title": "Decide ASN.1 strategy: in-house minimal DER reader vs vetted dep (prefer in-house for AAGUID/Apple-nonce; reassess for TPM/Android-key)",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.2",
+          "title": "Minimal DER/ASN.1 reader (TLV walker, OID match, extension extraction) in src/attestation/asn1.ts",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.3",
+          "title": "X509 chain verification helper (Node crypto.X509Certificate: parse, checkIssued, verify, validity, key extraction) in src/attestation/x509.ts",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.4",
+          "title": "MetadataService / trust-anchor provider interface (RP supplies FIDO MDS entries + roots); bundle Apple WebAuthn Root CA PEM",
+          "status": "pending"
+        },
+        {
+          "id": "phase05.5",
+          "title": "Tests for DER reader + X509 helper + provider; Verify gate + commit",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase06",
+      "title": "Attestation formats (full verification + FIDO MDS)",
+      "file": "docs/features/package-polish-v2.3.0/phase06-attestation-formats.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase06.1",
+          "title": "apple: chain to Apple WebAuthn Root CA; nonce ext OID 1.2.840.113635.100.8.2 == hash(authData||clientDataHash); leaf key == credential key",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.2",
+          "title": "fido-u2f: reconstruct U2F sig base; verify ES256 with attestation cert; chain validate",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.3",
+          "title": "packed-x5c: verify sig with leaf key; cert requirements; AAGUID ext OID 1.3.6.1.4.1.45724.1.1.4 == authData AAGUID; chain via MDS",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.4",
+          "title": "android-key: leaf key == credential key; Android Key Attestation ext OID 1.3.6.1.4.1.11129.2.1.17 (challenge==clientDataHash); chain to Google roots",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.5",
+          "title": "tpm: certInfo (TPMS_ATTEST) + pubArea (TPMT_PUBLIC) parse; pubArea==credential key; extraData==hash(attToBeSigned); AIK cert SAN/EKU; chain",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.6",
+          "title": "android-safetynet: JWS verify chain to GlobalSign; nonce; ctsProfileMatch; timestamp. Document Play Integrity as preferred successor.",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.7",
+          "title": "Wire all formats into verifyAttestationStatement; FUNC-N4: enforce attestationType policy (require trust-anchored when != none, or warn)",
+          "status": "pending"
+        },
+        {
+          "id": "phase06.8",
+          "title": "Tests per format (fixtures) + Verify gate + commit (may span multiple sessions — one commit per format-group is acceptable)",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase07",
+      "title": "Documentation refresh",
+      "file": "docs/features/package-polish-v2.3.0/phase07-docs.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase07.1",
+          "title": "Readme.md: 2.3.0 state, full attestation + MDS usage, new config (allowCrossOriginIframe, challenge enforcement), new result fields, honest claims (revisit HYG-N2)",
+          "status": "pending"
+        },
+        {
+          "id": "phase07.2",
+          "title": "CHANGELOG.md [2.3.0] with Upgrade notes + Security/Fixed/Changed/Added",
+          "status": "pending"
+        },
+        {
+          "id": "phase07.3",
+          "title": "docs/api-reference.md + docs/migration.md (2.2->2.3) + AI-INTEGRATION-GUIDE.md",
+          "status": "pending"
+        },
+        {
+          "id": "phase07.4",
+          "title": "docs/audit-records.md: append v2.3.0 audit + resolutions",
+          "status": "pending"
+        },
+        {
+          "id": "phase07.5",
+          "title": "CLAUDE.md + AGENTS.md at all levels (package root, .claude/, monorepo root, nested) — verified state + Last Updated; sync both",
+          "status": "pending"
+        },
+        { "id": "phase07.6", "title": "Verify gate + commit", "status": "pending" }
+      ]
+    },
+    {
+      "id": "phase08",
+      "title": "Release v2.3.0",
+      "file": "docs/features/package-polish-v2.3.0/phase08-release.md",
+      "status": "pending",
+      "completedAt": null,
+      "subTasks": [
+        {
+          "id": "phase08.1",
+          "title": "Bump package.json version to 2.3.0 (VERSION export injected at build)",
+          "status": "pending"
+        },
+        {
+          "id": "phase08.2",
+          "title": "Final full verification gate + npm pack --dry-run review",
+          "status": "pending"
+        },
+        {
+          "id": "phase08.3",
+          "title": "Commit release; push to origin main (authorized)",
+          "status": "pending"
+        },
+        {
+          "id": "phase08.4",
+          "title": "npm publish (REQUIRES explicit user go-ahead) + verify on npmjs.com",
+          "status": "pending",
+          "awaitingUser": true
+        }
+      ]
+    }
+  ],
+  "runHistory": [
+    {
+      "date": "2026-05-26",
+      "phase": "phase00",
+      "summary": "Confirmed v2.2.0 polish complete + published. Established green baseline (166 tests). Verified all 11 deps already at latest stable. Ran fresh deep audit (general-purpose agent) finding NEW issues beyond v2.2.0's 16: SEC-N1 stored-challenge never validated (replay), SEC-N2/N3 alg not pinned at auth, SEC-N4 crossOrigin unchecked, SEC-N5 BE/BS+UV downgrade, FUNC-N1 userHandle unvalidated/undiscarded webAuthnUserID, plus correctness/API/hygiene items + a full per-format attestation spec. Confirmed 3 scope decisions with user (full attestation+MDS, tests approved, secure-by-default). Invoked skills: security-review, security-best-practices, nodejs-best-practices, vitest. Scaffolded resumable plan: overview, findings, tracker, progress, 8 phase files.",
+      "commit": "pending"
+    },
+    {
+      "date": "2026-05-26",
+      "phase": "phase01",
+      "summary": "Dependency verification: confirmed all 11 deps at latest stable (no bumps needed — refreshed during v2.2.0 today). yarn install --immutable clean (no lockfile drift). No banned deps; only cbor-x in production; engine >=24.13.0, pm yarn@4.14.1 intact. Formatted the new plan files (prettier) so format:check is repo-wide clean. Gate green. Phase 0 + Phase 1 committed together as the first green checkpoint.",
+      "commit": "pending"
+    }
+  ],
+  "newFindings": [],
+  "status": "IN_PROGRESS",
+  "nextSuggestion": {
+    "phase": "phase02",
+    "subTask": "phase02.1",
+    "rationale": "Phases 0 + 1 complete and committed. Next: Phase 2 critical security — start with SEC-N1 (storage-backed challenge single-use/expiry/operation enforcement in the WebAuthnServer verify wrappers, secure-by-default + enforceChallengeStore switch), then SEC-N2/N3 (alg<->crv consistency + allowlist/exact-alg enforcement at authentication), SEC-N7 (session-token field validation), HYG-N3 (stored-session expiry re-check), plus the approved auth-path + challenge-lifecycle regression tests."
+  },
+  "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
+}
