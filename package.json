@@ -1,6 +1,6 @@
 {
   "name": "webauthn-server-buildkit",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "packageManager": "yarn@4.14.1",
   "description": "A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication",
   "author": "Ahsan Mahmood <aoneahsan@gmail.com>",
