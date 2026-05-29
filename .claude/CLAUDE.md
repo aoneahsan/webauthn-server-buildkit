@@ -2,7 +2,7 @@
 
 See the root `CLAUDE.md` for complete project guidance. This file supplements with .claude-specific configuration notes.
 
-**Last Updated:** 2026-05-26
+**Last Updated:** 2026-05-29
 
 ## Note
 

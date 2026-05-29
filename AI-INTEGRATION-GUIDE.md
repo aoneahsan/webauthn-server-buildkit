@@ -2,6 +2,26 @@
 
 > **For AI Development Agents**: This guide provides complete implementation instructions for integrating `webauthn-server-buildkit` (backend) with `capacitor-biometric-authentication` (frontend) for biometric authentication.
 
+> **Backend version: `webauthn-server-buildkit` v2.3.0.** This release is
+> secure-by-default: the challenge lifecycle is enforced from storage, the
+> credential algorithm is pinned at authentication, cross-origin-iframe ceremonies
+> are rejected, and full per-format attestation verification is available. Node
+> `>=24.13.0` is required. See [What's new in 2.3.0](#whats-new-in-230-backend)
+> for the API deltas an integrator must know.
+
+## What's new in 2.3.0 (backend)
+
+| Change                                                                                                                  | What an integrator must do                                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createRegistrationOptions` / `createAuthenticationOptions` take an **options object**, not positional credential lists | Pass `{ excludeCredentials }` / `{ allowCredentials }` (see examples below). The old positional `(user, excludeCredentials)` form is not the API.   |
+| `createRegistrationOptions` returns `webAuthnUserId`                                                                    | Persist it as the credential's `webAuthnUserID` for usernameless login.                                                                             |
+| Challenge lifecycle enforced from storage (`enforceChallengeStore`, default `true` with a storage adapter)              | If you use a `storageAdapter`, do not reuse a challenge across verifications; it is consumed once. Set `enforceChallengeStore: false` to opt out.   |
+| Algorithm pinned at authentication                                                                                      | Persist `registrationInfo.credential.alg` onto the credential's `alg`.                                                                              |
+| `userHandle` validated at authentication (`USER_HANDLE_MISMATCH`)                                                       | For usernameless flows, look credentials up by `response.userHandle`; the library re-checks it against `credential.webAuthnUserID`.                 |
+| Cross-origin-iframe ceremonies rejected (`allowCrossOriginIframe`, default `false`)                                     | If your ceremonies legitimately run in a cross-origin iframe, set `allowCrossOriginIframe: true`.                                                   |
+| Full attestation verification + `metadataService`                                                                       | To require trust-anchored attestation, set `attestationType !== 'none'` + supply a `metadataService` (Apple works via the bundled root). See below. |
+| Exported `WebAuthnErrorCode` union; `WebAuthnError.statusCode`                                                          | Branch on `error.code`; use `error.statusCode` for the HTTP response status.                                                                        |
+
 ## Package Overview
 
 | Package                              | Role                    | npm                                                                     |
@@ -70,13 +90,16 @@ app.post('/api/webauthn/register/options', async (req, res) => {
   // Get existing credentials for this user (to exclude)
   const existingCredentials = Array.from(credentials.values()).filter((c) => c.userId === userId);
 
-  const { options, challenge } = await webauthn.createRegistrationOptions(
-    user,
-    existingCredentials,
-  );
+  // v2.3.0: params is an options object; createRegistrationOptions also returns
+  // the generated `webAuthnUserId` (the user handle) for usernameless login.
+  const { options, challenge, webAuthnUserId } = await webauthn.createRegistrationOptions(user, {
+    excludeCredentials: existingCredentials,
+  });
 
-  // Store challenge temporarily (use session/cache in production)
-  users.set(userId, { ...user, challenge });
+  // Store challenge temporarily (use session/cache in production). When a
+  // storageAdapter is configured, the library also stores + enforces this
+  // challenge single-use automatically (enforceChallengeStore, default true).
+  users.set(userId, { ...user, challenge, webAuthnUserId });
 
   res.json(options);
 });
@@ -90,17 +113,38 @@ app.post('/api/webauthn/register/verify', async (req, res) => {
     return res.status(400).json({ error: 'Invalid session' });
   }
 
+  // v2.3.0: optionally enforce excludeCredentials server-side by passing the
+  // user's existing credential IDs — verification throws
+  // CREDENTIAL_ALREADY_REGISTERED if this authenticator is already registered.
+  const existingIds = Array.from(credentials.values())
+    .filter((c) => c.userId === userId)
+    .map((c) => c.id);
+
   const { verified, registrationInfo } = await webauthn.verifyRegistration(
     response,
     user.challenge,
+    undefined, // expectedOrigin (defaults to configured origin)
+    { existingCredentialIds: existingIds },
   );
 
   if (verified && registrationInfo) {
-    // Save credential to database
+    // Save credential to database. Persist `alg` (pins the algorithm at
+    // authentication), `userVerified` (enables the UV-downgrade signal), and the
+    // generated `webAuthnUserId` (so usernameless login can match userHandle).
+    // Note: credentialDeviceType / credentialBackedUp live on the parent object,
+    // not on `.credential` — map them to deviceType / backedUp.
     credentials.set(registrationInfo.credential.id, {
-      ...registrationInfo.credential,
+      id: registrationInfo.credential.id,
+      publicKey: registrationInfo.credential.publicKey,
+      counter: registrationInfo.credential.counter,
+      transports: registrationInfo.credential.transports,
+      alg: registrationInfo.credential.alg,
+      deviceType: registrationInfo.credentialDeviceType,
+      backedUp: registrationInfo.credentialBackedUp,
+      userVerified: registrationInfo.userVerified,
       userId,
-      webAuthnUserID: registrationInfo.credential.id,
+      webAuthnUserID: user.webAuthnUserId,
+      createdAt: new Date(),
     });
 
     // Clear challenge
@@ -124,7 +168,11 @@ app.post('/api/webauthn/authenticate/options', async (req, res) => {
     return res.status(400).json({ error: 'No credentials found' });
   }
 
-  const { options, challenge } = await webauthn.createAuthenticationOptions(userCredentials);
+  // v2.3.0: params is an options object. Omit `allowCredentials` entirely for a
+  // usernameless (discoverable-credential) flow.
+  const { options, challenge } = await webauthn.createAuthenticationOptions({
+    allowCredentials: userCredentials,
+  });
 
   // Store challenge
   const user = users.get(userId) || { id: userId };
@@ -308,16 +356,24 @@ function BiometricLogin({ userId }: { userId: string }) {
 
 ### Backend (webauthn-server-buildkit)
 
-| Method                                                  | Description                     |
-| ------------------------------------------------------- | ------------------------------- |
-| `new WebAuthnServer(config)`                            | Initialize server               |
-| `createRegistrationOptions(user, excludeCredentials?)`  | Generate registration challenge |
-| `verifyRegistration(response, challenge)`               | Verify registration             |
-| `createAuthenticationOptions(allowCredentials?)`        | Generate auth challenge         |
-| `verifyAuthentication(response, challenge, credential)` | Verify authentication           |
-| `createSession(userId, credentialId, userVerified)`     | Create session token            |
-| `validateSession(token)`                                | Validate session token          |
-| `revokeSession(token)`                                  | Revoke session                  |
+| Method                                                                                 | Description                                                                |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `new WebAuthnServer(config)`                                                           | Initialize server                                                          |
+| `createRegistrationOptions(user, params?)`                                             | Generate registration challenge → `{ options, challenge, webAuthnUserId }` |
+| `verifyRegistration(response, challenge, expectedOrigin?, { existingCredentialIds? })` | Verify registration (duplicate check via `existingCredentialIds`)          |
+| `createAuthenticationOptions(params?)`                                                 | Generate auth challenge (omit `allowCredentials` for usernameless)         |
+| `verifyAuthentication(response, challenge, credential, expectedOrigin?)`               | Verify authentication (pins `alg`, validates `userHandle`)                 |
+| `createSession(userId, credentialId, userVerified, additionalData?)`                   | Create session token                                                       |
+| `validateSession(token)`                                                               | Validate session token                                                     |
+| `refreshSession(token)`                                                                | Refresh (extend) a session token                                           |
+| `revokeSession(token)`                                                                 | Revoke session                                                             |
+| `revokeUserSessions(userId)`                                                           | Revoke all sessions for a user                                             |
+| `cleanup()`                                                                            | Delete expired challenges + sessions                                       |
+
+> `params` for `createRegistrationOptions`: `{ excludeCredentials?,
+authenticatorSelection?, preferredAuthenticatorType?, extensions?, timeout?,
+attestation?, rpIcon? }`. `params` for `createAuthenticationOptions`:
+> `{ allowCredentials?, userVerification?, rpId?, extensions?, timeout? }`.
 
 ### Frontend (capacitor-biometric-authentication)
 
@@ -356,8 +412,22 @@ const webauthn = new WebAuthnServer({
   challengeSize: number,    // Challenge size in bytes (default: 32)
   timeout: number,          // Operation timeout in ms (default: 60000)
   debug: boolean,           // Enable debug logging
+
+  // New in 2.3.0
+  enforceChallengeStore: boolean,   // default true when a storageAdapter is set — single-use/expiry/operation enforcement
+  allowCrossOriginIframe: boolean,  // default false — reject clientData.crossOrigin === true unless enabled
+  originVerifier: (origin: string) => boolean, // custom origin matcher (e.g. android:apk-key-hash:)
+  metadataService: MetadataService, // trust-anchor / FIDO MDS provider for cert-chain attestation
+  requireTrustedAttestation: boolean, // default false — reject non-trust-anchored attestation when attestationType !== 'none'
 });
 ```
+
+> **Secure-by-default upgrade note (2.2.0 → 2.3.0):** `enforceChallengeStore`
+> (`true` with a storage adapter) and `allowCrossOriginIframe` (`false`) change
+> behavior. If a previous integration reused challenges or ran ceremonies in a
+> cross-origin iframe, set those options explicitly. Also persist the new
+> `WebAuthnCredential.alg` and `userVerified` fields so algorithm pinning and the
+> UV-downgrade signal work.
 
 ### Frontend Configuration
 
@@ -378,6 +448,89 @@ BiometricAuth.authenticate({
 });
 ```
 
+## Usernameless (discoverable-credential) login
+
+v2.3.0 supports usernameless login safely. Two pieces make it work:
+
+- **Registration** returns `webAuthnUserId` (the generated user handle). Persist it
+  as the credential's `webAuthnUserID`.
+- **Authentication** validates the authenticator-returned `userHandle` against the
+  stored credential's `webAuthnUserID` and throws `USER_HANDLE_MISMATCH` on a
+  mismatch.
+
+```typescript
+// 1) Registration — persist webAuthnUserId (shown in the backend example above).
+
+// 2) Authentication — generate options WITHOUT allowCredentials so the platform
+//    offers a discoverable credential:
+const { options, challenge } = await webauthn.createAuthenticationOptions();
+// store `challenge` server-side, send `options` to the client ...
+
+// 3) On verify, look the credential up by the assertion's userHandle, then verify:
+const userHandle = response.response.userHandle; // base64url
+const matches = await db.credentials.findByWebAuthnUserId(userHandle);
+const credential = matches.find((c) => c.id === response.id);
+if (!credential) return res.status(400).json({ error: 'Credential not found' });
+
+const { verified, authenticationInfo } = await webauthn.verifyAuthentication(
+  response,
+  challenge,
+  credential,
+);
+// authenticationInfo.userHandle is returned; the userHandle<->credential binding
+// was already enforced during verification.
+```
+
+## Trust-anchored attestation (optional)
+
+By default `attestationType: 'none'` and no attestation is required. To verify and
+trust-anchor attestation statements, request attestation and supply a
+`metadataService`. The package is offline-by-default: **you** supply the FIDO
+Metadata Service roots; the package never fetches them. The Apple WebAuthn Root CA
+is bundled, so Apple attestation trust-anchors without any `metadataService`.
+
+```typescript
+import {
+  WebAuthnServer,
+  StaticMetadataService,
+  APPLE_WEBAUTHN_ROOT_CA_PEM,
+} from 'webauthn-server-buildkit';
+
+const webauthn = new WebAuthnServer({
+  rpName: 'My App',
+  rpID: 'myapp.com',
+  origin: 'https://myapp.com',
+  encryptionSecret: process.env.ENCRYPTION_SECRET!,
+  attestationType: 'direct',
+  metadataService: new StaticMetadataService({
+    defaultRoots: [APPLE_WEBAUTHN_ROOT_CA_PEM], // Apple also works without this
+    // rootsByAaguid: { '<aaguid>': [pem, ...] },     // from your FIDO MDS blob
+    // rootsByCertKeyId: { '<b64url-key-id>': [pem] }, // for fido-u2f
+  }),
+  requireTrustedAttestation: true, // reject registrations that can't be anchored
+});
+```
+
+After `verifyRegistration`, check `registrationInfo.attestationVerified` (true only
+when cryptographically verified **and** trust-anchored) and read the verified chain
+from `registrationInfo.trustPath` when present.
+
+**Capability & honest limits:**
+
+- `none` → never verified. `packed` self-attestation → verified without a chain.
+- `packed` x5c, `fido-u2f`, `android-key`, `tpm` → verified, but
+  `attestationVerified: true` **only** when their chain anchors to a root you
+  supplied via `metadataService`; otherwise `false`.
+- `apple` → trust-anchored via the bundled Apple root (no `metadataService`
+  needed).
+- `android-safetynet` → **deprecated by Google; prefer the Play Integrity API.**
+  It needs an RP-supplied GlobalSign root (none bundled) to anchor.
+- No certificate revocation (CRL/OCSP) is performed. TPM AIK SAN and android-key
+  Keymaster authorization-list constraints are not additionally asserted beyond
+  the documented checks.
+
+See `docs/api-reference.md` → _Attestation Verification_ for the full matrix.
+
 ## Database Schema Example
 
 ```sql
@@ -393,15 +546,19 @@ CREATE TABLE users (
 CREATE TABLE webauthn_credentials (
   id VARCHAR(255) PRIMARY KEY,        -- credentialId (base64url)
   user_id VARCHAR(255) NOT NULL,
+  webauthn_user_id VARCHAR(255) NOT NULL, -- webAuthnUserID (the generated user handle; index for usernameless lookup)
   public_key BYTEA NOT NULL,          -- publicKey bytes
   counter INTEGER DEFAULT 0,          -- signature counter
+  alg INTEGER,                        -- COSE algorithm id (e.g. -7); pins the algorithm at auth (2.3.0)
   transports TEXT[],                  -- ['internal', 'usb', etc.]
   device_type VARCHAR(50),            -- 'singleDevice' or 'multiDevice'
   backed_up BOOLEAN DEFAULT FALSE,
+  user_verified BOOLEAN DEFAULT FALSE,-- UV at registration; enables UV-downgrade signal (2.3.0)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_used_at TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+CREATE INDEX idx_webauthn_credentials_user_handle ON webauthn_credentials (webauthn_user_id);
 
 -- Sessions table
 CREATE TABLE sessions (
@@ -433,23 +590,64 @@ CREATE TABLE sessions (
 - [ ] Track and validate signature counters
 - [ ] Implement session expiry and refresh
 - [ ] Handle all error cases gracefully
+- [ ] (2.3.0) Configure a `storageAdapter` and keep `enforceChallengeStore: true`
+      so the challenge is one-time and expiry-bound
+- [ ] (2.3.0) Persist `registrationInfo.credential.alg` so the algorithm is pinned
+      at authentication
+- [ ] (2.3.0) Persist `registrationInfo.userVerified` as the credential's
+      `userVerified` so UV downgrades are reported
+- [ ] (2.3.0) For usernameless flows, persist `webAuthnUserId` as the credential's
+      `webAuthnUserID`
+- [ ] (2.3.0) Pass `existingCredentialIds` to `verifyRegistration` to reject
+      already-registered authenticators
+- [ ] (2.3.0) Leave `allowCrossOriginIframe: false` unless cross-origin-iframe
+      ceremonies are legitimate for your app
+- [ ] (2.3.0) Supply a `metadataService` and set `requireTrustedAttestation: true`
+      if your policy requires trust-anchored attestation
 
 ## Error Handling
 
 ```typescript
-// Backend
+// Backend — v2.3.0 ships an exported WebAuthnErrorCode union and a documented
+// HTTP statusCode on every error. Branch on `error.code`, not on the message.
 import {
+  WebAuthnError,
   RegistrationError,
   AuthenticationError,
   VerificationError,
+  type WebAuthnErrorCode,
 } from 'webauthn-server-buildkit';
 
 try {
-  await webauthn.verifyRegistration(response, challenge);
+  await webauthn.verifyRegistration(response, challenge, undefined, {
+    existingCredentialIds: existingIdsForUser,
+  });
 } catch (error) {
-  if (error instanceof RegistrationError) {
-    // Handle registration error
+  if (error instanceof WebAuthnError) {
+    switch (error.code as WebAuthnErrorCode) {
+      case 'CHALLENGE_NOT_FOUND':
+      case 'CHALLENGE_EXPIRED':
+      case 'CHALLENGE_OPERATION_MISMATCH':
+        // Stale or replayed challenge — ask the client to restart the ceremony
+        break;
+      case 'CREDENTIAL_ALREADY_REGISTERED':
+        // The user already registered this authenticator
+        break;
+      case 'CROSS_ORIGIN_NOT_ALLOWED':
+        // Ceremony ran in a cross-origin iframe (default policy rejects this)
+        break;
+      case 'ATTESTATION_NOT_TRUSTED':
+        // requireTrustedAttestation enabled and the chain didn't anchor
+        break;
+      case 'ALGORITHM_MISMATCH':
+      case 'USER_HANDLE_MISMATCH':
+        // Authentication-only signals (here in case a generic handler catches them)
+        break;
+    }
+    // 400 (Bad Request) / 401 (Unauthorized) / 500 (Internal Server Error)
+    return res.status(error.statusCode).json({ error: error.code });
   }
+  throw error;
 }
 
 // Frontend

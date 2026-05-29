@@ -21,20 +21,32 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 
 ## Current State
 
-- Package version: `2.2.0`
-- Verified on: `2026-05-26`
-- Tests: `166/166` passing via the `test` script in the last verification pass
+- Package version: `2.3.0`
+- Verified on: `2026-05-27`
+- Tests: `311/311` passing via the `test` script in the last verification pass
 - Build: the `build` script succeeds (ESM + CommonJS + type declarations)
 - Toolchain: TypeScript 6, ESLint 10, Vitest 4
+- Runtime dependency: `cbor-x` only (no new dependencies in 2.3.0)
+- Engine requirement: Node.js `>=24.13.0`
+
+### Security posture (2.3.0)
+
+- **Challenge single-use + expiry enforcement** — when a `storageAdapter` is configured, the verify path looks the challenge up in storage, rejects it if it is missing, expired, or scoped to the wrong operation, and consumes it once so it can never be replayed (`enforceChallengeStore`, default `true`).
+- **Algorithm pinning at authentication** — the registered COSE algorithm is persisted on the credential and re-checked at every assertion (`ALGORITHM_MISMATCH`), and the `supportedAlgorithms` allowlist is enforced at both registration and authentication.
+- **Cross-origin ceremonies rejected by default** — `clientData.crossOrigin === true` is rejected unless `allowCrossOriginIframe` is set.
+- **Per-format attestation verification with trust anchoring** — see [Attestation](#attestation) for the honest capability matrix.
+- **Encrypted session tokens** — AES-256-GCM with HKDF-SHA256 key derivation, a 12-byte GCM IV, and field-length validation before decryption.
+- **Constant-time comparisons** — the RP-ID hash and other security-sensitive byte comparisons use timing-safe equality.
 
 ## Features
 
 ### 🔐 Security & Compliance
 
-- **Full WebAuthn Level 3 Implementation** - Complete server-side implementation following the latest W3C standards
+- **WebAuthn Level 3 Server** - Server-side registration and authentication ceremony verification following the W3C WebAuthn Level 3 standard (challenge, origin, RP-ID hash, flags, counter, and signature)
 - **Secure by Default** - Built-in AES-256-GCM session encryption, cryptographically secure challenge generation
-- **Algorithm Support** - ES256/384/512, RS256/384/512, PS256/384/512 and Ed25519 (EdDSA), all verified via Node's native crypto
-- **Attestation** - `none` and `packed` self-attestation are cryptographically verified; certificate-chain formats are parsed and reported (not trust-anchored — see [Attestation](#attestation))
+- **Algorithm Support** - ES256/384/512, RS256/384/512, PS256/384/512 and Ed25519 (EdDSA), all verified via Node's native crypto. The registered algorithm is pinned and re-checked at authentication
+- **Per-Format Attestation** - `none`, `packed` (self + x5c), `fido-u2f`, `android-key`, `tpm`, `android-safetynet` and `apple` are all cryptographically verified. Certificate-chain formats report `attestationVerified: true` only when trust-anchored to a root you supply via a `MetadataService` (FIDO MDS); `apple` trust-anchors against the bundled Apple WebAuthn Root CA (see [Attestation](#attestation))
+- **Challenge Lifecycle** - server-enforced single-use, expiry, and operation scoping when a storage adapter is configured (`enforceChallengeStore`, default on)
 
 ### 🛠️ Developer Experience
 
@@ -78,8 +90,10 @@ const webauthn = new WebAuthnServer({
 
 // Registration flow
 async function handleRegistration(user: UserModel) {
-  // 1. Generate registration options
-  const { options, challenge } = await webauthn.createRegistrationOptions(user);
+  // 1. Generate registration options.
+  //    `webAuthnUserId` is the generated WebAuthn user handle — persist it on
+  //    the credential to support usernameless (discoverable-credential) login.
+  const { options, challenge, webAuthnUserId } = await webauthn.createRegistrationOptions(user);
 
   // 2. Send options to client
   // ... client performs WebAuthn registration ...
@@ -91,11 +105,19 @@ async function handleRegistration(user: UserModel) {
   );
 
   if (verified && registrationInfo) {
-    // Save credential to database
+    // Save credential to database. Persist `alg` and `userVerified` so the
+    // server can pin the algorithm and detect UV/backup downgrades at auth.
     await saveCredential({
-      ...registrationInfo.credential,
+      id: registrationInfo.credential.id,
+      publicKey: registrationInfo.credential.publicKey,
+      counter: registrationInfo.credential.counter,
+      transports: registrationInfo.credential.transports,
+      alg: registrationInfo.credential.alg,
+      deviceType: registrationInfo.credentialDeviceType,
+      backedUp: registrationInfo.credentialBackedUp,
+      userVerified: registrationInfo.userVerified,
       userId: user.id,
-      webAuthnUserID: options.user.id,
+      webAuthnUserID: webAuthnUserId,
     });
   }
 }
@@ -159,8 +181,7 @@ const webauthn = new WebAuthnServer({
 
   // Optional
   sessionDuration: 86400000, // Session duration in ms (default: 24h)
-  attestationType: 'none', // Attestation preference
-  enableMobileAttestation: false, // Opt-in to the non-standard mobile JSON path (default: false; see Attestation)
+  attestationType: 'none', // Attestation preference (default: 'none')
   userVerification: 'preferred', // User verification requirement
   authenticatorSelection: {
     // Authenticator selection criteria
@@ -168,15 +189,35 @@ const webauthn = new WebAuthnServer({
     userVerification: 'preferred',
     authenticatorAttachment: 'platform',
   },
-  supportedAlgorithms: [-7, -257], // COSE algorithm identifiers
-  challengeSize: 32, // Challenge size in bytes
-  timeout: 60000, // Operation timeout in ms
+  supportedAlgorithms: [-7, -257], // COSE algorithm identifiers (default: ES256, RS256)
+  challengeSize: 32, // Challenge size in bytes (default: 32)
+  timeout: 60000, // Operation timeout in ms (default: 60000)
   preferredAuthenticatorType: 'localDevice', // Preferred authenticator
   storageAdapter: customAdapter, // Custom storage adapter
+
+  // Security (secure-by-default — only set these to change the defaults)
+  enforceChallengeStore: true, // Require + consume the challenge from storage (default: true when a storageAdapter is set)
+  allowCrossOriginIframe: false, // Reject clientData.crossOrigin === true unless true (default: false)
+  originVerifier: (origin) => origin === 'https://example.com', // Custom origin matcher (supports android:apk-key-hash + normalization)
+  metadataService: trustAnchorProvider, // RP-supplied FIDO MDS / trust-anchor provider (see Attestation)
+  requireTrustedAttestation: false, // Throw ATTESTATION_NOT_TRUSTED when attestation is requested but not trust-anchored (default: false)
+  enableMobileAttestation: false, // Opt-in to the non-standard mobile JSON path (default: false; see Attestation)
+
   debug: true, // Enable debug logging
   logger: customLogger, // Custom logger function
 });
 ```
+
+### New in 2.3.0
+
+| Option                      | Default                                 | Purpose                                                                                                                                                                                                                  |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `enforceChallengeStore`     | `true` (when a `storageAdapter` is set) | Look the verification challenge up in storage, reject it if absent / expired / scoped to the wrong operation, and consume it once so it can't be replayed. Set `false` to manage the challenge lifecycle yourself.       |
+| `allowCrossOriginIframe`    | `false`                                 | When `false`, a ceremony performed in a cross-origin iframe (`clientData.crossOrigin === true`) is rejected with `CROSS_ORIGIN_NOT_ALLOWED`.                                                                             |
+| `originVerifier`            | _(none — exact-string match)_           | A custom `(origin: string) => boolean` matcher that replaces the default exact match against `origin`. Use it for advanced normalization or native `android:apk-key-hash:` origins.                                      |
+| `metadataService`           | _(none)_                                | An RP-supplied FIDO Metadata Service / trust-anchor provider. Synchronous and offline — the package never fetches MDS data. Required to trust-anchor certificate-chain attestation formats other than `apple`.           |
+| `requireTrustedAttestation` | `false`                                 | When `true` and `attestationType !== 'none'`, registration is rejected with `ATTESTATION_NOT_TRUSTED` unless the statement is verified **and** trust-anchored. When `false`, a non-trust-anchored attestation is warned. |
+| `enableMobileAttestation`   | `false`                                 | Opt-in to the non-standard mobile JSON path (no cryptographic attestation — see [Attestation](#attestation)).                                                                                                            |
 
 ## Storage Adapters
 
@@ -324,19 +365,38 @@ app.post('/api/register/options', async (req, res) => {
   //   (transports from registrationInfo.credential or authenticator response)
   // You get all this data when you save the credential after successful registration
   const credentials = await getUserCredentials(user.id);
-  const { options } = await webauthn.createRegistrationOptions(user, {
+  const { options, challenge, webAuthnUserId } = await webauthn.createRegistrationOptions(user, {
     excludeCredentials: credentials,
   });
-  req.session.challenge = options.challenge;
+  req.session.challenge = challenge;
+  req.session.webAuthnUserId = webAuthnUserId; // persist to store on the credential
   res.json(options);
 });
 
 app.post('/api/register/verify', async (req, res) => {
   const challenge = req.session.challenge;
-  const { verified, registrationInfo } = await webauthn.verifyRegistration(req.body, challenge);
+  // Enforce excludeCredentials: reject a credential the user already registered.
+  const existingCredentialIds = (await getUserCredentials(req.user.id)).map((c) => c.id);
+  const { verified, registrationInfo } = await webauthn.verifyRegistration(
+    req.body,
+    challenge,
+    undefined,
+    { existingCredentialIds },
+  );
 
   if (verified && registrationInfo) {
-    await saveCredential(registrationInfo.credential);
+    await saveCredential({
+      id: registrationInfo.credential.id,
+      publicKey: registrationInfo.credential.publicKey,
+      counter: registrationInfo.credential.counter,
+      transports: registrationInfo.credential.transports,
+      alg: registrationInfo.credential.alg, // pin the algorithm at auth
+      deviceType: registrationInfo.credentialDeviceType,
+      backedUp: registrationInfo.credentialBackedUp,
+      userVerified: registrationInfo.userVerified,
+      userId: req.user.id,
+      webAuthnUserID: req.session.webAuthnUserId, // for usernameless login
+    });
     res.json({ verified: true });
   } else {
     res.status(400).json({ verified: false });
@@ -389,13 +449,29 @@ new WebAuthnServer(config: WebAuthnServerConfig)
 
 ##### Registration
 
-- `createRegistrationOptions(user, params?)`: Generate registration options (`params.excludeCredentials`, `params.authenticatorSelection`, `params.attestation`, …)
-- `verifyRegistration(response, challenge, origin?)`: Verify registration response
+- `createRegistrationOptions(user, params?)`: Generate registration options (`params.excludeCredentials`, `params.authenticatorSelection`, `params.attestation`, …). Returns `{ options, challenge, webAuthnUserId }` — persist `webAuthnUserId` as `WebAuthnCredential.webAuthnUserID`.
+- `verifyRegistration(response, challenge, origin?, options?)`: Verify registration response. Pass `options.existingCredentialIds` (the user's already-registered credential IDs) to enforce `excludeCredentials` — a duplicate fails with `CREDENTIAL_ALREADY_REGISTERED`.
 
 ##### Authentication
 
 - `createAuthenticationOptions(params?)`: Generate authentication options (`params.allowCredentials`, `params.userVerification`, `params.rpId`, …)
-- `verifyAuthentication(response, challenge, credential, origin?)`: Verify authentication response
+- `verifyAuthentication(response, challenge, credential, origin?)`: Verify authentication response. Validates the assertion `userHandle` against `credential.webAuthnUserID` (`USER_HANDLE_MISMATCH`), enforces the `supportedAlgorithms` allowlist, and pins `credential.alg` (`ALGORITHM_MISMATCH`).
+
+##### Result fields (new in 2.3.0)
+
+`VerifiedRegistrationInfo` now also carries:
+
+- `credential.alg` — the COSE algorithm the credential registered with. Persist it on `WebAuthnCredential.alg` to enable algorithm pinning at authentication.
+- `trustPath?` — the verified attestation certificate chain (leaf-first PEMs), present only for trust-anchored certificate-chain formats.
+- `clientExtensionResults?` — parsed client extension outputs; at minimum surfaces `credProps.rk` (whether a discoverable credential was actually created).
+
+`VerifiedAuthenticationInfo` now also carries:
+
+- `userHandle?` — the `userHandle` returned by the authenticator for discoverable credentials.
+- `backupStateChanged?` — advisory: the authenticator's backup-state (BS) flag differs from the credential's stored `backedUp` value (a possible clone/migration signal).
+- `userVerificationDowngraded?` — advisory: the credential registered with UV but this assertion presented UV=false.
+- `counterSupported?` — `false` when both the stored and asserted signature counters are 0 (counter-based clone detection is a no-op for that authenticator, common for platform passkeys).
+- `clientExtensionResults?` — parsed client extension outputs (`appid`, `prf`, `largeBlob`, `credProps`).
 
 ##### Session Management
 
@@ -427,15 +503,104 @@ All algorithms are verified through Node's native crypto — COSE public keys ar
 
 ## Attestation
 
-### What is verified
+Every WebAuthn attestation format is cryptographically verified in this release. The distinction is **trust anchoring**: a statement can be cryptographically valid yet not chain to a root you trust. The package keeps that distinction honest — it reports `attestationVerified: true` only when the statement is both verified _and_ anchored to a known root, and never silently treats "verified but un-anchored" as "trusted".
 
-| Format                                                                         | Behaviour                                                                                                                                                                                         |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `none`                                                                         | Accepted (no statement to verify). `attestationVerified` is `false`.                                                                                                                              |
-| `packed` (self-attestation)                                                    | The signature over `authData \|\| clientDataHash` is verified with the credential public key. `attestationVerified` is `true`.                                                                    |
-| `packed` (x5c), `fido-u2f`, `tpm`, `android-key`, `android-safetynet`, `apple` | Parsed and reported, but the certificate chain is **not** trust-anchored in this release. `attestationVerified` is `false` — verify the chain yourself if you require hardware-attestation trust. |
+This verification is **offline by design**: trust anchors come from a relying-party-supplied `MetadataService`, never from the network. The package bundles only the small static Apple WebAuthn Root CA. There is no certificate revocation (CRL/OCSP) checking.
 
-`verifyRegistration` returns `registrationInfo.fmt` and `registrationInfo.attestationVerified` so you can branch on the outcome.
+### Capability matrix
+
+| Format              | Cryptographically verified                                                                                                         | `attestationVerified: true` when…                                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `none`              | Nothing to verify (no statement).                                                                                                  | Never — always `false`.                                                                                                                        |
+| `packed` (self)     | `sig` over `authData ‖ clientDataHash` with the **credential** key.                                                                | Always on success (no certificate chain is involved, so no trust anchor is needed).                                                            |
+| `packed` (x5c)      | `sig` with the **leaf** cert key; leaf requirements (v3, OU `Authenticator Attestation`, CA=false); FIDO AAGUID extension matches. | The x5c chain anchors to a root supplied via `metadataService`. Otherwise verified but `false` (honest framing, not a failure).                |
+| `fido-u2f`          | `sig` (ECDSA P-256) over the reconstructed U2F verification data with the attestation cert key.                                    | The x5c chain anchors to a root supplied via `metadataService`. Otherwise `false`.                                                             |
+| `android-key`       | `sig` with the leaf key; leaf key == credential key; the Key Attestation extension `attestationChallenge` == client-data hash.     | The x5c chain anchors to a Google hardware-attestation root supplied via `metadataService`. Otherwise `false`.                                 |
+| `tpm`               | `certInfo`/`pubArea` binding; `pubArea` key == credential key; `extraData` binding; AIK signature; AIK cert carries the AIK EKU.   | The AIK chain anchors to a root supplied via `metadataService`. Otherwise `false`.                                                             |
+| `apple`             | Chain to the bundled Apple WebAuthn Root CA; nonce extension == `hash(authData ‖ clientDataHash)`; leaf key == credential key.     | Trust-anchored **without** a `metadataService` — the Apple root is bundled.                                                                    |
+| `android-safetynet` | JWS signature verified with the `x5c[0]` leaf; hostname `attest.android.com`; `nonce`, `ctsProfileMatch`, and timestamp freshness. | The JWS chain anchors to a GlobalSign root supplied via `metadataService` (none is bundled). **Deprecated by Google** — prefer Play Integrity. |
+
+Honest limits worth stating explicitly:
+
+- **TPM**: the AIK SAN fields (manufacturer / model / version) are **not** additionally asserted. The security-critical bindings (key match, `extraData`/challenge binding, AIK signature, AIK EKU, and chain) **are**. The SAN is available to you via `trustPath`.
+- **android-key**: the Keymaster authorization-list constraints (`purpose`, `origin`, absence of `allApplications`) are **not** additionally enforced. The challenge binding, leaf-key match, and hardware-root chain **are**. Inspect `trustPath` if you need the full Keymaster policy.
+- **No revocation**: there is no CRL/OCSP checking (offline by design).
+- **android-safetynet** is deprecated by Google; new authenticators do not emit it.
+
+`verifyRegistration` returns `registrationInfo.fmt`, `registrationInfo.attestationVerified`, and (for trust-anchored chains) `registrationInfo.trustPath`, so you can branch on the outcome.
+
+### Supplying a MetadataService (FIDO MDS) and using the bundled Apple root
+
+The relying party supplies the (large, frequently-updated) FIDO MDS data — the package never bundles or fetches it. Use the exported `StaticMetadataService` for a fixed set of roots. The simplest case is a single-vendor deployment that only needs the bundled Apple root:
+
+```typescript
+import {
+  WebAuthnServer,
+  StaticMetadataService,
+  APPLE_WEBAUTHN_ROOT_CA_PEM,
+} from 'webauthn-server-buildkit';
+
+const metadataService = new StaticMetadataService({
+  // Returned when no AAGUID / cert-key-id match is found. A single known root
+  // (e.g. the bundled Apple WebAuthn Root CA) is the common single-vendor case.
+  defaultRoots: [APPLE_WEBAUTHN_ROOT_CA_PEM],
+
+  // Trusted roots keyed by authenticator AAGUID (from your FIDO MDS blob).
+  rootsByAaguid: {
+    '00000000-0000-0000-0000-000000000000': ['-----BEGIN CERTIFICATE-----\n…'],
+  },
+
+  // Roots keyed by attestation-cert key identifier (for formats without an
+  // AAGUID, e.g. fido-u2f).
+  rootsByCertKeyId: {
+    /* keyIdBase64Url: ['-----BEGIN CERTIFICATE-----\n…'] */
+  },
+});
+
+const webauthn = new WebAuthnServer({
+  rpName: 'My App',
+  rpID: 'example.com',
+  origin: 'https://example.com',
+  encryptionSecret: process.env.ENCRYPTION_SECRET,
+  attestationType: 'direct', // ask the authenticator for attestation
+  metadataService, // supply trust anchors
+  requireTrustedAttestation: true, // reject statements that can't be trust-anchored
+});
+```
+
+> Note: `apple` trust-anchors against the bundled root with **no** `metadataService`. Every other certificate-chain format needs a `metadataService` that supplies its roots — without one, those formats verify cryptographically but report `attestationVerified: false`, and `requireTrustedAttestation: true` would reject them.
+
+`MetadataService` is a synchronous interface (`getRootCertificates(query)` plus an optional `getStatement(aaguid)`); implement it yourself to back it with a live FIDO MDS cache if you prefer.
+
+## Usernameless / discoverable credentials
+
+To support usernameless (discoverable-credential / "passkey") login, you must persist the WebAuthn user handle at registration and validate it at authentication:
+
+1. **At registration**, request a resident key and persist the returned `webAuthnUserId` on the credential as `webAuthnUserID`:
+
+   ```typescript
+   const { options, challenge, webAuthnUserId } = await webauthn.createRegistrationOptions(user, {
+     authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+   });
+   // … after verifyRegistration succeeds …
+   await saveCredential({
+     /* …credential fields… */
+     webAuthnUserID: webAuthnUserId,
+   });
+   ```
+
+   Check `registrationInfo.clientExtensionResults?.credProps?.rk` to confirm a discoverable credential was actually created (`rk === true`).
+
+2. **At authentication**, omit `allowCredentials` so the client picks any resident credential, then look the credential up by the `userHandle` the authenticator returns:
+
+   ```typescript
+   const { options, challenge } = await webauthn.createAuthenticationOptions();
+   // … client returns an assertion with response.userHandle …
+   const credential = await getCredentialByWebAuthnUserId(clientResponse.response.userHandle);
+   const { verified } = await webauthn.verifyAuthentication(clientResponse, challenge, credential);
+   // verifyAuthentication also validates userHandle against credential.webAuthnUserID
+   // (USER_HANDLE_MISMATCH) as a defense-in-depth check.
+   ```
 
 ### Mobile attestation (opt-in)
 
@@ -463,10 +628,13 @@ When enabled, a warning is logged each time a credential is accepted via the mob
 
 1. **Encryption Secret**: Use a strong, unique secret of at least 32 characters
 2. **HTTPS Required**: Always use HTTPS in production for WebAuthn
-3. **Origin Validation**: The package validates origins to prevent phishing
-4. **Counter Tracking**: Authenticator counters are tracked to detect cloned credentials
-5. **Session Security**: Session tokens are encrypted with AES-256-GCM; keys are derived with HKDF-SHA256 and a 12-byte IV. Upgrading from 2.1.x invalidates existing tokens (users re-authenticate once)
-6. **Mobile Attestation**: The mobile JSON path is opt-in and provides NO cryptographic attestation — keep it disabled unless you understand the trade-off (see [Attestation](#attestation))
+3. **Origin Validation**: The package validates origins to prevent phishing; supply `originVerifier` for normalization or native `android:apk-key-hash:` origins
+4. **Cross-Origin Ceremonies**: Rejected by default (`clientData.crossOrigin === true` → `CROSS_ORIGIN_NOT_ALLOWED`); opt in with `allowCrossOriginIframe`
+5. **Challenge Replay**: With a storage adapter configured, challenges are server-enforced single-use, unexpired, and operation-scoped (`enforceChallengeStore`, default on)
+6. **Algorithm Pinning**: The registered COSE algorithm is enforced at every assertion (`ALGORITHM_MISMATCH`) and the `supportedAlgorithms` allowlist is applied at both registration and authentication — persist `credential.alg` for this to take effect
+7. **Counter & Clone Signals**: Authenticator counters are tracked to detect cloned credentials; `counterSupported`, `backupStateChanged`, and `userVerificationDowngraded` advisories surface migration/downgrade signals for your policy
+8. **Session Security**: Session tokens are encrypted with AES-256-GCM; keys are derived with HKDF-SHA256 and a 12-byte IV, and token fields are length-validated before decryption. Upgrading from 2.1.x invalidates existing tokens (users re-authenticate once)
+9. **Mobile Attestation**: The mobile JSON path is opt-in and provides NO cryptographic attestation — keep it disabled unless you understand the trade-off (see [Attestation](#attestation))
 
 ## Error Handling
 
@@ -493,6 +661,12 @@ try {
 ```
 
 All error classes extend `WebAuthnError` (exposing `code` and `statusCode`) and are exported as **runtime values**, so `instanceof` checks work. The `COSEAlgorithmIdentifier`, `COSEKeyType`, and `COSEEllipticCurve` enums are likewise value exports.
+
+`error.code` is a stable, machine-readable string typed against the exported `WebAuthnErrorCode` union (an _open_ union, so custom/future codes still compile) — branch on it instead of matching error messages. `error.statusCode` suggests an HTTP status: `400` for malformed input / verification failures, `401` for authentication/session failures, and `500` for configuration/storage problems. Codes new in 2.3.0 include `CHALLENGE_NOT_FOUND`, `CHALLENGE_EXPIRED`, `CHALLENGE_OPERATION_MISMATCH`, `CROSS_ORIGIN_NOT_ALLOWED`, `ALGORITHM_MISMATCH`, `USER_HANDLE_MISMATCH`, `CREDENTIAL_ALREADY_REGISTERED`, and the `ATTESTATION_*` family (e.g. `ATTESTATION_NOT_TRUSTED`).
+
+```typescript
+import type { WebAuthnErrorCode } from 'webauthn-server-buildkit';
+```
 
 ## Requirements
 

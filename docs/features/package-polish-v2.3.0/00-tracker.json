@@ -6,7 +6,7 @@
   "fromVersion": "2.2.0",
   "targetVersion": "2.3.0",
   "createdAt": "2026-05-26",
-  "lastUpdated": "2026-05-27",
+  "lastUpdated": "2026-05-29",
   "overview": "docs/features/package-polish-v2.3.0/00-overview.md",
   "findings": "docs/features/package-polish-v2.3.0/findings.md",
   "progress": "docs/features/package-polish-v2.3.0/progress.md",
@@ -336,35 +336,45 @@
       "id": "phase07",
       "title": "Documentation refresh",
       "file": "docs/features/package-polish-v2.3.0/phase07-docs.md",
-      "status": "pending",
-      "completedAt": null,
+      "status": "complete",
+      "completedAt": "2026-05-29",
       "subTasks": [
         {
           "id": "phase07.1",
           "title": "Readme.md: 2.3.0 state, full attestation + MDS usage, new config (allowCrossOriginIframe, challenge enforcement), new result fields, honest claims (revisit HYG-N2)",
-          "status": "pending"
+          "status": "complete",
+          "note": "Updated by parallel sub-agent A: Current State 2.3.0/311 tests, honest attestation matrix (per-format trust-anchoring), StaticMetadataService + APPLE_WEBAUTHN_ROOT_CA_PEM usage, new config table (enforceChallengeStore/allowCrossOriginIframe/originVerifier/metadataService/requireTrustedAttestation), corrected createRegistrationOptions return + new result fields, usernameless mini-guide, WebAuthnErrorCode + statusCode docs, expanded security considerations."
         },
         {
           "id": "phase07.2",
           "title": "CHANGELOG.md [2.3.0] with Upgrade notes + Security/Fixed/Changed/Added",
-          "status": "pending"
+          "status": "complete",
+          "note": "Updated by parallel sub-agent B: [2.3.0] 2026-05-27 with Upgrade notes (5 secure-by-default switches) + Security/Added/Changed/Fixed/Notes sections in Keep-a-Changelog style."
         },
         {
           "id": "phase07.3",
           "title": "docs/api-reference.md + docs/migration.md (2.2->2.3) + AI-INTEGRATION-GUIDE.md",
-          "status": "pending"
+          "status": "complete",
+          "note": "api-reference + AI-guide updated by sub-agent C (every new option/field/export/error documented against real source; corrected stale storage-adapter signatures; usernameless flow). migration.md 2.2->2.3 section by sub-agent B with before/after code."
         },
         {
           "id": "phase07.4",
           "title": "docs/audit-records.md: append v2.3.0 audit + resolutions",
-          "status": "pending"
+          "status": "complete",
+          "note": "Sub-agent C appended a dated 2026-05-29 v2.3.0 deep audit entry covering SEC-N1..N7, FUNC-N1..N6, GAP-N1..N4, API-N1..N4, HYG-N1..N6 + the full attestation work + verification summary (311 tests, zero new deps)."
         },
         {
           "id": "phase07.5",
           "title": "CLAUDE.md + AGENTS.md at all levels (package root, .claude/, monorepo root, nested) — verified state + Last Updated; sync both",
-          "status": "pending"
+          "status": "complete",
+          "note": "Updated in main thread: package-root CLAUDE.md + AGENTS.md (version 2.3.0, 311 tests, v2.3.0 security posture, tracker path), .claude/CLAUDE.md + .claude/AGENTS.md (Last Updated 2026-05-29; v2.3.0 tracker ref), parent monorepo CLAUDE.md + AGENTS.md (webauthn-server-buildkit 2.2.0 -> 2.3.0; 311 tests)."
         },
-        { "id": "phase07.6", "title": "Verify gate + commit", "status": "pending" }
+        {
+          "id": "phase07.6",
+          "title": "Verify gate + commit",
+          "status": "complete",
+          "note": "format:check clean; 311 tests still pass; no source changes (docs only). Three parallel sub-agents on disjoint file sets, instruction files in main thread. Ready for commit."
+        }
       ]
     },
     {
@@ -439,6 +449,12 @@
       "date": "2026-05-27",
       "phase": "phase06",
       "summary": "Full per-format attestation verification + FIDO MDS (single comprehensive sub-agent for coherence; dispatcher + apple + shared helpers reviewed in main thread; gate re-run). All 6 formats implemented under src/attestation/formats/: apple (bundled-root + nonce + key, trust-anchored w/o MDS), fido-u2f (U2F sig base + chain), packed (self + x5c w/ AAGUID ext + leaf reqs), android-key (KeyDescription challenge ext), tpm (full TPMS_ATTEST/TPMT_PUBLIC parse + AIK), android-safetynet (JWS, deprecated -> Play Integrity). Honest framing: attestationVerified=true ONLY when trust-anchored (apple via bundled root; others via RP metadataService roots); never a false positive; throws only on cryptographically-invalid statements. Dispatcher + verify-response wired; FUNC-N4 requireTrustedAttestation (default false). Tests: tests/attestation/formats/* with a real signed-cert builder, every format has a trust-anchored happy path + negative paths; suite 265 -> 311, zero regressions. Gate green, zero new deps. Caveats for docs: TPM SAN + android-key authz-list not additionally asserted; safetynet needs RP GlobalSign root.",
+      "commit": "7855648"
+    },
+    {
+      "date": "2026-05-29",
+      "phase": "phase07",
+      "summary": "Documentation refresh — three parallel sub-agents on disjoint file sets (A: Readme + SECURITY; B: CHANGELOG + migration; C: api-reference + AI-INTEGRATION-GUIDE + audit-records); instruction files (CLAUDE.md/AGENTS.md at package root, .claude/, and monorepo root) updated in main thread. Every claim verified against real source. README has the honest attestation capability matrix + MetadataService usage + usernameless mini-guide; CHANGELOG [2.3.0] has Upgrade notes; migration 2.2->2.3 added; api-reference covers every new option/field/export with corrected storage-adapter signatures; AI-guide refreshed; audit-records appended; SECURITY.md posture refreshed. All v2.3.0 / 311-tests / 2026-05-29 dates synced. format:check clean; 311 tests still pass (docs-only). Zero source changes.",
       "commit": "pending"
     }
   ],
@@ -447,9 +463,9 @@
   ],
   "status": "IN_PROGRESS",
   "nextSuggestion": {
-    "phase": "phase07",
-    "subTask": "phase07.1",
-    "rationale": "Phases 0-6 complete and committed; all six attestation formats verified + FIDO MDS provider integrated (311 tests). Next: Phase 7 documentation refresh — README (2.3.0 state, full attestation + MetadataService usage, all new config/result fields, honest capability matrix incl. TPM/android-key caveats + Play Integrity recommendation, usernameless guide), CHANGELOG [2.3.0] + upgrade notes, docs/api-reference.md, docs/migration.md (2.2->2.3), AI-INTEGRATION-GUIDE.md, docs/audit-records.md, and CLAUDE.md + AGENTS.md at all levels. Doc files are independent -> parallelizable across sub-agents. Then Phase 8 release (version bump 2.3.0, gate, npm publish — awaitingUser unless authorized)."
+    "phase": "phase08",
+    "subTask": "phase08.1",
+    "rationale": "Phases 0-7 complete and committed. All audit findings resolved, all 6 attestation formats verified + FIDO MDS provider, full docs refresh, instruction files synced. Final phase: bump package.json version to 2.3.0, run the full verification gate, npm pack --dry-run review, commit + push, then npm publish (uses the token from publishing-compliance.md; if expired ask the user for a fresh one)."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
 }

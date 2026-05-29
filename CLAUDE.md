@@ -2,7 +2,7 @@
 
 Guidance for Claude Code when working with `webauthn-server-buildkit`.
 
-**Last Updated:** 2026-05-26
+**Last Updated:** 2026-05-29
 
 ## Project Overview
 
@@ -10,22 +10,27 @@ Guidance for Claude Code when working with `webauthn-server-buildkit`.
 
 ## Current Verified State
 
-- Package version: `2.2.0`
-- Tests: 166 tests passing (Vitest)
+- Package version: `2.3.0`
+- Tests: 311 tests passing (Vitest)
 - Build: `tsup` for ESM, CommonJS, and DTS output generation
 - Node.js engine requirement: `>=24.13.0`
 - Toolchain: TypeScript 6, ESLint 10 (typescript-eslint flat config), Vitest 4, Prettier 3
-- Primary production dependency: `cbor-x`
+- Primary production dependency: `cbor-x` (zero new runtime deps added in 2.3.0)
 
-### Security posture (as of v2.2.0)
+### Security posture (as of v2.3.0)
 
 - Signature verification imports COSE keys via JWK (`createPublicKey({ format: 'jwk' })`) — RSA, P-521 (ES512) and Ed25519 verify correctly.
+- COSE key byte-length validation + `alg`↔`crv` consistency check (blocks digest/padding substitution; `COSE_ALG_MISMATCH`).
+- Algorithm pinning at **authentication**: `supportedAlgorithms` allowlist enforced at both registration and auth; `credential.alg` pinned when set (`ALGORITHM_MISMATCH`).
+- Stored challenge is consumed once (single-use / expiry / operation) when a storage adapter is configured (`enforceChallengeStore`, default `true`; new codes `CHALLENGE_NOT_FOUND` / `CHALLENGE_OPERATION_MISMATCH` / `CHALLENGE_EXPIRED`).
+- Cross-origin iframe ceremonies rejected by default (`allowCrossOriginIframe`, default `false`; `CROSS_ORIGIN_NOT_ALLOWED`).
+- `userHandle` validated against `credential.webAuthnUserID` (`USER_HANDLE_MISMATCH`) — usernameless flows are safe; `createRegistrationOptions` returns `webAuthnUserId`.
+- Session tokens: HKDF-SHA256 KDF + 12-byte GCM IV + iv/tag/salt length validation.
+- Constant-time RP-ID-hash comparison; timing-safe attestation nonce + buffer comparisons.
+- Full per-format attestation verification (apple, fido-u2f, packed-x5c, android-key, tpm, android-safetynet) with **honest framing**: `attestationVerified: true` only when trust-anchored — apple via the bundled Apple WebAuthn Root CA, others via an RP-supplied `MetadataService` (FIDO MDS). android-safetynet is deprecated by Google; docs recommend Play Integrity. No CRL/OCSP (offline by design). TPM AIK SAN and android-key Keymaster authz-list are not additionally asserted (the security-critical bindings are).
 - Mobile JSON attestation is **opt-in** (`enableMobileAttestation`, default `false`); the standard WebAuthn path runs by default.
-- Session tokens: HKDF-SHA256 key derivation + 12-byte GCM IV.
-- Constant-time RP-ID-hash comparison; algorithm allowlist enforced at registration.
-- Attestation: `none` + `packed` self-attestation verified; cert-chain formats reported but not trust-anchored (documented future work).
-- Error classes + COSE enums are exported as runtime values (`instanceof` / enum members work).
-- The active v2.2.0 audit/fix tracker lives at `docs/features/package-polish-v2.2.0/00-tracker.json`.
+- Error classes + COSE enums are exported as runtime values (`instanceof` / enum members work); typed `WebAuthnErrorCode` open union + documented `statusCode` (400/401/500).
+- The active v2.3.0 audit/fix tracker lives at `docs/features/package-polish-v2.3.0/00-tracker.json`.
 
 ## Architecture
 
@@ -41,7 +46,7 @@ Guidance for Claude Code when working with `webauthn-server-buildkit`.
 After making changes to this package:
 
 1. Run `yarn build` to verify the build succeeds.
-2. Run `yarn test` to verify all 166 tests pass.
+2. Run `yarn test` to verify all 311 tests pass.
 3. Run `yarn lint` and `yarn typecheck` for code quality.
 4. Re-verify any local consumer (frontend-test-app, backend-test-app) only after the package build succeeds.
 

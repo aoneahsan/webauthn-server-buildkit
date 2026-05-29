@@ -5,6 +5,132 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-05-27
+
+A security, correctness, and feature release. It enforces several WebAuthn
+protections that were previously only requested or partially applied, and adds
+full attestation-statement verification with trust anchoring. **Please read the
+upgrade notes** — some protections are now secure-by-default and change runtime
+behaviour even though this is a minor version. No new runtime dependencies
+(`cbor-x` only); 311 tests pass; Node `>=24.13.0`.
+
+### Upgrade notes
+
+Each behaviour change below ships with an opt-out switch so existing
+integrations can adjust deliberately.
+
+1. **Challenge lifecycle is now enforced from storage by default.** If you
+   configured a `storageAdapter`, `verifyRegistration` / `verifyAuthentication`
+   now look the challenge up in storage, reject it if it is missing
+   (`CHALLENGE_NOT_FOUND`), expired (`CHALLENGE_EXPIRED`), or scoped to a
+   different operation (`CHALLENGE_OPERATION_MISMATCH`), and consume it once so
+   it can never be replayed. Issue challenges via `createRegistrationOptions` /
+   `createAuthenticationOptions` (which persist them), or set
+   `enforceChallengeStore: false` to keep managing challenge lifecycle yourself.
+   Has no effect when no `storageAdapter` is configured.
+2. **Authentication now enforces the algorithm allowlist and pins the
+   credential algorithm.** The `supportedAlgorithms` allowlist — previously
+   applied only at registration — is now also applied at authentication, and
+   when the stored credential carries an `alg`, the assertion must use that exact
+   algorithm (`ALGORITHM_MISMATCH`). Persist `VerifiedRegistrationInfo.credential.alg`
+   onto your stored credential to enable this pinning.
+3. **Cross-origin iframe ceremonies are now rejected by default.** A ceremony
+   whose `clientDataJSON` reports `crossOrigin === true` is rejected
+   (`CROSS_ORIGIN_NOT_ALLOWED`). Set `allowCrossOriginIframe: true` if you
+   intentionally support cross-origin iframe ceremonies.
+4. **New optional `WebAuthnCredential` fields (`alg`, `userVerified`).** Persist
+   them to enable algorithm pinning (above) and user-verification downgrade
+   detection at authentication. Both are additive and optional.
+5. **To trust-anchor certificate-chain attestation, supply a
+   `metadataService`.** `packed` x5c, `fido-u2f`, `android-key`, and `tpm` are
+   cryptographically verified, but only report `attestationVerified: true` when
+   their chain anchors to a root you provide via `metadataService` (FIDO MDS).
+   `apple` works out of the box via the bundled Apple WebAuthn Root CA. Set
+   `requireTrustedAttestation: true` to reject non-trust-anchored attestations
+   when `attestationType !== 'none'`.
+
+### Security
+
+- **Stored challenges are now validated and consumed once (`enforceChallengeStore`,
+  default `true` when a `storageAdapter` is set).** The verify path now reads the
+  challenge from storage and enforces existence, expiry, and operation scope
+  before consuming it, closing a replay gap where a captured `clientDataJSON` +
+  assertion could be re-verified indefinitely while the relying party supplied the
+  same `expectedChallenge`. New error codes: `CHALLENGE_NOT_FOUND`,
+  `CHALLENGE_OPERATION_MISMATCH`, `CHALLENGE_EXPIRED`.
+- **Algorithm pinning at authentication.** The `supportedAlgorithms` allowlist is
+  now applied at authentication (not just registration); COSE keys are rejected
+  when their `alg` is inconsistent with their `kty`/`crv` (`COSE_ALG_MISMATCH`),
+  and a stored credential's registered `alg` is enforced against the asserted
+  algorithm (`ALGORITHM_MISMATCH`). This also fixes RSA padding (PSS vs PKCS#1)
+  being selectable by the key rather than pinned at registration.
+- **Cross-origin iframe ceremonies are rejected** unless `allowCrossOriginIframe`
+  is set (`CROSS_ORIGIN_NOT_ALLOWED`), per W3C §7.1/§7.2.
+- **COSE key byte-length validation.** Coordinate/modulus lengths are validated
+  during parsing (P-256 32, P-384 48, P-521 66, Ed25519 32, RSA modulus ≥ 256),
+  rejecting malformed keys before they reach Node's key import.
+- **Trailing bytes after the COSE key are rejected** when the extension-data flag
+  is unset, instead of being silently dropped.
+- **Session-token field validation.** `iv` (12), `tag` (16), and `salt` (32) byte
+  lengths are validated before constructing the decipher; malformed tokens are
+  rejected with a generic error.
+- **Stored-session expiry is re-checked** after fetching from a custom adapter
+  (defense-in-depth).
+
+### Added
+
+- **Full attestation-statement verification with trust anchoring** for `apple`,
+  `fido-u2f`, `packed` x5c, `android-key`, `tpm`, and `android-safetynet`, via a
+  pluggable `MetadataService` / `StaticMetadataService` (FIDO Metadata Service).
+  The relying party supplies the (large, frequently-updated) FIDO MDS data — the
+  package never fetches it. The **Apple WebAuthn Root CA is bundled**
+  (`APPLE_WEBAUTHN_ROOT_CA_PEM`), so `apple` trust-anchors without configuration.
+  New `requireTrustedAttestation` config rejects non-trust-anchored attestations
+  when `attestationType !== 'none'`. `trustPath` is surfaced on the registration
+  result.
+- **Usernameless (discoverable-credential) support.** `userHandle` is validated
+  and returned in `VerifiedAuthenticationInfo`; `createRegistrationOptions` now
+  returns `webAuthnUserId` (the generated WebAuthn user handle) so it can be
+  persisted as `WebAuthnCredential.webAuthnUserID`.
+- **`excludeCredentials` duplicate rejection.** `verifyRegistration` accepts
+  `{ existingCredentialIds }` and rejects an already-registered credential
+  (`CREDENTIAL_ALREADY_REGISTERED`).
+- **Client extension outputs** (`clientExtensionResults`) are parsed and returned
+  on both registration and authentication results, including `credProps.rk`,
+  `prf`, and `largeBlob`.
+- **Advisory cloning/downgrade signals** in `VerifiedAuthenticationInfo`:
+  `backupStateChanged`, `userVerificationDowngraded`, and `counterSupported`.
+- **`originVerifier`** custom origin matcher config (enables advanced
+  normalization and native `android:apk-key-hash:` origins).
+- **`WebAuthnErrorCode`** exported as a typed union of the known error codes.
+- New optional `WebAuthnCredential.alg` and `WebAuthnCredential.userVerified`
+  fields.
+
+### Changed
+
+- Honest top-level JSDoc — removed the overstated "Complete WebAuthn Level 3"
+  and mobile-attestation claims so the documentation matches verified behaviour.
+- `verifyHash` now delegates to `crypto.timingSafeEqual`.
+- `buffersEqual` is documented as **non-constant-time**; use `timingSafeEqualBytes`
+  for security-sensitive comparisons.
+
+### Fixed
+
+- The `supportedAlgorithms` allowlist is now actually enforced at authentication
+  (it was previously applied only at registration).
+- The `crossOrigin` flag in `clientDataJSON`, previously typed but never read, is
+  now verified.
+- `attestationVerified` is reported `true` **only** when the attestation is
+  trust-anchored (`apple` via the bundled root; certificate-chain formats via
+  `metadataService` roots); otherwise it remains `false`. It is never a false
+  positive.
+
+### Notes
+
+- `android-safetynet` is verified for completeness but is **deprecated by
+  Google** — use Play Integrity for new Android integrations.
+- Attestation trust anchoring does not perform CRL/OCSP revocation checks.
+
 ## [2.2.0] - 2026-05-26
 
 A security and correctness release. **Please read the upgrade notes** — two

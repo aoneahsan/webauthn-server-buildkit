@@ -2,6 +2,184 @@
 
 This guide helps you upgrade between versions of webauthn-server-buildkit.
 
+## Migrating from v2.2.x to v2.3.0
+
+v2.3.0 is a minor release, but it turns on several WebAuthn protections that were
+previously only requested or partially applied. Each behaviour change is
+**secure-by-default with an opt-out switch**, so you can adopt them deliberately.
+The rest of the release is additive (new config options, result fields, and
+exports). No source API was removed.
+
+### 1. Challenge lifecycle is now enforced from storage
+
+If you configured a `storageAdapter`, the verify path now looks the challenge up
+in storage, rejects it if it is missing / expired / scoped to the wrong
+operation, and consumes it once so it can never be replayed.
+
+```typescript
+// Issue challenges through the server so they are persisted to your adapter:
+const { options, challenge, webAuthnUserId } = await webauthn.createRegistrationOptions(user);
+// ...later, on the verify path, the stored challenge is validated and consumed:
+const result = await webauthn.verifyRegistration(response, challenge);
+```
+
+If a challenge is invalid, verification throws a typed error you can switch on:
+
+```typescript
+import { type WebAuthnErrorCode } from 'webauthn-server-buildkit';
+
+// New codes: 'CHALLENGE_NOT_FOUND' | 'CHALLENGE_EXPIRED' | 'CHALLENGE_OPERATION_MISMATCH'
+```
+
+**Migration:** if you manage challenge lifecycle yourself (and only pass
+`expectedChallenge`), opt out to keep the old behaviour:
+
+```typescript
+const webauthn = new WebAuthnServer({
+  // ...existing config...
+  enforceChallengeStore: false, // library only compares the supplied expectedChallenge
+});
+```
+
+This option has no effect when no `storageAdapter` is configured.
+
+### 2. Algorithm allowlist + credential algorithm pinning at authentication
+
+The `supportedAlgorithms` allowlist — previously applied only at registration —
+is now also applied at authentication. When the stored credential carries an
+`alg`, the assertion must use that exact algorithm.
+
+**Migration:** persist the credential's registered algorithm so pinning can take
+effect.
+
+**Before (v2.2.x):**
+
+```typescript
+const result = await webauthn.verifyRegistration(response, challenge);
+await saveCredential({
+  id: result.registrationInfo.credential.id,
+  publicKey: result.registrationInfo.credential.publicKey,
+  counter: result.registrationInfo.credential.counter,
+});
+```
+
+**After (v2.3.0):**
+
+```typescript
+const result = await webauthn.verifyRegistration(response, challenge);
+await saveCredential({
+  id: result.registrationInfo.credential.id,
+  publicKey: result.registrationInfo.credential.publicKey,
+  counter: result.registrationInfo.credential.counter,
+  alg: result.registrationInfo.credential.alg, // pin the algorithm at auth
+  userVerified: result.registrationInfo.userVerified, // enables UV downgrade detection
+});
+```
+
+A mismatch at authentication throws with code `ALGORITHM_MISMATCH`; an
+inconsistent COSE key (`alg` vs `kty`/`crv`) throws `COSE_ALG_MISMATCH`. Both
+`alg` and `userVerified` are optional on `WebAuthnCredential` — existing stored
+credentials without them keep working, just without pinning.
+
+### 3. Cross-origin iframe ceremonies are now rejected
+
+A ceremony whose `clientDataJSON` reports `crossOrigin === true` is now rejected
+with `CROSS_ORIGIN_NOT_ALLOWED`.
+
+**Migration:** if you intentionally run ceremonies inside a cross-origin iframe,
+opt in:
+
+```typescript
+const webauthn = new WebAuthnServer({
+  // ...existing config...
+  allowCrossOriginIframe: true,
+});
+```
+
+### 4. New optional API surface (all additive)
+
+**New config options:**
+
+```typescript
+const webauthn = new WebAuthnServer({
+  // ...existing config...
+  enforceChallengeStore: true, // default true when a storageAdapter is set
+  allowCrossOriginIframe: false, // default false
+  requireTrustedAttestation: false, // default false
+  originVerifier: (origin) => origin === 'android:apk-key-hash:...', // optional custom matcher
+  metadataService: undefined, // optional FIDO MDS trust-anchor provider (see §5)
+});
+```
+
+**New result fields** (all optional/additive):
+
+```typescript
+// VerifiedRegistrationInfo
+result.registrationInfo.credential.alg; // COSE algorithm — persist for pinning
+result.registrationInfo.trustPath; // attestation cert chain (PEM[]) when present
+result.registrationInfo.clientExtensionResults; // credProps.rk, prf, largeBlob, ...
+
+// VerifiedAuthenticationInfo
+result.authenticationInfo.userHandle; // for discoverable (usernameless) credentials
+result.authenticationInfo.backupStateChanged; // advisory cloning/migration signal
+result.authenticationInfo.userVerificationDowngraded; // advisory UV downgrade signal
+result.authenticationInfo.counterSupported; // false for always-0-counter authenticators
+result.authenticationInfo.clientExtensionResults; // appid, prf, largeBlob, ...
+```
+
+**New exports:** the typed `WebAuthnErrorCode` union, the attestation
+trust-anchor provider (`MetadataService`, `StaticMetadataService`), the bundled
+`APPLE_WEBAUTHN_ROOT_CA_PEM`, and per-format attestation verifiers. See the
+[API Reference](./api-reference.md) for the full list.
+
+### 5. Trust-anchoring certificate-chain attestation (optional)
+
+`apple`, `fido-u2f`, `packed` x5c, `android-key`, `tpm`, and `android-safetynet`
+attestation statements are now cryptographically verified. Certificate-chain
+formats report `attestationVerified: true` **only** when their chain anchors to a
+trusted root. `apple` works out of the box (its root is bundled); the others need
+roots you supply through a `metadataService`.
+
+```typescript
+import {
+  WebAuthnServer,
+  StaticMetadataService,
+  APPLE_WEBAUTHN_ROOT_CA_PEM,
+} from 'webauthn-server-buildkit';
+
+const webauthn = new WebAuthnServer({
+  // ...existing config...
+  metadataService: new StaticMetadataService({
+    defaultRoots: [APPLE_WEBAUTHN_ROOT_CA_PEM /* + your FIDO MDS roots */],
+  }),
+  requireTrustedAttestation: true, // reject non-trust-anchored attestation when attestationType !== 'none'
+});
+```
+
+Without a `metadataService`, certificate-chain formats are still verified but
+report `attestationVerified: false` (honest framing — never a false positive).
+Note: `android-safetynet` is **deprecated by Google** (use Play Integrity for new
+Android integrations), and trust anchoring does not perform CRL/OCSP revocation
+checks.
+
+### 6. Detect already-registered credentials (optional)
+
+`verifyRegistration` can now reject a credential that the user has already
+registered:
+
+```typescript
+const result = await webauthn.verifyRegistration(response, challenge, {
+  existingCredentialIds: await listUserCredentialIds(user.id),
+});
+// throws with code 'CREDENTIAL_ALREADY_REGISTERED' on a duplicate
+```
+
+### 7. Toolchain / engine
+
+No source API change. The runtime engine requirement is unchanged
+(`>=24.13.0`), there are no new runtime dependencies (`cbor-x` only), and 311
+tests pass.
+
 ## Migrating from v2.1.x to v2.2.0
 
 v2.2.0 is a minor release, but two security fixes change runtime behaviour.

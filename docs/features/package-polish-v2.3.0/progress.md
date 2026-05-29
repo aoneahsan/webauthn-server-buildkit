@@ -13,7 +13,7 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Phase 4 — Extensions, API & hygiene:** ✅ complete
 - **Phase 5 — Attestation foundation:** ✅ complete
 - **Phase 6 — Attestation formats (+ FIDO MDS):** ✅ complete
-- **Phase 7 — Documentation refresh:** ⏳ pending
+- **Phase 7 — Documentation refresh:** ✅ complete
 - **Phase 8 — Release v2.3.0:** ⏳ pending
 
 ## Log
@@ -97,3 +97,14 @@ _Single comprehensive sub-agent (kept the six formats coherent on shared X.509/A
 - Caveats for docs: TPM AIK SAN and android-key Keymaster authorization-list constraints are not additionally asserted (the security-critical bindings are); android-safetynet needs an RP-supplied GlobalSign root.
 - Gate green: typecheck/lint/test (311)/build/format. Committed + pushed.
 - **Next:** Phase 7 — documentation refresh (parallelized across sub-agents).
+
+### 2026-05-29 — Phase 7 (documentation refresh)
+
+_Three parallel sub-agents on disjoint file sets; instruction files updated in the main thread._
+
+- **Sub-agent A → `Readme.md` + `SECURITY.md`:** Current State 2.3.0 / 311 tests; honest attestation capability matrix (per-format trust-anchoring rules + caveats); `StaticMetadataService` + `APPLE_WEBAUTHN_ROOT_CA_PEM` usage example; corrected `createRegistrationOptions` return shape + all new result fields documented; usernameless mini-guide; `WebAuthnErrorCode` + `statusCode` docs; expanded security posture.
+- **Sub-agent B → `CHANGELOG.md` + `docs/migration.md`:** `[2.3.0]` entry in Keep-a-Changelog style with **Upgrade notes** (5 secure-by-default switches) + Security/Added/Changed/Fixed sections; new `2.2 → 2.3` migration section with before/after code.
+- **Sub-agent C → `docs/api-reference.md` + `AI-INTEGRATION-GUIDE.md` + `docs/audit-records.md`:** every new config option / result field / export / error code documented against real source; stale storage-adapter signatures corrected; AI-guide refreshed (usernameless flow, trust-anchored attestation, DB schema additions); audit record appended for v2.3.0.
+- **Main thread → instruction files:** package-root `CLAUDE.md` / `AGENTS.md` (version 2.3.0, 311 tests, v2.3.0 security posture, tracker path); `.claude/CLAUDE.md` / `.claude/AGENTS.md` (Last Updated 2026-05-29); parent monorepo `CLAUDE.md` / `AGENTS.md` (`webauthn-server-buildkit` 2.2.0 → 2.3.0).
+- Zero source changes; 311 tests still pass; `yarn format:check` clean.
+- **Next:** Phase 8 — release v2.3.0.
