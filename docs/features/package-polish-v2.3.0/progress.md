@@ -14,7 +14,7 @@ Running log. The authoritative resume state is `00-tracker.json` (find the first
 - **Phase 5 — Attestation foundation:** ✅ complete
 - **Phase 6 — Attestation formats (+ FIDO MDS):** ✅ complete
 - **Phase 7 — Documentation refresh:** ✅ complete
-- **Phase 8 — Release v2.3.0:** ⏳ pending
+- **Phase 8 — Release v2.3.0:** ✅ complete — **`webauthn-server-buildkit@2.3.0` is live on npm**
 
 ## Log
 
@@ -108,3 +108,16 @@ _Three parallel sub-agents on disjoint file sets; instruction files updated in t
 - **Main thread → instruction files:** package-root `CLAUDE.md` / `AGENTS.md` (version 2.3.0, 311 tests, v2.3.0 security posture, tracker path); `.claude/CLAUDE.md` / `.claude/AGENTS.md` (Last Updated 2026-05-29); parent monorepo `CLAUDE.md` / `AGENTS.md` (`webauthn-server-buildkit` 2.2.0 → 2.3.0).
 - Zero source changes; 311 tests still pass; `yarn format:check` clean.
 - **Next:** Phase 8 — release v2.3.0.
+
+### 2026-05-29 — Phase 8 (release v2.3.0)
+
+- Bumped `package.json` to **2.3.0**; built `VERSION` export confirms 2.3.0.
+- Final gate green: 311 tests pass; typecheck / lint / build / format all clean.
+- `npm pack --dry-run`: **10 files / 374.7 kB** (dist + Readme + AI-INTEGRATION-GUIDE + LICENSE + package.json) — no stray files.
+- Release commit **`b6b8e44`** pushed to remote `o` main.
+- **`npm publish` succeeded** — authenticated as `aoneahsan` via the documented token + explicit `--userconfig` (temp `.npmrc` removed after; token never committed).
+- **Verified live:** `npm view webauthn-server-buildkit version` = **`2.3.0`**, `dist-tags.latest = 2.3.0`.
+
+## ✅ TASK COMPLETE
+
+All nine phases done; the polished, deeply-audited, full-attestation v2.3.0 release is published and verified live on npm.

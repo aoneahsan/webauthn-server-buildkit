@@ -405,8 +405,9 @@
         {
           "id": "phase08.4",
           "title": "npm publish + verify on npmjs.com",
-          "status": "pending",
-          "awaitingUser": false
+          "status": "complete",
+          "awaitingUser": false,
+          "note": "PUBLISHED 2026-05-29 from release commit b6b8e44. Authenticated as aoneahsan using the documented npm token + explicit --userconfig (temp file removed after; token kept in /tmp, never committed). Verified live: `npm view webauthn-server-buildkit version` = 2.3.0, dist-tags.latest = 2.3.0."
         }
       ]
     }
@@ -459,16 +460,28 @@
       "phase": "phase07",
       "summary": "Documentation refresh — three parallel sub-agents on disjoint file sets (A: Readme + SECURITY; B: CHANGELOG + migration; C: api-reference + AI-INTEGRATION-GUIDE + audit-records); instruction files (CLAUDE.md/AGENTS.md at package root, .claude/, and monorepo root) updated in main thread. Every claim verified against real source. README has the honest attestation capability matrix + MetadataService usage + usernameless mini-guide; CHANGELOG [2.3.0] has Upgrade notes; migration 2.2->2.3 added; api-reference covers every new option/field/export with corrected storage-adapter signatures; AI-guide refreshed; audit-records appended; SECURITY.md posture refreshed. All v2.3.0 / 311-tests / 2026-05-29 dates synced. format:check clean; 311 tests still pass (docs-only). Zero source changes.",
       "commit": "18a3e78"
+    },
+    {
+      "date": "2026-05-29",
+      "phase": "phase08",
+      "summary": "Release v2.3.0. Bumped package.json -> 2.3.0; built VERSION export confirms 2.3.0. Final gate green (311 tests; typecheck/lint/build/format clean). npm pack --dry-run: 10 files (dist + Readme + AI-INTEGRATION-GUIDE + LICENSE + package.json), 374.7 kB, no stray files. Release commit b6b8e44 pushed to remote 'o' main.",
+      "commit": "b6b8e44"
+    },
+    {
+      "date": "2026-05-29",
+      "phase": "phase08-publish",
+      "summary": "PUBLISHED webauthn-server-buildkit@2.3.0 to npm. Authenticated as aoneahsan using the documented global token (publishing-compliance.md) + explicit `npm --userconfig` pointing at a temp .npmrc (token kept in /tmp, never committed, removed after) — same robust pattern used for the v2.2.0 publish. Verified live: `npm view webauthn-server-buildkit version` = 2.3.0, dist-tags.latest = 2.3.0. TASK COMPLETE.",
+      "commit": "post-b6b8e44 (tracker finalize)"
     }
   ],
   "newFindings": [
     "IMPL-1 [info]: The bundled MemoryStorageAdapter already filters expiry inside challenges.find()/sessions.find() (returns null for expired). The new server-side CHALLENGE_EXPIRED + stored-session-expiry checks are therefore defense-in-depth for CUSTOM adapters that don't filter; tested via find()-override stubs."
   ],
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "nextSuggestion": {
-    "phase": "phase08",
-    "subTask": "phase08.1",
-    "rationale": "Phases 0-7 complete and committed. All audit findings resolved, all 6 attestation formats verified + FIDO MDS provider, full docs refresh, instruction files synced. Final phase: bump package.json version to 2.3.0, run the full verification gate, npm pack --dry-run review, commit + push, then npm publish (uses the token from publishing-compliance.md; if expired ask the user for a fresh one)."
+    "phase": "done",
+    "subTask": null,
+    "rationale": "All 9 phases complete and webauthn-server-buildkit@2.3.0 is published + verified live on npm. No remaining work. If re-run: confirm `npm view webauthn-server-buildkit version` is 2.3.0 and stop."
   },
   "resumeInstructions": "1) Read this tracker. 2) Read progress.md + findings.md + 00-overview.md. 3) Find the FIRST phase/sub-task with status 'pending' or 'in_progress'. 4) Read that phase's .md file. 5) Invoke matching skills per RULE #0 (security-review, security-best-practices, nodejs-best-practices, vitest always; documentation-writer at Phase 7; simplify at hygiene work; typescript-advanced-types/error-handling-patterns/api-design-principles at Phases 4-6 as relevant). 6) Do the work, run the full verification gate, mark sub-tasks complete, append a runHistory row, bump lastUpdated. 7) ONE commit per completed+verified phase including the tracker + progress update; push. 8) Do NOT npm publish without explicit user confirmation (phase08.4 — awaitingUser:true)."
 }
