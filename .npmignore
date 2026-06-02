@@ -1,12 +1,10 @@
 # Source files
 src/
-tests/
 
 # Configuration files
 .gitignore
 .nvmrc
 eslint.config.js
-vitest.config.ts
 tsconfig.json
 tsup.config.ts
 
@@ -16,9 +14,6 @@ simplewebauthn-server-documentation-part.md
 
 # Development files
 *.log
-*.test.*
-coverage/
-.vitest/
 
 # CI/CD
 .github/

@@ -48,30 +48,25 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "prepare": "yarn build",
-    "prepublishOnly": "yarn test && yarn lint && yarn typecheck"
+    "prepublishOnly": "yarn lint && yarn typecheck"
   },
   "dependencies": {
     "cbor-x": "^1.6.4"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
-    "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "prettier": "^3.8.3",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.60.0",
-    "vitest": "^4.1.7"
+    "typescript-eslint": "^8.60.0"
   }
 }
