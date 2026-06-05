@@ -177,8 +177,7 @@ const result = await webauthn.verifyRegistration(response, challenge, {
 ### 7. Toolchain / engine
 
 No source API change. The runtime engine requirement is unchanged
-(`>=24.13.0`), there are no new runtime dependencies (`cbor-x` only), and 311
-tests pass.
+(`>=24.13.0`) and there are no new runtime dependencies (`cbor-x` only).
 
 ## Migrating from v2.1.x to v2.2.0
 
@@ -363,19 +362,7 @@ const webauthn = new WebAuthnServer({
 
 ### Recommended Upgrades
 
-#### 5. Use Test Fixtures
-
-v2.0 includes test fixtures for WebAuthn data. Use them for your test suite:
-
-```typescript
-import {
-  validRegistrationResponse,
-  validAuthenticationResponse,
-  mockChallenge,
-} from 'webauthn-server-buildkit/tests/fixtures/webauthn-data';
-```
-
-#### 6. Enable Debug Logging
+#### 5. Enable Debug Logging
 
 Enable debug mode during development to catch issues early:
 

@@ -2,7 +2,7 @@
 
 Guidance for Claude Code when working with `webauthn-server-buildkit`.
 
-**Last Updated:** 2026-05-29
+**Last Updated:** 2026-06-05
 
 ## Project Overview
 
@@ -11,10 +11,9 @@ Guidance for Claude Code when working with `webauthn-server-buildkit`.
 ## Current Verified State
 
 - Package version: `2.3.0`
-- Tests: 311 tests passing (Vitest)
 - Build: `tsup` for ESM, CommonJS, and DTS output generation
 - Node.js engine requirement: `>=24.13.0`
-- Toolchain: TypeScript 6, ESLint 10 (typescript-eslint flat config), Vitest 4, Prettier 3
+- Toolchain: TypeScript 6, ESLint 10 (typescript-eslint flat config), Prettier 3
 - Primary production dependency: `cbor-x` (zero new runtime deps added in 2.3.0)
 
 ### Security posture (as of v2.3.0)
@@ -39,16 +38,14 @@ Guidance for Claude Code when working with `webauthn-server-buildkit`.
 - `src/session/` -- encrypted session token creation and validation
 - `src/crypto/` -- CBOR, COSE, challenge generation, and signature verification
 - `src/adapters/` -- storage adapter abstractions and built-in memory adapter
-- `tests/` -- Vitest coverage for adapters, crypto, session, registration, and authentication flows
 
 ## Critical Verification Rule
 
 After making changes to this package:
 
 1. Run `yarn build` to verify the build succeeds.
-2. Run `yarn test` to verify all 311 tests pass.
-3. Run `yarn lint` and `yarn typecheck` for code quality.
-4. Re-verify any local consumer (frontend-test-app, backend-test-app) only after the package build succeeds.
+2. Run `yarn lint` and `yarn typecheck` for code quality.
+3. Re-verify any local consumer (frontend-test-app, backend-test-app) only after the package build succeeds.
 
 ## Critical Instruction Sync Rule
 
@@ -83,7 +80,6 @@ After making changes to this package:
 ```bash
 yarn build          # Build ESM, CJS, and DTS via tsup
 yarn dev            # Watch mode for development
-yarn test           # Run all Vitest tests
 yarn lint           # Lint source files
 yarn typecheck      # TypeScript type checking
 yarn format         # Format source files
@@ -97,7 +93,7 @@ yarn format         # Format source files
 
 ## NPM Publishing Checklist
 
-1. Verify build, tests, lint, and typecheck all pass.
+1. Verify build, lint, and typecheck all pass.
 2. Update version in `package.json`.
 3. Update changelog and `Readme.md` if needed.
 4. Run `yarn build` (production build).
@@ -107,7 +103,7 @@ yarn format         # Format source files
 ## Working Rules
 
 - Keep `Readme.md` and package docs aligned with verified behavior when public APIs change.
-- Run build, tests, lint, and typecheck before release-oriented changes.
+- Run build, lint, and typecheck before release-oriented changes.
 - Preserve framework-independent, type-safe WebAuthn behavior.
 - Audit records and package update history are maintained in `docs/audit-records.md`.
 - Portfolio file maintenance rules are documented in `docs/portfolio-maintenance.md`.

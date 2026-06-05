@@ -53,25 +53,19 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
    yarn install
    ```
 
-3. Run tests
-
-   ```bash
-   yarn test
-   ```
-
-4. Run linting
+3. Run linting
 
    ```bash
    yarn lint
    ```
 
-5. Run type checking
+4. Run type checking
 
    ```bash
    yarn typecheck
    ```
 
-6. Build the project
+5. Build the project
    ```bash
    yarn build
    ```

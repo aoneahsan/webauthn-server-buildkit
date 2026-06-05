@@ -23,9 +23,8 @@ A comprehensive WebAuthn server package for TypeScript that provides secure, typ
 
 - Package version: `2.3.0`
 - Verified on: `2026-05-27`
-- Tests: `311/311` passing via the `test` script in the last verification pass
 - Build: the `build` script succeeds (ESM + CommonJS + type declarations)
-- Toolchain: TypeScript 6, ESLint 10, Vitest 4
+- Toolchain: TypeScript 6, ESLint 10
 - Runtime dependency: `cbor-x` only (no new dependencies in 2.3.0)
 - Engine requirement: Node.js `>=24.13.0`
 
@@ -160,13 +159,13 @@ async function handleAuthentication(credentials: WebAuthnCredential[]) {
 - `src/session/` handles encrypted session lifecycle operations.
 - `src/crypto/` handles challenge generation, CBOR parsing, COSE operations, and verification helpers.
 - `src/adapters/` contains the storage abstraction layer and memory adapter.
-- `tests/` currently covers adapters, crypto, session, registration, and authentication paths.
 
 ## Verification Commands
 
 ```bash
-yarn test
 yarn build
+yarn lint
+yarn typecheck
 ```
 
 ## Configuration
