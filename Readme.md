@@ -14,7 +14,7 @@
 - [**Troubleshooting Guide**](./docs/troubleshooting.md) - Common issues and solutions
 - [**Migration Guide**](./docs/migration.md) - Upgrading between versions
 - [**Changelog**](./CHANGELOG.md) - Release history
-- [**Portfolio Info File**](./WEBAUTHN-SERVER-BUILDKIT_portfolio-info_2026-03-24.md) - Resume, portfolio, SEO, and social-content source material
+- [**Portfolio Info File**](./WEBAUTHN-SERVER-BUILDKIT_portfolio-info_2026-06-08.md) - Resume, portfolio, SEO, and social-content source material
 - [**WebAuthn Specification**](https://www.w3.org/TR/webauthn-3/) - W3C WebAuthn standard
 
 A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication.

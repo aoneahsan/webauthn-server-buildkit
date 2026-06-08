@@ -2,11 +2,21 @@
 
 > AI agent instructions for the server-side WebAuthn package.
 
-**Last Updated:** 2026-06-05
+**Last Updated:** 2026-06-08
 
 ## Project Overview
 
 `webauthn-server-buildkit` is a TypeScript package for secure, framework-independent WebAuthn server workflows. It pairs with `capacitor-biometric-authentication` but works in any Node.js backend. This package is custom-built; do not describe it as a thin wrapper around another server library.
+
+## Global Standards (pointers — never copy content here)
+
+These global rules apply; read them at their canonical locations rather than duplicating them in this repo:
+
+- **Generic master project rules:** `/home/ahsan/Documents/ahsan-notebook/static/assets/txt-files-important/generic-project-rules.md` (43 tagged rules). Priority order: RULE #0 (invoke matching skills before any edit) → master rules → this file.
+- **Centralized logger rule:** route any log output through one `logger` utility — never `console.*` directly. Full rule in `~/.claude/CLAUDE.md`. (This is a backend library; consumers pass their own `logger`, and the package keeps logging behind its `debug`/`logger` config.)
+- **No automated tests unless explicitly requested:** do not add/expand test files; running existing build/typecheck/lint as a gate is fine. Full rule in `~/.claude/CLAUDE.md`. (This package currently ships no test runner — testing infra was removed portfolio-wide; quality = typecheck + build + lint.)
+- **Store rejection rules + history:** global-only references at `~/.claude/play-console-rejection-rules.json` and `~/.claude/chrome-web-store-rejection-rules.json` (N/A for this npm library — there is no app/extension store artifact; npm publishing checklist below applies instead).
+- **Dependency upgrades:** use `npx -y npm-check-updates -u && yarn install` (latest STABLE), not `yarn upgrade --latest`. For this published package, hold back any major that would raise `engines.node` past what consumers can run.
 
 ## Current Verified State
 
