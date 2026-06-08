@@ -77,13 +77,14 @@ After making changes to this package:
 - Claude Code agents should be the default path for exploration, planning, refactors, implementation, reviews, and other systematic work.
 - Treat direct manual execution as the exception for only genuinely trivial tasks.
 
-## Package Manager Policy
+## Package Manager Hierarchy: nvm → npm (global) → yarn (local) (IRON-SOLID)
 
-- Use `yarn` for all project-local dependency installation, dependency updates, script execution, and publish preparation in this package.
-- Use `pnpm` for all global package installation on the system.
-- Use `npm` only to install or update `pnpm` globally when `pnpm` is missing or needs an update.
-- If `yarn` is missing globally, install it with `pnpm`, not `npm`.
-- Keep `yarn.lock` and remove other lockfiles such as `package-lock.json`, `pnpm-lock.yaml`, and `npm-shrinkwrap.json`.
+Three tiers, each tool ONLY for its tier — for the best, most reproducible dev results:
+- **`nvm`** → install/update Node.js (which bundles `npm`): `nvm install --lts`. Use nvm to get/update `npm` itself.
+- **`npm`** → ALL global packages: `npm install -g yarn` (install yarn globally if missing) + `npm install -g <pkg>` (every other global CLI).
+- **`yarn`** → ALL local project work: `yarn`, `yarn add <pkg>`, `yarn add -D <pkg>` inside the project.
+
+❌ NEVER use `npm`/`pnpm` for LOCAL installs. NEVER use `pnpm` at all. ✅ Only `yarn.lock` in the project — delete `package-lock.json` and `pnpm-lock.yaml`.
 
 ## Commands
 

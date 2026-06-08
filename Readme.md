@@ -69,10 +69,13 @@ yarn add webauthn-server-buildkit
 
 ## Package Manager Policy
 
-- Use `yarn` for project-local installs and script execution.
-- Use `pnpm` for global package installs.
-- Use `npm` only to install or update `pnpm` globally.
-- Keep `yarn.lock` and remove other lockfiles.
+For local development, this project follows a three-tier hierarchy — each tool only for its tier:
+
+- **`nvm`** → install/update Node.js (which bundles `npm`): `nvm install --lts`.
+- **`npm`** → all global packages: `npm install -g yarn` plus any other global CLI.
+- **`yarn`** → all project-local installs and script execution (`yarn`, `yarn add <pkg>`).
+
+Keep only `yarn.lock`; remove `package-lock.json` and `pnpm-lock.yaml`. Never use `pnpm`.
 
 ## Quick Start
 
