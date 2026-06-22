@@ -4,6 +4,10 @@
 
 **Last Updated:** 2026-06-08
 
+## Task Speed Over Docs (IRON-SOLID — BEHAVIORAL)
+
+Finish the real task fast + correctly FIRST; docs/trackers/sync are a footnote (≤~20% of effort) — never let recording outpace the fix. HARD STOP when doc work outpaces the change → ship, then ONE line if anything. No new summary/status/completion files unless asked; edit/delete over add; delete stale docs. Full rule: `~/.claude/CLAUDE.md`. (Est. 2026-06-19)
+
 ## Project Overview
 
 `webauthn-server-buildkit` is a TypeScript package for secure, framework-independent WebAuthn server workflows. It pairs with `capacitor-biometric-authentication` but works in any Node.js backend. This package is custom-built; do not describe it as a thin wrapper around another server library.
