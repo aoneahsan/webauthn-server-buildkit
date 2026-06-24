@@ -120,12 +120,16 @@ export interface VerifiedRegistrationInfo {
   /** Attestation statement format from the attestation object (e.g. 'none', 'packed'). */
   fmt?: AttestationFormat;
   /**
-   * Whether this library cryptographically verified the attestation statement.
-   * `true` only for formats it verifies (currently `packed` self-attestation).
-   * `false` for `none` and for certificate-chain formats whose trust anchors are
-   * not validated here (`packed` with x5c, `fido-u2f`, `tpm`, `android-key`,
-   * `android-safetynet`, `apple`) — verify those out-of-band if you require
-   * attestation trust.
+   * Whether this library cryptographically verified the attestation statement
+   * AND trust-anchored it. Every supported format is cryptographically verified
+   * (`packed` self + x5c, `fido-u2f`, `android-key`, `tpm`, `android-safetynet`,
+   * `apple`); this flag is `true` only when the statement is also anchored to a
+   * trusted root — `apple` via the bundled Apple WebAuthn Root CA, and the
+   * certificate-chain formats via a root supplied through a `metadataService`
+   * (FIDO MDS). It is `false` for `none`, for `packed` self-attestation (no
+   * chain to anchor), and for chain formats when no matching trust anchor is
+   * available (honest framing). Set `requireTrustedAttestation: true` to reject
+   * a non-trust-anchored attestation when `attestationType !== 'none'`.
    */
   attestationVerified?: boolean;
   attestationObject?: Uint8Array;
