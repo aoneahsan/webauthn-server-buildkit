@@ -13,11 +13,8 @@ coverage/
 .nyc_output/
 
 # Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# NOTE: This is a PRIVATE repo — .env / secrets ARE tracked in git (see Gitignore Hygiene in CLAUDE.md).
+# Only template files (.env.example/.env.sample/.env.template) stay untracked when present.
 
 # Logs
 logs/
@@ -56,3 +53,7 @@ Thumbs.db
 # Misc
 *.bak
 *.orig
+
+# Custom rules (always present)
+*.ignore.*
+project-record-ignore/
