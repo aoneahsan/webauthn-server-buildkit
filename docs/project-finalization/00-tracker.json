@@ -1,0 +1,252 @@
+{
+  "$schema": "webauthn-server-buildkit-finalization-tracker",
+  "description": "Resumable production-finalization tracker for webauthn-server-buildkit. The first phase/sub-task with status 'pending' or 'in_progress' is the next thing to work on. Re-running the finalization prompt MUST read this file and resume from the first non-complete sub-task — never restart from scratch.",
+  "module": "project-finalization",
+  "package": "webauthn-server-buildkit",
+  "stack": "TypeScript npm library (framework-independent WebAuthn / FIDO2 server). Build via tsup (ESM + CJS + DTS). One runtime dep: cbor-x. No app/store artifact, no env/secrets.",
+  "repo": "git@github.com:aoneahsan/webauthn-server-buildkit.git (remote 'o', owner github.com/aoneahsan, PRIVATE, main)",
+  "createdAt": "2026-06-24",
+  "lastUpdated": "2026-06-24",
+  "currentVersion": "2.3.0",
+  "verificationGate": [
+    "yarn typecheck (0 errors)",
+    "yarn lint (0 errors/warnings)",
+    "yarn build (ESM + CJS + DTS success, 0 warnings)",
+    "yarn format:check (clean)"
+  ],
+  "baseline": {
+    "date": "2026-06-24",
+    "typecheck": "clean (exit 0)",
+    "lint": "clean (exit 0)",
+    "build": "success — CJS 201.5 KB, ESM 199.67 KB, DTS 68.55 KB",
+    "formatCheck": "3 files flagged (CLAUDE.md, AGENTS.md, eslint.config.js) — repo-level only, not part of published package; prepublishOnly runs lint+typecheck only",
+    "note": "Mature, already-published v2.3.0 package. Two prior deep polish passes (v2.2.0, v2.3.0). Full per-format attestation verification (apple, fido-u2f, packed, android-key, tpm, android-safetynet) with FIDO MDS trust anchoring. No functional gaps in source."
+  },
+  "gapInventory": [
+    {
+      "id": "GAP-01",
+      "area": "documentation-site",
+      "title": "No dedicated Docusaurus documentation site",
+      "detail": "Package ships rich in-repo markdown (Readme.md 36 KB, docs/api-reference.md, AI-INTEGRATION-GUIDE.md, examples/) but has no hosted docs site. Fleet standard: a separate PUBLIC webauthn-server-buildkit-docs repo (Docusaurus 3) with full SEO floor + dual-hosting config.",
+      "classification": "AUTOMATABLE",
+      "reason": "Zero-cost; builds locally; no secret/device/product decision. Deploy itself is user-only.",
+      "status": "complete"
+    },
+    {
+      "id": "GAP-02",
+      "area": "code-hygiene",
+      "title": "format:check fails on CLAUDE.md / AGENTS.md / eslint.config.js",
+      "detail": "Prettier flags 3 repo-level files. Not published (only dist/ + AI-INTEGRATION-GUIDE.md are in files[]) and prepublishOnly does not run format:check, so it does not block publish — but full format:check should be green for hygiene.",
+      "classification": "AUTOMATABLE",
+      "reason": "Mechanical prettier --write on the 3 flagged files.",
+      "status": "complete"
+    },
+    {
+      "id": "GAP-03",
+      "area": "publish",
+      "title": "npm publish of any new version",
+      "detail": "Publishing to the npm registry requires the maintainer's npm auth token and is an irreversible registry action.",
+      "classification": "MANUAL",
+      "reason": "User-only: requires npm credentials + irreversible registry publish. No new version is needed right now (2.3.0 is current and green).",
+      "status": "deferred-manual"
+    },
+    {
+      "id": "GAP-04",
+      "area": "docs-deploy",
+      "title": "Deploy docs site (Firebase Hosting + GitHub Pages)",
+      "detail": "Config written (firebase.json, .firebaserc, GitHub Pages Actions workflow, CNAME). Actual deploy needs Firebase project access / GitHub Pages enablement — user-only.",
+      "classification": "MANUAL",
+      "reason": "User-only: deploy action needing hosting credentials / repo settings toggle.",
+      "status": "deferred-manual"
+    },
+    {
+      "id": "GAP-05",
+      "area": "verification",
+      "title": "Real end-to-end WebAuthn ceremony verification with a live authenticator",
+      "detail": "Library logic is type/lint/build verified and the prior polish passes added regression tests (since removed portfolio-wide). A true round-trip (browser navigator.credentials + platform/roaming authenticator → server verify) needs a real device/browser.",
+      "classification": "MANUAL",
+      "reason": "Needs a real browser + authenticator device; cannot run a server/device in this environment.",
+      "status": "deferred-manual"
+    }
+  ],
+  "phases": [
+    {
+      "id": "phase00",
+      "title": "Setup: confirm remote/branch, invoke skills, read real code vs plan, scaffold tracker + MANUAL-TASKS, refresh CLAUDE/AGENTS",
+      "status": "complete",
+      "completedAt": "2026-06-24",
+      "subTasks": [
+        {
+          "id": "phase00.1",
+          "title": "Confirm remote owner github.com/aoneahsan, branch main, clean tree",
+          "status": "complete",
+          "note": "remote 'o' = git@github.com:aoneahsan/webauthn-server-buildkit.git; main; clean."
+        },
+        {
+          "id": "phase00.2",
+          "title": "Invoke matching skills (typescript-advanced-types, api-documentation; docusaurus-config-setup/ai-seo/technical-writing for docs)",
+          "status": "complete"
+        },
+        {
+          "id": "phase00.3",
+          "title": "Read real API surface (index, server, config, storage, attestation) vs Readme/plan",
+          "status": "complete",
+          "note": "Feature-complete; no functional gaps found."
+        },
+        {
+          "id": "phase00.4",
+          "title": "Scaffold docs/project-finalization/00-tracker.json + docs/MANUAL-TASKS.md; refresh root CLAUDE.md/AGENTS.md",
+          "status": "complete"
+        }
+      ]
+    },
+    {
+      "id": "phase01",
+      "title": "Env/secret + privacy gate",
+      "status": "complete",
+      "completedAt": "2026-06-24",
+      "subTasks": [
+        {
+          "id": "phase01.1",
+          "title": "Privacy gate: app repo PRIVATE",
+          "status": "complete",
+          "note": "gh repo view → isPrivate:true."
+        },
+        {
+          "id": "phase01.2",
+          "title": "Scan whole tree for .env*/.firebaserc/google-services/service-account/.dev.vars",
+          "status": "complete",
+          "note": "ZERO found. Pure server library — no secrets, no credentials, no env files. Nothing to un-ignore or force-add."
+        }
+      ]
+    },
+    {
+      "id": "phase02",
+      "title": "Gap audit (classified gapInventory)",
+      "status": "complete",
+      "completedAt": "2026-06-24",
+      "subTasks": [
+        {
+          "id": "phase02.1",
+          "title": "Scan src for TODO/FIXME/stub/not-implemented/placeholder/disabled routes",
+          "status": "complete",
+          "note": "No real gaps. @deprecated markers are intentional WebAuthn Level 3 deprecations; 'placeholder' refs are security checks that REJECT fake mobile attestation."
+        },
+        {
+          "id": "phase02.2",
+          "title": "Classify gaps AUTOMATABLE/MANUAL/WONT-DO",
+          "status": "complete",
+          "note": "See gapInventory[]: 2 automatable (docs site, format hygiene), 3 manual (npm publish, docs deploy, live-device E2E)."
+        }
+      ]
+    },
+    {
+      "id": "phase03",
+      "title": "Build AUTOMATABLE gap: code-hygiene (format:check green)",
+      "status": "complete",
+      "completedAt": "2026-06-24",
+      "subTasks": [
+        {
+          "id": "phase03.1",
+          "title": "prettier --write the 3 flagged repo files; verify format:check clean",
+          "status": "complete"
+        }
+      ]
+    },
+    {
+      "id": "phaseD",
+      "title": "Docs site — NEW PUBLIC repo webauthn-server-buildkit-docs (Docusaurus 3, full SEO floor, dual-hosting config)",
+      "status": "complete",
+      "completedAt": "2026-06-24",
+      "subTasks": [
+        {
+          "id": "phaseD.1",
+          "title": "gh repo create aoneahsan/webauthn-server-buildkit-docs --public",
+          "status": "complete"
+        },
+        {
+          "id": "phaseD.2",
+          "title": "Scaffold Docusaurus 3 site modeled on native-update-docs; brand from package; document ALL real features/APIs from source",
+          "status": "complete"
+        },
+        {
+          "id": "phaseD.3",
+          "title": "SEO floor: robots.txt AI-bot allowlist, sitemap, llms.txt, JSON-LD (WebSite+Organization+SoftwareSourceCode), per-page meta+OG, cross-links to npm/github",
+          "status": "complete"
+        },
+        {
+          "id": "phaseD.4",
+          "title": "Dual-hosting: firebase.json + .firebaserc + GitHub Pages Actions workflow + CNAME",
+          "status": "complete"
+        },
+        {
+          "id": "phaseD.5",
+          "title": "Scaffold docs/tracking/webauthn-server-buildkit-docs-content-tracker.json (SEO batch schema)",
+          "status": "complete"
+        },
+        {
+          "id": "phaseD.6",
+          "title": "yarn build clean; commit+push docs repo to its own 'o' remote on main",
+          "status": "complete"
+        }
+      ]
+    },
+    {
+      "id": "phaseN1",
+      "title": "Manual-task consolidation",
+      "status": "complete",
+      "completedAt": "2026-06-24",
+      "subTasks": [
+        {
+          "id": "phaseN1.1",
+          "title": "Append all MANUAL + awaitingUser items (npm publish, docs deploy, live-device E2E) to docs/MANUAL-TASKS.md; reconcile done ones with date",
+          "status": "complete"
+        }
+      ]
+    },
+    {
+      "id": "phaseN2",
+      "title": "Finalize: final verify gates + tracker runHistory + clean/in-sync git",
+      "status": "complete",
+      "completedAt": "2026-06-24",
+      "subTasks": [
+        {
+          "id": "phaseN2.1",
+          "title": "Final typecheck+lint+build+format:check on app; docs build",
+          "status": "complete"
+        },
+        {
+          "id": "phaseN2.2",
+          "title": "App repo + docs repo clean and in sync on main",
+          "status": "complete"
+        }
+      ]
+    }
+  ],
+  "manualTasks": [
+    {
+      "gap": "GAP-03",
+      "task": "npm publish (when a new version is cut)",
+      "blocker": "needs npm auth token + irreversible registry publish"
+    },
+    {
+      "gap": "GAP-04",
+      "task": "Deploy docs site to Firebase Hosting + enable GitHub Pages",
+      "blocker": "needs hosting credentials / repo Pages settings"
+    },
+    {
+      "gap": "GAP-05",
+      "task": "Live-device WebAuthn round-trip verification",
+      "blocker": "needs a real browser + authenticator device"
+    }
+  ],
+  "runHistory": [
+    {
+      "date": "2026-06-24",
+      "phase": "phase00..phaseN2",
+      "summary": "Finalization pass on already-published v2.3.0 lib. Verified all gates green; confirmed zero functional/source gaps (mature, 2 prior polish passes). Built 2 automatable gaps: format:check hygiene, and a NEW public Docusaurus docs site (webauthn-server-buildkit-docs) documenting the full real API with SEO floor + dual-hosting config. Deferred 3 true-blocker manual tasks (npm publish, docs deploy, live-device E2E).",
+      "commit": "see app + docs repo logs"
+    }
+  ],
+  "resumeInstructions": "1) Read this tracker. 2) Find the first pending/in_progress sub-task. 3) Invoke matching skills (RULE #0). 4) Complete + mark complete + append a runHistory row + bump lastUpdated. 5) ONE commit per phase, pushed to remote 'o' (owner github.com/aoneahsan only). npm publish + docs deploy + live-device E2E remain user-only."
+}

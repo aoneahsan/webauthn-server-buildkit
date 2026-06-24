@@ -3,14 +3,7 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 
 export default tseslint.config(
   {
-    ignores: [
-      'dist/',
-      'node_modules/',
-      '*.config.js',
-      '*.config.ts',
-      'docs/',
-      'examples/',
-    ],
+    ignores: ['dist/', 'node_modules/', '*.config.js', '*.config.ts', 'docs/', 'examples/'],
   },
   ...tseslint.configs.recommended,
   {

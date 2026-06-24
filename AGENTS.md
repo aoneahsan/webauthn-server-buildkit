@@ -2,13 +2,14 @@
 
 > AI agent instructions for the server-side WebAuthn package.
 
-**Last Updated:** 2026-06-08
+**Last Updated:** 2026-06-24
 
 ## Task Speed Over Docs (IRON-SOLID — BEHAVIORAL)
 
 Finish the real task fast + correctly FIRST; docs/trackers/sync are a footnote (≤~20% of effort) — never let recording outpace the fix. HARD STOP when doc work outpaces the change → ship, then ONE line if anything. No new summary/status/completion files unless asked; edit/delete over add; delete stale docs. Full rule: `~/.claude/CLAUDE.md`. (Est. 2026-06-19)
 
 ## Gitignore Hygiene (IRON-SOLID)
+
 `.gitignore` stays current with the project structure — ignore only recoverable artifacts (build/`dist`/`www`/`node_modules`/logs/caches/IDE), never lose source. Custom rules always present: `*.ignore.*`, `project-record-ignore/`. This is a **PRIVATE** repo -> `.env`/secrets/keystores ARE tracked in git.
 Full rule + private/public protocol: `~/.claude/rules/project-config.md`.
 Gitignore Last Verified: 2026-06-24
@@ -16,6 +17,12 @@ Gitignore Last Verified: 2026-06-24
 ## Project Overview
 
 `webauthn-server-buildkit` is a TypeScript package for secure, framework-independent WebAuthn server workflows. It pairs with `capacitor-biometric-authentication` but works in any Node.js backend. This package is custom-built; do not describe it as a thin wrapper around another server library.
+
+## Production Finalization & Manual Tasks (pointers)
+
+- **Human-only tasks** (npm publish, docs-site deploy, live-device WebAuthn round-trip): `docs/MANUAL-TASKS.md` — the ONE place for "what's left for me". Spec: `~/.claude/rules/manual-tasks.md`.
+- **Finalization tracker** (resumable): `docs/project-finalization/00-tracker.json` (classified gap inventory + per-phase status).
+- **Documentation site:** separate PUBLIC repo `aoneahsan/webauthn-server-buildkit-docs` (Docusaurus 3) → `https://webauthn-server-buildkit-docs.aoneahsan.com` (Firebase Hosting + GitHub Pages, deploy is user-only). Long-tail SEO content tracker: `docs/tracking/webauthn-server-buildkit-docs-content-tracker.json`.
 
 ## Global Standards (pointers — never copy content here)
 
@@ -96,6 +103,7 @@ After making changes to this package:
 ## Package Manager Hierarchy: nvm → npm (global) → yarn (local) (IRON-SOLID)
 
 Three tiers, each tool ONLY for its tier — for the best, most reproducible dev results:
+
 - **`nvm`** → install/update Node.js (which bundles `npm`): `nvm install --lts`. Use nvm to get/update `npm` itself.
 - **`npm`** → ALL global packages: `npm install -g yarn` (install yarn globally if missing) + `npm install -g <pkg>` (every other global CLI).
 - **`yarn`** → ALL local project work: `yarn`, `yarn add <pkg>`, `yarn add -D <pkg>` inside the project.
