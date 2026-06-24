@@ -244,8 +244,9 @@
     {
       "date": "2026-06-24",
       "phase": "phase00..phaseN2",
-      "summary": "Finalization pass on already-published v2.3.0 lib. Verified all gates green; confirmed zero functional/source gaps (mature, 2 prior polish passes). Built 2 automatable gaps: format:check hygiene, and a NEW public Docusaurus docs site (webauthn-server-buildkit-docs) documenting the full real API with SEO floor + dual-hosting config. Deferred 3 true-blocker manual tasks (npm publish, docs deploy, live-device E2E).",
-      "commit": "see app + docs repo logs"
+      "summary": "Finalization pass on already-published v2.3.0 lib. Verified all gates green; confirmed zero functional/source gaps (mature, 2 prior polish passes). Built 3 automatable gaps: format:check hygiene, a stale-JSDoc correctness fix (attestationVerified, ships in dist/index.d.ts), and a NEW public Docusaurus docs site (webauthn-server-buildkit-docs, 19 pages) documenting the full real API with SEO floor + dual-hosting config. Deferred 3 true-blocker manual tasks (npm publish, docs deploy, live-device E2E).",
+      "commit": "app: 75a6920 (finalization scaffold+hygiene), 9855ab7 (JSDoc fix), 2501d27 (content tracker); docs repo: 29fefdb (initial site, pushed to o/main)",
+      "verifyOutput": "app: typecheck 0, lint 0, build OK (ESM 199.67 KB + CJS + DTS 68.92 KB), format:check clean. docs: yarn build OK (21 html pages, sitemap 20 urls, robots/llms/CNAME/JSON-LD emitted)."
     }
   ],
   "resumeInstructions": "1) Read this tracker. 2) Find the first pending/in_progress sub-task. 3) Invoke matching skills (RULE #0). 4) Complete + mark complete + append a runHistory row + bump lastUpdated. 5) ONE commit per phase, pushed to remote 'o' (owner github.com/aoneahsan only). npm publish + docs deploy + live-device E2E remain user-only."
