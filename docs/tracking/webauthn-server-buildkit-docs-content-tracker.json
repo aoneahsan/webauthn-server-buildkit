@@ -1,0 +1,139 @@
+{
+  "$schema": "webauthn-server-buildkit-docs-content-tracker",
+  "description": "Per-page rich SEO/AEO content enrichment + long-tail expansion tracker for the webauthn-server-buildkit-docs Docusaurus site (separate PUBLIC repo aoneahsan/webauthn-server-buildkit-docs). Resumable across sessions. The docs site is NOT in this repo; this tracker lives here so the package owner has one predictable tracking location. Follows ~/.claude/rules/seo-aeo-ranking.md §13.",
+  "docsRepo": "git@github.com:aoneahsan/webauthn-server-buildkit-docs.git (PUBLIC, main)",
+  "siteUrl": "https://webauthn-server-buildkit-docs.aoneahsan.com",
+  "createdAt": "2026-06-24",
+  "lastUpdated": "2026-06-24",
+  "expert": "Ahsan Mahmood",
+  "wordsPerPageMin": 600,
+  "wordsPerPageTarget": "600-1200",
+  "seoFloor": {
+    "robotsAiAllowlist": true,
+    "sitemap": "emitted by @docusaurus/plugin-sitemap on build",
+    "llmsTxt": true,
+    "llmsFullTxt": true,
+    "jsonLd": ["WebSite", "Organization", "SoftwareSourceCode"],
+    "perPageMetaOg": "Docusaurus per-page frontmatter (title/description/keywords) + global OG/Twitter tags",
+    "crossLinks": ["npm", "github source", "capacitor-biometric-authentication"]
+  },
+  "pagesPublished": [
+    { "id": "intro", "path": "docs/intro.md", "status": "complete", "hasFaq": true },
+    {
+      "id": "getting-started/installation",
+      "path": "docs/getting-started/installation.md",
+      "status": "complete"
+    },
+    {
+      "id": "getting-started/quick-start",
+      "path": "docs/getting-started/quick-start.md",
+      "status": "complete"
+    },
+    {
+      "id": "guides/configuration",
+      "path": "docs/guides/configuration.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    {
+      "id": "guides/registration",
+      "path": "docs/guides/registration.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    {
+      "id": "guides/authentication",
+      "path": "docs/guides/authentication.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    {
+      "id": "guides/sessions",
+      "path": "docs/guides/sessions.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    {
+      "id": "guides/storage-adapters",
+      "path": "docs/guides/storage-adapters.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    {
+      "id": "guides/attestation",
+      "path": "docs/guides/attestation.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    {
+      "id": "guides/security-model",
+      "path": "docs/guides/security-model.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    {
+      "id": "guides/error-handling",
+      "path": "docs/guides/error-handling.md",
+      "status": "complete",
+      "hasFaq": true
+    },
+    { "id": "api/webauthn-server", "path": "docs/api/webauthn-server.md", "status": "complete" },
+    { "id": "api/configuration", "path": "docs/api/configuration.md", "status": "complete" },
+    { "id": "api/storage-adapter", "path": "docs/api/storage-adapter.md", "status": "complete" },
+    { "id": "api/attestation", "path": "docs/api/attestation.md", "status": "complete" },
+    { "id": "api/crypto-and-utils", "path": "docs/api/crypto-and-utils.md", "status": "complete" },
+    { "id": "api/types-and-errors", "path": "docs/api/types-and-errors.md", "status": "complete" },
+    { "id": "examples/express", "path": "docs/examples/express.md", "status": "complete" },
+    { "id": "about-the-author", "path": "docs/about-the-author.md", "status": "complete" }
+  ],
+  "longTailBacklog": [
+    {
+      "id": "guides/passkeys",
+      "title": "Passkeys with webauthn-server-buildkit (discoverable credentials end to end)",
+      "status": "pending",
+      "rationale": "High-search term 'passkeys'."
+    },
+    {
+      "id": "guides/fastify",
+      "title": "Using webauthn-server-buildkit with Fastify",
+      "status": "pending"
+    },
+    { "id": "guides/nextjs", "title": "WebAuthn in a Next.js route handler", "status": "pending" },
+    {
+      "id": "guides/capacitor",
+      "title": "Pairing with capacitor-biometric-authentication (native biometrics)",
+      "status": "pending"
+    },
+    {
+      "id": "guides/postgres-adapter",
+      "title": "A production PostgreSQL StorageAdapter walkthrough",
+      "status": "pending"
+    },
+    {
+      "id": "concepts/webauthn-vs-fido2",
+      "title": "WebAuthn vs FIDO2 vs passkeys — what the terms mean",
+      "status": "pending"
+    },
+    {
+      "id": "comparisons/simplewebauthn",
+      "title": "webauthn-server-buildkit vs simplewebauthn",
+      "status": "pending",
+      "note": "Keep balanced + honest; comparison pages have ~33% AI-citation share."
+    }
+  ],
+  "batchWorkflow": [
+    "1) Read this tracker; pick the next pending longTailBacklog item (or the highest-search-demand one).",
+    "2) Invoke ai-seo + copywriting + technical-writing skills (RULE #0).",
+    "3) Write the page in the docs repo with definition-first intro, concrete examples, 3-5 FAQ entries, distinct title+description+keywords frontmatter, honest scope/limits framing.",
+    "4) Add it to sidebars.ts. yarn build clean.",
+    "5) Mark complete here, append a runHistory row, bump lastUpdated. ONE commit per batch in the docs repo.",
+    "Honest framing: say what the library does NOT do; no fabricated benchmarks; no keyword stuffing (Princeton GEO: -10%)."
+  ],
+  "runHistory": [
+    {
+      "date": "2026-06-24",
+      "summary": "Initial site scaffolded + 19 pages published (intro, getting-started x2, guides x8, api x6, examples x1, author). Full SEO floor in place (robots AI allowlist, sitemap, llms.txt, llms-full.txt, JSON-LD WebSite+Organization+SoftwareSourceCode, per-page meta/keywords, OG/Twitter). Long-tail backlog seeded with 7 items.",
+      "commit": "see webauthn-server-buildkit-docs repo"
+    }
+  ]
+}
