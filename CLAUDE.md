@@ -141,3 +141,12 @@ yarn format         # Format source files
 - This package is custom-built; do not describe it as a thin wrapper around another server library.
 - Current engine requirement in `package.json`: Node.js `>=24.13.0`.
 - Primary production dependency: `cbor-x`.
+
+
+## Sub-agents & Skills — Main-Context-First (IRON-SOLID)
+Default/built-in sub-agents (`general-purpose`, `Explore`, `Plan`, `claude`, `fork`, …) do NOT have
+access to `/skills`, so delegating to them silently SKIPS the skills RULE #0 requires. Do all
+skill-relevant work in the **MAIN context**; use a sub-agent ONLY when a **custom** agent exists in
+`.claude/agents/` for that job; a default `Explore`/`Plan` agent is allowed ONLY for read-only,
+no-skill search/exploration. When a relevant skill is missing, **install/enable it** rather than
+proceeding skill-less. (Owner directive 2026-07-11; full text in `~/.claude/CLAUDE.md`.)
