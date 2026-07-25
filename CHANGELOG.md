@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-07-25
+
+Packaging and documentation only — no runtime code changed, so the public API and behaviour of `2.3.0` are
+untouched.
+
+### Fixed
+
+- **`CHANGELOG.md` now ships in the published tarball.** The `files` allowlist omitted it and npm does not
+  include it automatically, so every installed copy from `2.0.0` onward had no release history. `SECURITY.md`
+  now ships too, so an installed copy carries the vulnerability-disclosure path.
+- **Source maps are no longer published.** `tsup` emitted `index.js.map` and `index.cjs.map` totalling
+  1.08 MB of a 1.7 MB unpacked install, embedding the full TypeScript source. Published output now ships
+  without them, cutting the unpacked size by roughly 63%.
+- **CommonJS consumers now resolve their own type declarations.** The `exports` map pointed both conditions
+  at `dist/index.d.ts`, leaving the generated `dist/index.d.cts` orphaned; under `moduleResolution: node16`
+  or `nodenext` a `require()` consumer was served an ESM declaration file from a `"type": "module"` package.
+  The `import` and `require` conditions now carry their own nested `types`.
+- **`homepage` points at the documentation site** rather than a README anchor, so the npm "Homepage" link
+  reaches the docs.
+- **Removed `.npmignore`.** It coexisted with the `files` allowlist, which silently wins — a denylist that
+  looked authoritative and was inert.
+
+### Added
+
+- `sideEffects: false`, enabling tree-shaking for bundler-based consumers.
+- `./package.json` as an explicit `exports` subpath, for tooling that reads it.
+- `assets/logo.svg`, shared with the documentation site.
+
+### Changed
+
+- **README rewritten to the canonical package pattern.** Internal audit scaffolding (`Current State`,
+  `Verified Package Architecture`, `Verification Commands`, `Package Manager Policy`) removed; every link is
+  now absolute and verified, so it works when rendered on npmjs.com; explicit heading anchors added, without
+  which in-page links do not resolve on npmjs.com at all. A broken link to a portfolio-info file that had
+  been renamed is gone. Limitations are now stated explicitly rather than implied.
+- `description` and `keywords` sharpened for npm search; the description now matches the README tagline.
+
+### Notes
+
+- **This package currently has no automated test suite.** The Vitest suite of 311 tests referenced in the
+  `2.3.0` entry below was accurate at that release; the entire testing infrastructure was removed on
+  2026-06-02. CI runs lint, typecheck and build only. Recorded here so the `2.3.0` entry is not read as a
+  statement about the current tree.
+
 ## [2.3.0] - 2026-05-27
 
 A security, correctness, and feature release. It enforces several WebAuthn

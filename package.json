@@ -1,7 +1,7 @@
 {
   "name": "webauthn-server-buildkit",
-  "version": "2.3.0",
-  "description": "A comprehensive WebAuthn server package for TypeScript that provides secure, type-safe, and framework-independent biometric authentication",
+  "version": "2.3.1",
+  "description": "Framework-independent WebAuthn server for Node.js — passkeys, attestation, encrypted sessions.",
   "author": "Ahsan Mahmood <aoneahsan@gmail.com>",
   "license": "MIT",
   "repository": {
@@ -11,20 +11,23 @@
   "bugs": {
     "url": "https://github.com/aoneahsan/webauthn-server-buildkit/issues"
   },
-  "homepage": "https://github.com/aoneahsan/webauthn-server-buildkit#readme",
+  "homepage": "https://webauthn-server-buildkit-docs.aoneahsan.com",
   "funding": {
     "type": "individual",
     "url": "https://aoneahsan.com/payment?project-id=webauthn-server-buildkit&project-identifier=webauthn-server-buildkit"
   },
   "type": "module",
+  "sideEffects": false,
   "keywords": [
     "webauthn",
-    "biometric",
-    "authentication",
     "passkeys",
     "fido2",
-    "typescript",
+    "biometric",
+    "authentication",
+    "passwordless",
+    "attestation",
     "security",
+    "typescript",
     "server"
   ],
   "main": "./dist/index.cjs",
@@ -32,14 +35,22 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "AI-INTEGRATION-GUIDE.md"
+    "AI-INTEGRATION-GUIDE.md",
+    "CHANGELOG.md",
+    "SECURITY.md"
   ],
   "engines": {
     "node": ">=24.13.0"

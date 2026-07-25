@@ -9,7 +9,9 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   dts: true,
   splitting: false,
-  sourcemap: true,
+  // Published output ships without source maps (global rule): they leak full
+  // source into the tarball and accounted for 1.08 MB of a 1.7 MB install.
+  sourcemap: false,
   clean: true,
   minify: false,
   target: 'es2022',
