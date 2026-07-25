@@ -1,12 +1,12 @@
 # WebAuthn Server Buildkit — Portfolio Info
 
-Reference Date: 2026-06-08
+Reference Date: 2026-06-26
 Project Type: Custom-built, framework-independent WebAuthn / passkey **server** package for TypeScript (Node.js backend library), published to npm; companion to the `capacitor-biometric-authentication` frontend plugin
 Project Slug: webauthn-server-buildkit
 Primary Email Reference: aoneahsan@gmail.com
 Current Version Reviewed: 2.3.0
-Last Portfolio Update: 2026-06-08
-Next Eligible Update After: 2026-06-15
+Last Portfolio Update: 2026-06-26
+Next Eligible Update After: 2026-07-03
 
 ---
 
@@ -23,7 +23,7 @@ Next Eligible Update After: 2026-06-15
 | Capacitor App ID / App Store / Play Store | N/A — this is a backend Node.js library, not an app                                                                                        |
 | Browser Extension                         | N/A                                                                                                                                        |
 | License                                   | MIT (LICENSE file present)                                                                                                                 |
-| Author                                    | Ahsan Mahmood — aoneahsan@gmail.com — https://aoneahsan.com — https://github.com/aoneahsan                                                 |
+| Author                                    | Ahsan Mahmood — aoneahsan@gmail.com — https://aoneahsan.com                                                                                |
 | Payment / Support URL                     | https://aoneahsan.com/payment?project-id=webauthn-server-buildkit&project-identifier=webauthn-server-buildkit                              |
 | Agent-Readable Integration                | Ships `AI-INTEGRATION-GUIDE.md` inside the published package for AI coding agents + frontend (`capacitor-biometric-authentication`) wiring |
 | Companion Frontend Package                | `capacitor-biometric-authentication` — https://www.npmjs.com/package/capacitor-biometric-authentication                                    |
@@ -75,6 +75,7 @@ Next Eligible Update After: 2026-06-15
 
 | Date       | Type              | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ---------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-26 | Links reconcile   | links/identifiers/contact reconciled from master JSON.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 2026-06-08 | Material refresh  | Portfolio refresh on published v2.3.0 (no new release). `npm-check-updates -u` bumped one devDep patch (`@types/node ^25.9.1 → ^25.9.2`); `yarn install` reconciled `yarn.lock`. Re-verified green: `yarn typecheck` (0 errors), `yarn build` (tsup → ESM 199.67 KB + CJS 201.50 KB + dual `.d.ts`/`.d.cts`), and `yarn lint` (clean). **Correction: prior "strong test coverage / 131 (then 311) tests" claims are retired** — the automated-test runner (Cypress and all testing infra) was removed in the portfolio-wide cleanup, so the package now ships with NO test runner; quality is enforced by strict typecheck + a real dual-format build + ESLint 10. Single runtime dependency (`cbor-x`) preserved. Dossier rebuilt to the current section structure; CLAUDE.md + AGENTS.md date blocks bumped to 2026-06-08. |
 | 2026-03-24 | Created/Refreshed | Portfolio file created from repository state during portfolio sweep (then v2.1.0). At that time the suite reported 131 passing tests; that claim is retired as of 2026-06-08 (testing infra removed).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
