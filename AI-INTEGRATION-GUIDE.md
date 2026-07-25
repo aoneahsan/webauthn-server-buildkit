@@ -2,7 +2,7 @@
 
 > **For AI Development Agents**: This guide provides complete implementation instructions for integrating `webauthn-server-buildkit` (backend) with `capacitor-biometric-authentication` (frontend) for biometric authentication.
 
-> **Backend version: `webauthn-server-buildkit` v2.3.0.** This release is
+> **Backend version: `webauthn-server-buildkit` v2.3.2.** This release is
 > secure-by-default: the challenge lifecycle is enforced from storage, the
 > credential algorithm is pinned at authentication, cross-origin-iframe ceremonies
 > are rejected, and full per-format attestation verification is available. Node

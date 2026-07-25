@@ -1,6 +1,6 @@
 {
   "name": "webauthn-server-buildkit",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Framework-independent WebAuthn server for Node.js — passkeys, attestation, encrypted sessions.",
   "author": "Ahsan Mahmood <aoneahsan@gmail.com>",
   "license": "MIT",

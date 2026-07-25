@@ -29,7 +29,7 @@ of collapsing the two.
 
 | | |
 |---|---|
-| **Version** | `2.3.0` |
+| **Version** | `2.3.2` |
 | **License** | MIT |
 | **Node** | `>=24.13.0` |
 | **Platforms** | Node.js server only (not a browser or React Native library) |
@@ -372,9 +372,7 @@ Stated plainly, because this is security code.
 <a id="changelog"></a>
 ## 🔄 Changelog&nbsp;[#](#changelog)
 
-Latest release: **`2.3.0`** — enforced single-use challenges, algorithm pinning at authentication,
-cross-origin rejection by default, and full per-format attestation verification with trust anchoring.
-Full history: [CHANGELOG.md](https://github.com/aoneahsan/webauthn-server-buildkit/blob/main/CHANGELOG.md).
+Latest release: **`2.3.2`** — documentation only: the at-a-glance table above reported the previous version, because it is a static duplicate of `package.json`. Full history in the changelog.
 
 <a id="contributing"></a>
 ## 🤝 Contributing&nbsp;[#](#contributing)
