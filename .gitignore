@@ -12,9 +12,17 @@ build/
 coverage/
 .nyc_output/
 
-# Environment files
-# NOTE: This is a PRIVATE repo — .env / secrets ARE tracked in git (see Gitignore Hygiene in CLAUDE.md).
-# Only template files (.env.example/.env.sample/.env.template) stay untracked when present.
+# Environment files and credentials (this repository is public)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+*service-account*.json
 
 # Logs
 logs/
