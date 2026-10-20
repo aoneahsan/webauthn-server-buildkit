@@ -1,5 +1,7 @@
 # WebAuthn Server Buildkit project guidance
 
+**Last Updated:** 2026-10-20
+
 **Last context pass:** 2026-10-20. **Next routine context pass:** 2026-11-19.
 
 ## Start here
@@ -27,3 +29,9 @@ Preserve ESM, CJS, and declaration exports, source-map exclusions, the Node engi
 Run `yarn install --immutable`, `yarn typecheck`, `yarn lint`, `yarn format:check`, `yarn build`, and `yarn pack --dry-run`. Inspect both module formats and declarations. A new release requires a semantic version, security-focused verification appropriate to the change, tarball inspection, and registry verification.
 
 Context optimization is complete for this pass. Do not repeat before 2026-11-19 unless the owner requests it, the tree changes materially, a hard cap is breached, or stale guidance can cause wrong work.
+
+## Stop-work Git gate
+
+<!-- RULE:stop-work-git-gate v2026-10-20 -->
+
+Before stopping, commit every legitimate change and work-progress checkpoint in this repository and each independent nested repository, fetch and merge the designated upstream, push the documented working branch, then verify an empty worktree and `0 0` ahead/behind. Never stash, discard, reset, rebase, or force-push. If synchronization is blocked, report the exact repository, branch, blocker, and next action instead of calling the work complete. The full workflow remains authoritative in `~/.claude/rules/git-workflow.md`.
